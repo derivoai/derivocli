@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'motion/react';
 import { Logo } from './Logo';
 import { cn } from '../../lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { auth } from '../../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export function Navbar() {
   const { scrollY } = useScroll();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 20);
@@ -70,18 +80,29 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link 
-            to="/login" 
-            className="hidden sm:block text-[13px] font-medium text-white/50 hover:text-white transition-colors px-3 focus-visible:ring-1 focus-visible:ring-white rounded"
-          >
-            Sign in
-          </Link>
-          <Link 
-            to="/register" 
-            className="hidden md:block px-5 py-2 rounded-full bg-white/[0.08] border border-white/[0.08] text-white text-[13px] font-medium hover:bg-white/[0.15] transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] focus-visible:ring-2 focus-visible:ring-white"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <Link 
+              to="/dashboard" 
+              className="px-5 py-2 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-white/90 transition-colors shadow focus-visible:ring-2 focus-visible:ring-white"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link 
+                to="/login" 
+                className="hidden sm:block text-[13px] font-medium text-white/50 hover:text-white transition-colors px-3 focus-visible:ring-1 focus-visible:ring-white rounded"
+              >
+                Sign in
+              </Link>
+              <Link 
+                to="/register" 
+                className="hidden md:block px-5 py-2 rounded-full bg-white/[0.08] border border-white/[0.08] text-white text-[13px] font-medium hover:bg-white/[0.15] transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -125,20 +146,32 @@ export function Navbar() {
             </nav>
             <div className="h-px bg-white/10 my-1" />
             <div className="flex flex-col gap-3">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 rounded-lg text-white/70 hover:text-white transition-colors text-sm font-medium border border-white/5 bg-white/[0.02]"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors shadow"
-              >
-                Get Started
-              </Link>
+              {user ? (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors shadow"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-lg text-white/70 hover:text-white transition-colors text-sm font-medium border border-white/5 bg-white/[0.02]"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors shadow"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

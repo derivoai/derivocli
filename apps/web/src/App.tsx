@@ -17,6 +17,8 @@ import { Activity } from './pages/dashboard/Activity';
 import { Billing } from './pages/dashboard/Billing';
 import { Settings } from './pages/dashboard/Settings';
 
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
 export default function App() {
   return (
     <Router>
@@ -34,13 +36,13 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         
         {/* Dashboard Routes */}
-        <Route path="/dashboard" element={<DashboardHome />} />
-        <Route path="/dashboard/projects" element={<Projects />} />
-        <Route path="/dashboard/devices" element={<Devices />} />
-        <Route path="/dashboard/keys" element={<ApiKeys />} />
-        <Route path="/dashboard/activity" element={<Activity />} />
-        <Route path="/dashboard/billing" element={<Billing />} />
-        <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
+        <Route path="/dashboard/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+        <Route path="/dashboard/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+        <Route path="/dashboard/keys" element={<ProtectedRoute><ApiKeys /></ProtectedRoute>} />
+        <Route path="/dashboard/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+        <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+        <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

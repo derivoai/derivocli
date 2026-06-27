@@ -15,6 +15,7 @@ import {
   PhoneAuthProvider,
   signInWithCredential
 } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM",
@@ -30,10 +31,14 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
 export {
+  doc,
+  getDoc,
+  setDoc,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,

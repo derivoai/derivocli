@@ -1,9 +1,20 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-
 import { Link } from 'react-router-dom';
+import { auth } from '../../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export function Hero() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <section className="relative z-10 w-full max-w-5xl mx-auto px-6 flex flex-col items-start justify-center pt-32 pb-16 md:pt-48 md:pb-24 text-left">
       <motion.h1
@@ -31,10 +42,17 @@ export function Hero() {
         transition={{ duration: 1, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="mt-12 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto"
       >
-        <Link to="/register" className="h-12 px-8 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all flex items-center justify-center gap-2 group shadow-[0_0_30px_rgba(255,255,255,0.15)] focus-visible:ring-2 focus-visible:ring-white">
-          Get Started
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        {user ? (
+          <Link to="/dashboard" className="h-12 px-8 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all flex items-center justify-center gap-2 group shadow-[0_0_30px_rgba(255,255,255,0.15)] focus-visible:ring-2 focus-visible:ring-white">
+            Dashboard
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        ) : (
+          <Link to="/register" className="h-12 px-8 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 transition-all flex items-center justify-center gap-2 group shadow-[0_0_30px_rgba(255,255,255,0.15)] focus-visible:ring-2 focus-visible:ring-white">
+            Get Started
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        )}
         <Link to="/docs" className="h-12 px-8 rounded-full bg-white/[0.03] text-white/80 border border-white/[0.08] text-sm font-medium hover:bg-white/[0.08] transition-all flex items-center justify-center gap-2 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-white">
           View Documentation
         </Link>

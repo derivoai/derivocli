@@ -1,9 +1,37 @@
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { mockUser } from '../../mock/data';
 import { Zap, CreditCard, Download, ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 export function Billing() {
+  const { profile, loading } = useUserProfile();
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+            <span className="text-xs text-white/40 font-mono">Loading billing details...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const userPlan = profile?.role === 'pro' 
+    ? 'Pro Plan' 
+    : profile?.role === 'pro_trial' 
+      ? 'Pro Trial' 
+      : 'Community Plan';
+
+  let trialDaysLeft = 0;
+  if (profile?.trialExpiresAt) {
+    const expires = new Date(profile.trialExpiresAt).getTime();
+    const now = new Date().getTime();
+    trialDaysLeft = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8 max-w-4xl">
@@ -21,26 +49,30 @@ export function Billing() {
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-white/90">Current Plan</span>
-                <span className="text-xl font-bold text-white tracking-tight">{mockUser.plan}</span>
+                <span className="text-xl font-bold text-white tracking-tight">{userPlan}</span>
               </div>
             </div>
             
             <div className="flex flex-col gap-4 relative z-10 flex-1">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-xs text-white/60">
-                  <span>Trial time remaining</span>
-                  <span className="font-medium text-white">{mockUser.trialDaysLeft} days</span>
+              {profile?.role === 'pro_trial' && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-xs text-white/60">
+                    <span>Trial time remaining</span>
+                    <span className="font-medium text-white">{trialDaysLeft} days</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(trialDaysLeft / 3) * 100}%` }}
+                      className="h-full bg-amber-500"
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(mockUser.trialDaysLeft / 7) * 100}%` }}
-                    className="h-full bg-amber-500"
-                  />
-                </div>
-              </div>
+              )}
               <p className="text-xs text-white/50 leading-relaxed mt-2">
-                Your trial ends on Nov 12, 2023. You will automatically be downgraded to the Community plan if you do not upgrade.
+                {profile?.role === 'pro_trial' 
+                  ? `Your 3-day trial is currently active. Upgrade to a paid plan to keep enjoying full Pro privileges.`
+                  : `You are on the free Community plan. Upgrade to access premium features.`}
               </p>
             </div>
 

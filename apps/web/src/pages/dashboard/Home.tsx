@@ -1,10 +1,39 @@
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { mockUser, mockProjects, mockDevices, mockActivity } from '../../mock/data';
+import { mockProjects, mockDevices, mockActivity } from '../../mock/data';
 import { Plus, Terminal, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 export function DashboardHome() {
+  const { profile, loading } = useUserProfile();
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+            <span className="text-xs text-white/40 font-mono">Loading profile data...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const userPlan = profile?.role === 'pro' 
+    ? 'Pro Plan' 
+    : profile?.role === 'pro_trial' 
+      ? 'Pro Trial' 
+      : 'Community Plan';
+
+  let trialDaysLeft = 0;
+  if (profile?.trialExpiresAt) {
+    const expires = new Date(profile.trialExpiresAt).getTime();
+    const now = new Date().getTime();
+    trialDaysLeft = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
@@ -13,7 +42,7 @@ export function DashboardHome() {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-              Welcome back, {mockUser.name.split(' ')[0]}
+              Welcome back, {profile?.name.split(' ')[0] || 'User'}
             </h1>
             <p className="text-sm text-white/50">
               Here is what's happening with your workspace today.
@@ -43,8 +72,10 @@ export function DashboardHome() {
               <Zap className="w-4 h-4 text-amber-400" />
             </div>
             <div className="relative z-10">
-              <div className="text-2xl font-semibold text-white tracking-tight">{mockUser.plan}</div>
-              <div className="text-xs text-white/40 mt-1">{mockUser.trialDaysLeft} days remaining</div>
+              <div className="text-2xl font-semibold text-white tracking-tight">{userPlan}</div>
+              {profile?.role === 'pro_trial' && (
+                <div className="text-xs text-white/40 mt-1">{trialDaysLeft} days remaining</div>
+              )}
             </div>
             <div className="absolute right-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <Link to="/dashboard/billing" className="text-[10px] text-white/40 hover:text-white flex items-center gap-1 uppercase tracking-wider">
@@ -52,6 +83,7 @@ export function DashboardHome() {
               </Link>
             </div>
           </motion.div>
+
 
           {/* Status Card 2 */}
           <motion.div 
