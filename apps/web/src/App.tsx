@@ -29,7 +29,7 @@ export default function App() {
     <Router>
       <Routes>
         {/* Root Landing Route */}
-        <Route path="/" element={<RootLandingGuard><Landing /></RootLandingGuard>} />
+        <Route path="/" element={<Landing />} />
         <Route path="/features" element={<Landing />} />
         <Route path="/how-it-works" element={<Landing />} />
         <Route path="/pricing" element={<Landing />} />

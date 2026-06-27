@@ -132,10 +132,7 @@ export function PublicAuthGuard({ children }: { children: React.ReactNode }) {
     return <LoadingSpinner message="Checking session..." />;
   }
 
-  if (user) {
-    if (!checkEmailVerified(user)) {
-      return <Navigate to="/verify-email" replace />;
-    }
+  if (user && checkEmailVerified(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 
