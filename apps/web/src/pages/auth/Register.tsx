@@ -25,12 +25,12 @@ export function Register() {
   // Handle redirect result on mount
   useEffect(() => {
     getRedirectResult(auth)
-      .then((result) => {
+      .then((result: any) => {
         if (result?.user) {
           navigate('/dashboard');
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('Redirect result error:', err);
         setError(err.message || 'OAuth redirect failed.');
       });

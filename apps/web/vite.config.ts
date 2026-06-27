@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.APP_URL': JSON.stringify(env.APP_URL || 'http://localhost:3000'),
     },
     server: {
+      hosts: true,
+      allowedHosts: true,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

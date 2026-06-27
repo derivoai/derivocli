@@ -13,7 +13,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       setUser(currentUser);
       setLoading(false);
     });

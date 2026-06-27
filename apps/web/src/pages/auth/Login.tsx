@@ -26,12 +26,12 @@ export function Login() {
   // Handle redirect result on mount
   useEffect(() => {
     getRedirectResult(auth)
-      .then((result) => {
+      .then((result: any) => {
         if (result?.user) {
           navigate(callbackUrl);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('Redirect result error:', err);
         setError(err.message || 'OAuth redirect failed.');
       });

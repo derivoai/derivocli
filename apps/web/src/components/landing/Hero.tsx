@@ -9,7 +9,7 @@ export function Hero() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       setUser(currentUser);
     });
     return () => unsubscribe();

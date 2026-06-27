@@ -17,7 +17,7 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       setCurrentUser(user);
       if (!user) {
         setProfile(null);

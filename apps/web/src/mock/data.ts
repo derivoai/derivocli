@@ -1,11 +1,3 @@
-export const mockUser = {
-  name: 'Jane Doe',
-  email: 'jane@example.com',
-  avatar: 'https://i.pravatar.cc/150?u=jane',
-  plan: 'Pro Trial',
-  trialDaysLeft: 5,
-};
-
 export const mockProjects = [
   { id: 'proj_1', name: 'derivo-web', framework: 'Next.js', status: 'synced', env: 'Production', lastSync: '2m ago' },
   { id: 'proj_2', name: 'api-service', framework: 'NestJS', status: 'synced', env: 'Staging', lastSync: '1h ago' },

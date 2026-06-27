@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, firebaseSignOut } from '../../../lib/firebase';
 import { useUserProfile } from '../../../hooks/useUserProfile';
+import { User } from 'firebase/auth';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -78,36 +79,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       : 'Community';
 
   const userInitial = profile?.name?.charAt(0)?.toUpperCase() || currentUser?.email?.charAt(0)?.toUpperCase() || '?';
-
-  const UserFooter = () => (
-    <div className="p-4 border-t border-white/[0.04]">
-      <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.03] transition-all group">
-        {currentUser?.photoURL ? (
-          <img 
-            src={currentUser.photoURL} 
-            alt={profile?.name || 'User'} 
-            className="w-8 h-8 rounded-full border border-white/10 object-cover" 
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-sm font-semibold text-white/70 uppercase">
-            {userInitial}
-          </div>
-        )}
-        <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-sm font-medium text-white/90 truncate">{profile?.name || 'User'}</span>
-          <span className="text-xs text-white/40 truncate">{userPlan}</span>
-        </div>
-        <button 
-          onClick={handleLogout}
-          disabled={loggingOut}
-          title="Sign out"
-          className="p-1 rounded-lg text-white/30 hover:text-white/85 hover:bg-white/[0.05] transition-all disabled:opacity-40"
-        >
-          <LogOut className="w-4 h-4 shrink-0" />
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-white/20 flex">
@@ -185,7 +156,33 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
         </div>
 
-        <UserFooter />
+        <div className="p-4 border-t border-white/[0.04]">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.03] transition-all group">
+            {currentUser?.photoURL ? (
+              <img 
+                src={currentUser.photoURL} 
+                alt={profile?.name || 'User'} 
+                className="w-8 h-8 rounded-full border border-white/10 object-cover" 
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-sm font-semibold text-white/70 uppercase">
+                {userInitial}
+              </div>
+            )}
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-sm font-medium text-white/90 truncate">{profile?.name || 'User'}</span>
+              <span className="text-xs text-white/40 truncate">{userPlan}</span>
+            </div>
+            <button 
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Sign out"
+              className="p-1 rounded-lg text-white/30 hover:text-white/85 hover:bg-white/[0.05] transition-all disabled:opacity-40"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+            </button>
+          </div>
+        </div>
       </aside>
 
       {/* Mobile Header */}
