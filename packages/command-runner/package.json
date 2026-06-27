@@ -1,0 +1,21 @@
+{
+  "name": "@derivo/command-runner",
+  "version": "0.1.0",
+  "description": "Task execution engine for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "execa": "^8.0.1"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

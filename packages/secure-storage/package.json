@@ -1,0 +1,21 @@
+{
+  "name": "@derivo/secure-storage",
+  "version": "0.1.0",
+  "description": "Secure storage abstraction (Keychain, Credential Manager) for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "keytar": "^7.9.0"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

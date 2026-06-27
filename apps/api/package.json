@@ -1,0 +1,36 @@
+{
+  "name": "@derivo/api",
+  "version": "0.1.0",
+  "description": "Backend API server for Derivo including authentication endpoints",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0"
+  },
+  "dependencies": {
+    "@derivo/db": "workspace:*",
+    "better-auth": "^1.1.18",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.30.10",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "pg": "^8.11.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/pg": "^8.11.6",
+    "tsx": "^4.15.6",
+    "typescript": "~5.4.5"
+  }
+}

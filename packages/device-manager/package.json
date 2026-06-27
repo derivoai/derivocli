@@ -1,0 +1,19 @@
+{
+  "name": "@derivo/device-manager",
+  "version": "0.1.0",
+  "description": "Device registration and fingerprinting for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {},
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

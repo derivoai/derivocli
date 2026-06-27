@@ -1,0 +1,18 @@
+{
+  "name": "@derivo/plugin-registry",
+  "version": "0.1.0",
+  "description": "In-memory registry of active plugins and their exported hooks",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

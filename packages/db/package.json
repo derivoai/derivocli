@@ -1,0 +1,26 @@
+{
+  "name": "@derivo/db",
+  "version": "0.1.0",
+  "description": "Database access layer with Drizzle ORM for Derivo",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.10",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*",
+    "@types/pg": "^8.11.6",
+    "drizzle-kit": "^0.21.4",
+    "typescript": "~5.4.5"
+  }
+}

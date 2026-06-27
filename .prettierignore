@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.turbo
+package-lock.json
+pnpm-lock.yaml
+build
+.env*
+*.md

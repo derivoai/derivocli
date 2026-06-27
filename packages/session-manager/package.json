@@ -1,0 +1,21 @@
+{
+  "name": "@derivo/session-manager",
+  "version": "0.1.0",
+  "description": "Token refresh, caching, and state management for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@derivo/secure-storage": "workspace:*"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

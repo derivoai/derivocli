@@ -1,0 +1,21 @@
+{
+  "name": "@derivo/cli-core",
+  "version": "0.1.0",
+  "description": "Core command parsing and lifecycle for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "commander": "^11.0.0"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

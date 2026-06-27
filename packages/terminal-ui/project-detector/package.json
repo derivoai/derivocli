@@ -1,0 +1,21 @@
+{
+  "name": "@derivo/project-detector",
+  "version": "0.1.0",
+  "description": "Scans repository to identify configuration files and manifest data",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0"
+  },
+  "dependencies": {
+    "@derivo/filesystem-engine": "workspace:*",
+    "@derivo/stack-analyzer": "workspace:*"
+  },
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

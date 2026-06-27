@@ -1,0 +1,22 @@
+{
+  "name": "@derivo/cli-logger",
+  "version": "0.1.0",
+  "description": "Multi-transport logger for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "pino": "^8.15.0",
+    "chalk": "^5.3.0"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

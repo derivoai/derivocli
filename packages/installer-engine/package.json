@@ -1,0 +1,22 @@
+{
+  "name": "@derivo/installer-engine",
+  "version": "0.1.0",
+  "description": "Installs missing system dependencies, binaries, and packages",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@derivo/runtime-manager": "workspace:*",
+    "@derivo/package-manager": "workspace:*"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

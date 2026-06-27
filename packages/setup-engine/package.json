@@ -1,0 +1,26 @@
+{
+  "name": "@derivo/setup-engine",
+  "version": "0.1.0",
+  "description": "Orchestrates the entire setup workflow for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@derivo/project-detector": "workspace:*",
+    "@derivo/environment-detector": "workspace:*",
+    "@derivo/config-generator": "workspace:*",
+    "@derivo/installer-engine": "workspace:*",
+    "@derivo/validator-engine": "workspace:*",
+    "@derivo/report-generator": "workspace:*"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}

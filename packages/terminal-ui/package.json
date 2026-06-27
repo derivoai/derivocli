@@ -1,0 +1,23 @@
+{
+  "name": "@derivo/terminal-ui",
+  "version": "0.1.0",
+  "description": "Terminal UI components for Derivo CLI",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "ora": "^7.0.0",
+    "listr2": "^6.6.1"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@derivo/config-eslint": "workspace:*",
+    "@derivo/config-typescript": "workspace:*"
+  }
+}
