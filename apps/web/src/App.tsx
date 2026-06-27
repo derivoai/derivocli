@@ -17,25 +17,35 @@ import { Activity } from './pages/dashboard/Activity';
 import { Billing } from './pages/dashboard/Billing';
 import { Settings } from './pages/dashboard/Settings';
 
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import {
+  ProtectedRoute,
+  VerifyEmailRouteGuard,
+  PublicAuthGuard,
+  RootLandingGuard
+} from './components/auth/Guards';
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        {/* Root Landing Route */}
+        <Route path="/" element={<RootLandingGuard><Landing /></RootLandingGuard>} />
         <Route path="/features" element={<Landing />} />
         <Route path="/how-it-works" element={<Landing />} />
         <Route path="/pricing" element={<Landing />} />
         <Route path="/docs" element={<Landing />} />
         <Route path="/blog" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
+
+        {/* Public Auth Routes */}
+        <Route path="/login" element={<PublicAuthGuard><Login /></PublicAuthGuard>} />
+        <Route path="/register" element={<PublicAuthGuard><Register /></PublicAuthGuard>} />
+        <Route path="/forgot-password" element={<PublicAuthGuard><ForgotPassword /></PublicAuthGuard>} />
+        <Route path="/reset-password" element={<PublicAuthGuard><ResetPassword /></PublicAuthGuard>} />
+
+        {/* Dedicated Email Verification Guarded Route */}
+        <Route path="/verify-email" element={<VerifyEmailRouteGuard><VerifyEmail /></VerifyEmailRouteGuard>} />
         
-        {/* Dashboard Routes */}
+        {/* Dashboard & Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
         <Route path="/dashboard/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
         <Route path="/dashboard/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
@@ -43,6 +53,11 @@ export default function App() {
         <Route path="/dashboard/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
         <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
         <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+        {/* Route Aliases */}
+        <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
