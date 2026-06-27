@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { MailCheck, ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -11,13 +11,47 @@ export function VerifyEmail() {
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState('');
+  const [checkingVerification, setCheckingVerification] = useState(false);
+  const navigate = useNavigate();
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setCurrentUser(user);
+
+      // If they somehow arrive here already verified, send them to dashboard
+      if (user?.emailVerified) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
+
+  // Auto-poll Firebase every 4 seconds to detect when the email is verified
+  useEffect(() => {
+    if (!currentUser) return;
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        setCheckingVerification(true);
+        await currentUser.reload();
+        const refreshed = auth.currentUser;
+        if (refreshed?.emailVerified) {
+          clearInterval(pollingRef.current!);
+          navigate('/dashboard', { replace: true });
+        }
+      } catch {
+        // silently ignore transient errors
+      } finally {
+        setCheckingVerification(false);
+      }
+    }, 4000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [currentUser, navigate]);
 
   const email = currentUser?.email || 'your email';
 
@@ -60,8 +94,14 @@ export function VerifyEmail() {
         </motion.div>
 
         <p className="text-sm text-center text-white/60 mb-8 max-w-xs leading-relaxed">
-          Click the link in the email to verify your account. Once verified, refresh the page or log back in to access the dashboard.
+          Click the link in the email to verify your account. This page will automatically redirect you to your dashboard once verified.
         </p>
+
+        {/* Auto-checking indicator */}
+        <div className="flex items-center gap-2 text-xs text-white/30 mb-6">
+          <Loader2 className={`w-3.5 h-3.5 ${checkingVerification ? 'animate-spin' : 'opacity-30'}`} />
+          <span>Checking verification status automatically…</span>
+        </div>
 
         {error && (
           <div className="w-full mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">

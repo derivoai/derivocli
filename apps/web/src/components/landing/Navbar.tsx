@@ -13,10 +13,12 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       setUser(currentUser);
+      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -80,12 +82,14 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {user ? (
+          {authLoading ? (
+            <div className="w-20 h-8 rounded-full bg-white/[0.06] animate-pulse" />
+          ) : user ? (
             <Link 
-              to="/dashboard" 
+              to={user.emailVerified ? '/dashboard' : '/verify-email'}
               className="px-5 py-2 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-white/90 transition-colors shadow focus-visible:ring-2 focus-visible:ring-white"
             >
-              Dashboard
+              {user.emailVerified ? 'Dashboard' : 'Verify Email'}
             </Link>
           ) : (
             <>
@@ -146,13 +150,15 @@ export function Navbar() {
             </nav>
             <div className="h-px bg-white/10 my-1" />
             <div className="flex flex-col gap-3">
-              {user ? (
+              {authLoading ? (
+                <div className="w-full h-10 rounded-lg bg-white/[0.06] animate-pulse" />
+              ) : user ? (
                 <Link
-                  to="/dashboard"
+                  to={user.emailVerified ? '/dashboard' : '/verify-email'}
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center py-2.5 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors shadow"
                 >
-                  Dashboard
+                  {user.emailVerified ? 'Dashboard' : 'Verify Email'}
                 </Link>
               ) : (
                 <>
