@@ -35,5 +35,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to={`/login?callbackUrl=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
+  if (!user.emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
   return <>{children}</>;
 }

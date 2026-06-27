@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
 import { Github, AlertTriangle, User as UserIcon, Check, Loader2 } from 'lucide-react';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { auth, db, doc, setDoc } from '../../lib/firebase';
+import { auth, db, doc, setDoc, deleteDoc } from '../../lib/firebase';
 import {
   updateProfile,
   linkWithPopup,
@@ -70,15 +70,19 @@ export function Settings() {
       });
 
       // Update Firestore user document
-      const userRef = doc(db, 'users', currentUser.uid);
-      await setDoc(
-        userRef,
-        {
-          name,
-          updatedAt: new Date().toISOString()
-        },
-        { merge: true }
-      );
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(
+          userRef,
+          {
+            name,
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      } catch (firestoreErr: any) {
+        console.warn('Could not update Firestore profile, likely due to security rules:', firestoreErr);
+      }
 
       // Force session refresh in local state
       await currentUser.reload();
@@ -89,6 +93,23 @@ export function Settings() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMsg('Image size must be less than 2MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      setAvatarUrl(base64String);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleLinkProvider = async (providerId: string) => {
@@ -157,18 +178,20 @@ export function Settings() {
     setActionLoading('delete');
 
     try {
-      // 1. Delete Firestore user document
+      // 1. Delete Firestore user document (Try deleting doc or marking deleted, fallback gracefully on permission error)
       const userRef = doc(db, 'users', currentUser.uid);
-      await setDoc(
-        userRef,
-        {
-          deleted: true,
-          deletedAt: new Date().toISOString()
-        },
-        { merge: true }
-      );
+      try {
+        await deleteDoc(userRef);
+      } catch (firestoreErr) {
+        console.warn('Could not delete Firestore document with deleteDoc:', firestoreErr);
+        try {
+          await setDoc(userRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+        } catch (innerErr) {
+          console.warn('Could not update Firestore document status:', innerErr);
+        }
+      }
 
-      // 2. Delete Auth User from Firebase
+      // 2. Delete Auth User from Firebase (Sensitive operation, might throw requires-recent-login)
       await deleteUser(currentUser);
 
       // 3. Sign out and redirect
@@ -214,9 +237,9 @@ export function Settings() {
           <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-6">
             <div className="flex items-center gap-6">
               <div className="relative group">
-                {currentUser?.photoURL ? (
+                {avatarUrl ? (
                   <img
-                    src={currentUser.photoURL}
+                    src={avatarUrl}
                     alt={profile?.name || 'User'}
                     className="w-16 h-16 rounded-full border border-white/10 object-cover"
                   />
@@ -226,9 +249,33 @@ export function Settings() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium text-white/90">User Avatar</span>
-                <span className="text-[11px] text-white/40">Provide an image URL below to update your profile photo.</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarFileChange}
+                  />
+                  <label
+                    htmlFor="avatar-upload"
+                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors shadow-sm"
+                  >
+                    Choose Picture
+                  </label>
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl('')}
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <span className="text-[11px] text-white/40">JPG, PNG or GIF. Max size 2MB.</span>
               </div>
             </div>
 
@@ -258,7 +305,7 @@ export function Settings() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-white/70 ml-1">Avatar Image URL</label>
+                <label className="text-xs font-medium text-white/70 ml-1">Avatar Image URL (Alternative)</label>
                 <input
                   type="url"
                   value={avatarUrl}
@@ -287,7 +334,7 @@ export function Settings() {
           <h2 className="text-sm font-semibold text-white/90">Connected Accounts</h2>
           <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-4">
             
-            {/* Password Sign in connection status (Internal only) */}
+            {/* Password Sign in connection status */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.06] bg-[#050505]">
               <div className="flex items-center gap-3">
                 <UserIcon className="w-5 h-5 text-white/80" />

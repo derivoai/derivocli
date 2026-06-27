@@ -15,7 +15,7 @@ import {
   PhoneAuthProvider,
   signInWithCredential
 } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM",
@@ -39,6 +39,7 @@ export {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
