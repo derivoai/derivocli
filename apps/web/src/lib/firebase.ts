@@ -18,7 +18,7 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM",
-  authDomain: "derivo-e8c82.firebaseapp.com",
+  authDomain: "auth.derivo.in",
   projectId: "derivo",
   storageBucket: "derivo.firebasestorage.app",
   messagingSenderId: "290795143643",
