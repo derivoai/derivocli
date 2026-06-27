@@ -1,10 +1,51 @@
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { mockApiKeys } from '../../mock/data';
 import { KeyRound, Plus, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useApiKeys } from '../../hooks/useDashboardData';
 
 export function ApiKeys() {
+  const { data: apiKeys, loading, error } = useApiKeys();
   const [showKey, setShowKey] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+            <span className="text-xs text-white/40 font-mono">Loading API keys...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <span className="text-sm text-white/60">{error}</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -23,7 +64,8 @@ export function ApiKeys() {
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-3 text-amber-500/90 text-sm">
           <KeyRound className="w-5 h-5 shrink-0" />
           <p className="leading-relaxed">
-            API keys grant full access to your workspace. Treat them like passwords. Keys will only be shown once upon creation.
+            API keys grant full access to your workspace. Treat them like passwords. Keys will only
+            be shown once upon creation.
           </p>
         </div>
 
@@ -40,7 +82,7 @@ export function ApiKeys() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {mockApiKeys.map((apiKey) => (
+                {apiKeys.map((apiKey) => (
                   <tr key={apiKey.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4">
                       <span className="font-medium text-white/90">{apiKey.name}</span>
@@ -50,11 +92,15 @@ export function ApiKeys() {
                         <code className="text-xs font-mono text-white/60 bg-white/[0.05] px-2 py-1 rounded">
                           {showKey === apiKey.id ? apiKey.preview : 'drv_••••••••••••••'}
                         </code>
-                        <button 
+                        <button
                           onClick={() => setShowKey(showKey === apiKey.id ? null : apiKey.id)}
                           className="p-1.5 text-white/40 hover:text-white hover:bg-white/[0.1] rounded transition-colors"
                         >
-                          {showKey === apiKey.id ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          {showKey === apiKey.id ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -79,11 +125,13 @@ export function ApiKeys() {
               </tbody>
             </table>
           </div>
-          {mockApiKeys.length === 0 && (
+          {apiKeys.length === 0 && (
             <div className="py-12 flex flex-col items-center justify-center text-center">
               <KeyRound className="w-10 h-10 text-white/20 mb-3" />
-              <p className="text-sm text-white/60 font-medium">No API keys</p>
-              <p className="text-xs text-white/40 mt-1">Generate an API key to access the Derivo API.</p>
+              <p className="text-sm text-white/60 font-medium">No API Keys created</p>
+              <p className="text-xs text-white/40 mt-1">
+                Generate an API key to access the Derivo API.
+              </p>
             </div>
           )}
         </div>
