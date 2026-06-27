@@ -4,6 +4,8 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -15,10 +17,13 @@ import {
 } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'mock-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'mock-domain.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'mock-project-id',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || 'mock-app-id',
+  apiKey: "AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM",
+  authDomain: "derivo-e8c82.firebaseapp.com",
+  projectId: "derivo",
+  storageBucket: "derivo.firebasestorage.app",
+  messagingSenderId: "290795143643",
+  appId: "1:290795143643:web:ca15a0ec196fcd4f50a7fe",
+  measurementId: "G-PWPSX0Q08Q"
 };
 
 // Initialize Firebase App
@@ -30,6 +35,8 @@ export const githubProvider = new GithubAuthProvider();
 
 export {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   firebaseSignOut,
