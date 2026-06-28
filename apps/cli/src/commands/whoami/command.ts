@@ -1,17 +1,33 @@
 import { Command } from 'commander';
 import pc from 'picocolors';
 import { getSession } from '../../utils/session.js';
+import {
+  printBanner,
+  printSection,
+  printKeyValue,
+  printStatus,
+  icons,
+  colors,
+  nl,
+} from '../../utils/ui.js';
 
 export const whoamiCommand = new Command('whoami')
   .description('Display the currently logged-in user')
   .action(() => {
+    printBanner('Who Am I', 'Current session information');
+
     const session = getSession();
     if (!session) {
-      console.log(pc.red('Not logged in.'));
-      console.log(`Run ${pc.cyan('derivo login')} to authenticate.`);
+      printStatus('error', 'Not logged in.');
+      console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd('derivo login')} to authenticate.`);
+      nl();
       process.exit(1);
     }
 
-    console.log(`Logged in as ${pc.green(session!.email)} (UID: ${session!.uid})`);
+    printSection('Session Details');
+    nl();
+    printKeyValue('Email', session!.email);
+    printKeyValue('UID', session!.uid);
+    nl();
     process.exit(0);
   });

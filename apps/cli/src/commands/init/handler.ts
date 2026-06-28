@@ -9,62 +9,81 @@ import { createDocument, listDocuments, updateDocument } from '../../utils/fires
 import { prompt, promptSelect, promptConfirm, closePrompt } from '../../utils/prompts.js';
 import { ensureDerivoDir } from '../../utils/session.js';
 import { getGlobalConfig } from '../../utils/config.js';
+import {
+  printBanner,
+  printSuccessBox,
+  printSection,
+  printKeyValue,
+  printStatus,
+  printDivider,
+  nl,
+  icons,
+  colors,
+  stepLabel,
+  spinnerConfig,
+} from '../../utils/ui.js';
 
 const CLI_VERSION = '0.1.0';
 
 export async function initHandler() {
-  console.log('');
-  console.log(pc.bold('  Derivo — Project Initialization'));
-  console.log(pc.dim('  ─────────────────────────────────'));
-  console.log('');
+  printBanner('Project Initialization', `${icons.rocket} Set up a new Derivo project`);
 
   // ── Step 1: Verify login ──────────────────────────
   const session = getSession();
   if (!session) {
-    console.log(pc.red('  ✗ You are not logged in.'));
-    console.log(`  Run ${pc.cyan('derivo login')} to authenticate.\n`);
+    printStatus('error', 'You are not logged in.');
+    console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd('derivo login')} to authenticate.`);
+    nl();
     process.exit(1);
   }
 
-  console.log(pc.dim(`  Authenticated as ${pc.green(session.email)}\n`));
+  printStatus('success', `Authenticated as ${colors.brand(session.email)}`);
+  nl();
 
   // ── Step 2: Detect project ────────────────────────
   const cwd = process.cwd();
-  const spinner = ora('Scanning project directory...').start();
+  const spinner = ora({
+    text: `  ${icons.magnify} Scanning project directory...`,
+    ...spinnerConfig,
+  }).start();
 
   const detected = detectProject(cwd);
 
-  spinner.succeed('Project directory scanned');
+  spinner.succeed(`  ${icons.magnify} Project directory scanned`);
 
   if (!detected.hasPackageJson && !detected.hasGit) {
-    console.log(pc.yellow('\n  ⚠ No package.json or git repository detected.'));
+    nl();
+    printStatus('warning', 'No package.json or git repository detected.');
     const continueAnyway = await promptConfirm('  Continue anyway?', false);
     if (!continueAnyway) {
-      console.log(pc.dim('\n  Initialization canceled.\n'));
+      nl();
+      console.log(pc.dim('  Initialization canceled.'));
+      nl();
       closePrompt();
       process.exit(0);
     }
   }
 
   // Print detection results
-  console.log('');
-  console.log(pc.dim('  Detected:'));
-  if (detected.name) console.log(`    Package   ${pc.white(detected.name)}`);
-  if (detected.framework) console.log(`    Framework ${pc.white(detected.framework)}`);
-  if (detected.packageManager) console.log(`    Manager   ${pc.white(detected.packageManager)}`);
-  if (detected.hasGit) console.log(`    Git       ${pc.green('✓')}`);
-  console.log('');
+  printSection('Detection Results');
+  if (detected.name) printKeyValue(`${icons.package} Package`, detected.name);
+  if (detected.framework) printKeyValue(`${icons.gear} Framework`, detected.framework);
+  if (detected.packageManager) printKeyValue(`${icons.tools} Manager`, detected.packageManager);
+  if (detected.hasGit) printKeyValue(`${icons.check} Git`, pc.green('Detected'));
+  nl();
 
   // Check if framework is supported
   if (detected.framework && !isFrameworkSupported(detected.framework)) {
-    console.log(pc.yellow(`  ⚠ Framework "${detected.framework}" is not officially supported.`));
+    printStatus('warning', `Framework "${detected.framework}" is not officially supported.`);
     const continueAnyway = await promptConfirm('  Continue anyway?', true);
     if (!continueAnyway) {
-      console.log(pc.dim('\n  Initialization canceled.\n'));
+      nl();
+      console.log(pc.dim('  Initialization canceled.'));
+      nl();
       closePrompt();
       process.exit(0);
     }
-    console.log('');
+    nl();
   }
 
   // ── Step 3: Check existing derivo.json ────────────
@@ -73,10 +92,12 @@ export async function initHandler() {
   let existingCreatedAt: string | null = null;
 
   if (detected.hasDerivoJson) {
-    console.log(pc.yellow('  ⚠ A derivo.json already exists in this directory.'));
+    printStatus('warning', 'A derivo.json already exists in this directory.');
     const overwrite = await promptConfirm('  Overwrite?', false);
     if (!overwrite) {
-      console.log(pc.dim('\n  Initialization canceled.\n'));
+      nl();
+      console.log(pc.dim('  Initialization canceled.'));
+      nl();
       closePrompt();
       process.exit(0);
     }
@@ -87,31 +108,39 @@ export async function initHandler() {
     } catch {
       // ignore corrupt files
     }
-    console.log('');
+    nl();
   }
 
   // ── Step 4: Interactive setup ─────────────────────
+  printSection('Project Configuration');
   const defaultName = detected.name || path.basename(cwd);
-  const projectName = (await prompt(`  Project Name (${pc.dim(defaultName)}): `)) || defaultName;
+  const projectName =
+    (await prompt(`    ${icons.arrowRight} Project Name (${pc.dim(defaultName)}): `)) ||
+    defaultName;
 
-  const environment = await promptSelect('  Select Environment:', [
+  const environment = await promptSelect(`    ${icons.arrowRight} Select Environment:`, [
     'Development',
     'Production',
     'Staging',
   ]);
 
-  console.log('');
+  nl();
 
   // Reuse existing project ID or generate a new unique one
   const projectId = existingProjectId || `proj_${crypto.randomBytes(8).toString('hex')}`;
 
   // ── Step 5: Check for duplicates in Firestore ─────
-  const dupSpinner = ora('Checking for duplicate projects...').start();
+  const dupSpinner = ora({
+    text: `  ${icons.magnify} Checking for duplicate projects...`,
+    ...spinnerConfig,
+  }).start();
 
   const existingProjects = await listDocuments(session.token, session.uid, 'projects');
 
   if (existingProjects.error) {
-    dupSpinner.warn('Could not verify duplicates (Firestore might be unavailable)');
+    dupSpinner.warn(
+      `  ${icons.warning} Could not verify duplicates (Firestore might be unavailable)`,
+    );
   } else {
     // Only flag as duplicate if it's a different project ID
     const duplicate = existingProjects.documents.find(
@@ -122,19 +151,27 @@ export async function initHandler() {
     );
 
     if (duplicate) {
-      dupSpinner.fail(`A project named "${projectName}" already exists in ${environment}.`);
-      console.log(pc.dim('  Use a different name or environment.\n'));
+      dupSpinner.fail(
+        `  ${icons.error} A project named "${projectName}" already exists in ${environment}.`,
+      );
+      console.log(pc.dim(`    ${icons.arrow} Use a different name or environment.`));
+      nl();
       closePrompt();
       process.exit(1);
     }
 
     dupSpinner.succeed(
-      existingProjectId ? 'Updating existing project details' : 'No duplicate projects found',
+      existingProjectId
+        ? `  ${icons.check} Updating existing project`
+        : `  ${icons.check} No duplicate projects found`,
     );
   }
 
   // ── Step 6: Write derivo.json ─────────────────────
-  const writeSpinner = ora('Writing derivo.json...').start();
+  const writeSpinner = ora({
+    text: `  ${icons.file} Writing derivo.json...`,
+    ...spinnerConfig,
+  }).start();
 
   const derivoConfig = {
     projectId,
@@ -147,10 +184,11 @@ export async function initHandler() {
 
   try {
     fs.writeFileSync(derivoJsonPath, JSON.stringify(derivoConfig, null, 2) + '\n', 'utf8');
-    writeSpinner.succeed('derivo.json created');
+    writeSpinner.succeed(`  ${icons.file} derivo.json created`);
   } catch (err) {
-    writeSpinner.fail('Failed to write derivo.json');
-    console.log(pc.red(`  ${err instanceof Error ? err.message : String(err)}\n`));
+    writeSpinner.fail(`  ${icons.error} Failed to write derivo.json`);
+    console.log(pc.red(`    ${err instanceof Error ? err.message : String(err)}`));
+    nl();
     closePrompt();
     process.exit(1);
   }
@@ -169,9 +207,12 @@ export async function initHandler() {
   ensureDerivoDir();
 
   // ── Step 8: Register project in Firestore ─────────
-  const firestoreSpinner = ora(
-    existingProjectId ? 'Updating project in Derivo Cloud...' : 'Registering project...',
-  ).start();
+  const firestoreSpinner = ora({
+    text: existingProjectId
+      ? `  ${icons.globe} Updating project in Derivo Cloud...`
+      : `  ${icons.globe} Registering project...`,
+    ...spinnerConfig,
+  }).start();
 
   const globalConfig = getGlobalConfig();
   const deviceId = globalConfig.deviceId || 'unknown';
@@ -200,26 +241,37 @@ export async function initHandler() {
 
   if (result.success) {
     firestoreSpinner.succeed(
-      existingProjectId ? 'Project updated in Derivo Cloud' : 'Project registered in Derivo Cloud',
+      existingProjectId
+        ? `  ${icons.globe} Project updated in Derivo Cloud`
+        : `  ${icons.globe} Project registered in Derivo Cloud`,
     );
   } else {
-    firestoreSpinner.warn(`Could not register project remotely: ${result.error}`);
-    console.log(pc.dim('  The project was created locally. Cloud sync will retry later.\n'));
+    firestoreSpinner.warn(
+      `  ${icons.warning} Could not register project remotely: ${result.error}`,
+    );
+    console.log(
+      pc.dim(`    ${icons.arrow} The project was created locally. Cloud sync will retry later.`),
+    );
   }
 
   // ── Step 9: Summary ───────────────────────────────
-  console.log('');
-  console.log(pc.green('  ✓ Project initialized successfully!'));
-  console.log('');
-  console.log(pc.dim('  ┌──────────────────────────────────────'));
-  console.log(pc.dim('  │') + `  Name         ${pc.white(projectName)}`);
-  console.log(pc.dim('  │') + `  ID           ${pc.dim(projectId)}`);
-  console.log(pc.dim('  │') + `  Framework    ${pc.white(detected.framework || 'Unknown')}`);
-  console.log(pc.dim('  │') + `  Environment  ${pc.white(environment)}`);
-  console.log(pc.dim('  │') + `  Directory    ${pc.dim(cwd)}`);
-  console.log(pc.dim('  └──────────────────────────────────────'));
-  console.log('');
-  console.log(pc.dim(`  Run ${pc.cyan('derivo status')} to check your project.\n`));
+  printSuccessBox('Project Initialized!', [
+    '',
+    `  ${pc.dim('Name')}         ${pc.white(projectName)}`,
+    `  ${pc.dim('ID')}           ${pc.dim(projectId)}`,
+    `  ${pc.dim('Framework')}    ${pc.white(detected.framework || 'Unknown')}`,
+    `  ${pc.dim('Environment')}  ${pc.white(environment)}`,
+    `  ${pc.dim('Directory')}    ${pc.dim(cwd)}`,
+    '',
+  ]);
+
+  console.log(
+    `  ${pc.dim(icons.arrow)} Run ${colors.cmd('derivo setup')} to install dependencies.`,
+  );
+  console.log(
+    `  ${pc.dim(icons.arrow)} Run ${colors.cmd('derivo doctor')} to check your environment.`,
+  );
+  nl();
 
   closePrompt();
   process.exit(0);

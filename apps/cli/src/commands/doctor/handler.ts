@@ -7,6 +7,16 @@ import pc from 'picocolors';
 import { getSession, ensureDerivoDir } from '../../utils/session.js';
 import { detectProject, isFrameworkSupported } from '../../utils/detect.js';
 import { getRealOSName, registerOrUpdateDevice } from '../../utils/device.js';
+import {
+  printBanner,
+  printSection,
+  printDivider,
+  nl,
+  icons,
+  colors,
+  progressBar,
+  formatDuration,
+} from '../../utils/ui.js';
 
 const CLI_VERSION = '0.1.0';
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
@@ -435,16 +445,14 @@ function checkLocalDerivoDir(cwd: string, fix: boolean): CheckResult {
 export async function doctorHandler(options: DoctorOptions) {
   const cwd = process.cwd();
   const results: CheckResult[] = [];
+  const startTime = Date.now();
 
   if (!options.json) {
-    console.log('');
-    console.log(pc.bold('  Derivo Doctor'));
-    console.log(pc.dim('  ─────────────────────────────────'));
-    console.log('');
-    console.log(pc.dim('  Running diagnostics...\n'));
+    printBanner('Derivo Doctor', `${icons.tools} Diagnosing your development environment`);
   }
 
   // ── System Checks ─────────────────────────────────
+  if (!options.json) printSection('System');
   results.push(checkOsInfo());
   results.push(checkCpuArch());
   results.push(checkDiskSpace(cwd));
@@ -456,15 +464,39 @@ export async function doctorHandler(options: DoctorOptions) {
   results.push(await checkInternet());
   results.push(checkCliVersion());
 
+  if (!options.json) {
+    for (let i = 0; i < 10; i++) {
+      const r = results[i]!;
+      printCheckResult(r);
+    }
+  }
+
   // ── Auth & Config ─────────────────────────────────
+  if (!options.json) printSection('Authentication & Config');
   results.push(checkAuth());
   results.push(checkConfigDir(options.fix));
 
+  if (!options.json) {
+    for (let i = 10; i < 12; i++) {
+      const r = results[i]!;
+      printCheckResult(r);
+    }
+  }
+
   // ── Connectivity ──────────────────────────────────
+  if (!options.json) printSection('Cloud Connectivity');
   results.push(await checkFirebase());
   results.push(await checkFirestore());
 
+  if (!options.json) {
+    for (let i = 12; i < 14; i++) {
+      const r = results[i]!;
+      printCheckResult(r);
+    }
+  }
+
   // ── Project Checks ────────────────────────────────
+  if (!options.json) printSection('Project');
   results.push(checkPackageJson(cwd));
   results.push(checkDerivoJson(cwd));
   results.push(checkGitRepo(cwd));
@@ -473,6 +505,13 @@ export async function doctorHandler(options: DoctorOptions) {
   results.push(checkWorkspace(cwd));
   results.push(checkWritePermissions(cwd));
   results.push(checkLocalDerivoDir(cwd, options.fix));
+
+  if (!options.json) {
+    for (let i = 14; i < results.length; i++) {
+      const r = results[i]!;
+      printCheckResult(r);
+    }
+  }
 
   // ── Calculate Score ───────────────────────────────
   const total = results.length;
@@ -495,52 +534,41 @@ export async function doctorHandler(options: DoctorOptions) {
     };
     console.log(JSON.stringify(output, null, 2));
   } else {
-    // ── Pretty Output ─────────────────────────────────
-    const icons: Record<CheckStatus, string> = {
-      pass: pc.green('✔'),
-      warn: pc.yellow('⚠'),
-      fail: pc.red('✗'),
-    };
-
-    for (const r of results) {
-      const icon = icons[r.status];
-      const msg =
-        r.status === 'pass'
-          ? pc.white(r.message)
-          : r.status === 'warn'
-            ? pc.yellow(r.message)
-            : pc.red(r.message);
-      const fixTag = r.fixed ? pc.green(' [FIXED]') : '';
-      console.log(`  ${icon} ${pc.dim(r.name.padEnd(20))} ${msg}${fixTag}`);
-      if (r.detail && r.status !== 'pass') {
-        console.log(`    ${pc.dim('→')} ${pc.dim(r.detail)}`);
-      }
-    }
-
     // ── Summary ───────────────────────────────────────
-    console.log('');
-    console.log(pc.dim('  ─────────────────────────────────'));
+    const elapsed = formatDuration(Date.now() - startTime);
 
-    const scoreColor = score >= 80 ? pc.green : score >= 50 ? pc.yellow : pc.red;
-    console.log(`\n  Health Score: ${scoreColor(pc.bold(`${score}/100`))}`);
+    nl();
+    printDivider();
+    nl();
 
-    if (failCount > 0) {
-      console.log(pc.red(`\n  ${failCount} issue${failCount > 1 ? 's' : ''} found.`));
-    }
-    if (warnCount > 0) {
-      console.log(pc.yellow(`  ${warnCount} warning${warnCount > 1 ? 's' : ''}.`));
-    }
+    // Health bar
+    console.log(`  ${icons.shield} Health Score`);
+    console.log(`  ${progressBar(score, 100, 36)}`);
+    nl();
+
+    // Stats row
+    console.log(
+      `  ${pc.green(`${icons.success} ${passCount} passed`)}  ${pc.yellow(`${icons.warning} ${warnCount} warnings`)}  ${pc.red(`${icons.error} ${failCount} failed`)}`,
+    );
+
     if (fixedCount > 0) {
-      console.log(pc.green(`  ${fixedCount} issue${fixedCount > 1 ? 's' : ''} auto-fixed.`));
+      console.log(
+        pc.green(`  ${icons.tools} ${fixedCount} issue${fixedCount > 1 ? 's' : ''} auto-fixed`),
+      );
     }
+
+    nl();
+
     if (score >= 80) {
-      console.log(pc.green('\n  Ready for development. ✓'));
+      console.log(`  ${pc.green(`${icons.rocket} Ready for development!`)}`);
     } else if (score >= 50) {
-      console.log(pc.yellow('\n  Some issues need attention.'));
+      console.log(`  ${pc.yellow(`${icons.warning} Some issues need attention.`)}`);
     } else {
-      console.log(pc.red('\n  Critical issues detected. Please resolve them.'));
+      console.log(`  ${pc.red(`${icons.error} Critical issues detected. Please resolve them.`)}`);
     }
-    console.log('');
+
+    console.log(pc.dim(`\n  Completed in ${elapsed}`));
+    nl();
   }
 
   // ── Register/Update Device ────────────────────────
@@ -571,4 +599,26 @@ export async function doctorHandler(options: DoctorOptions) {
 
   // Force exit to prevent hanging from active sockets
   process.exit(0);
+}
+
+// ── Pretty Check Result Printer ─────────────────────
+function printCheckResult(r: CheckResult) {
+  const statusIcons: Record<CheckStatus, string> = {
+    pass: pc.green(icons.success),
+    warn: pc.yellow(icons.warning),
+    fail: pc.red(icons.error),
+  };
+
+  const icon = statusIcons[r.status];
+  const msg =
+    r.status === 'pass'
+      ? pc.white(r.message)
+      : r.status === 'warn'
+        ? pc.yellow(r.message)
+        : pc.red(r.message);
+  const fixTag = r.fixed ? pc.green(` [${icons.check} FIXED]`) : '';
+  console.log(`    ${icon} ${pc.dim(r.name.padEnd(20))} ${msg}${fixTag}`);
+  if (r.detail && r.status !== 'pass') {
+    console.log(`      ${pc.dim(icons.arrow)} ${pc.dim(r.detail)}`);
+  }
 }

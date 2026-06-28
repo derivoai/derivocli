@@ -5,18 +5,28 @@ import ora from 'ora';
 import { getSession } from '../../utils/session.js';
 import { deleteDocument, listDocuments } from '../../utils/firestore.js';
 import { promptConfirm, promptSelect, closePrompt } from '../../utils/prompts.js';
+import {
+  printBanner,
+  printSuccessBox,
+  printErrorBox,
+  printStatus,
+  printKeyValue,
+  printSection,
+  icons,
+  colors,
+  spinnerConfig,
+  nl,
+} from '../../utils/ui.js';
 
 export async function deleteHandler() {
-  console.log('');
-  console.log(pc.bold('  Derivo — Delete Project'));
-  console.log(pc.dim('  ─────────────────────────────────'));
-  console.log('');
+  printBanner(`${icons.trash}  Delete Project`, 'Remove project from Derivo Cloud');
 
   // ── Step 1: Verify login ──────────────────────────
   const session = getSession();
   if (!session) {
-    console.log(pc.red('  ✗ You are not logged in.'));
-    console.log(`  Run ${pc.cyan('derivo login')} to authenticate.\n`);
+    printStatus('error', 'You are not logged in.');
+    console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd('derivo login')} to authenticate.`);
+    nl();
     process.exit(1);
   }
 
@@ -35,25 +45,35 @@ export async function deleteHandler() {
       projectNameToDelete = config.name || 'Unnamed Project';
       isLocalProject = true;
     } catch {
-      console.log(pc.red('  ✗ Found corrupt derivo.json file in current directory.'));
+      printStatus('error', 'Found corrupt derivo.json file in current directory.');
     }
   }
 
   if (isLocalProject && projectIdToDelete) {
-    console.log(`  Local project detected: ${pc.cyan(projectNameToDelete)} (${projectIdToDelete})`);
+    printSection('Local Project Detected');
+    nl();
+    printKeyValue('Project', projectNameToDelete!);
+    printKeyValue('ID', projectIdToDelete);
+    nl();
+
     const confirm = await promptConfirm(
       `  Are you sure you want to delete this project from Derivo Cloud and local files?`,
       false,
     );
 
     if (!confirm) {
-      console.log(pc.dim('\n  Deletion canceled.\n'));
+      nl();
+      printStatus('info', 'Deletion canceled.');
+      nl();
       closePrompt();
       process.exit(0);
     }
 
-    console.log('');
-    const deleteSpinner = ora('Deleting project from cloud...').start();
+    nl();
+    const deleteSpinner = ora({
+      text: `${icons.trash}  Deleting project from cloud...`,
+      ...spinnerConfig,
+    }).start();
     const result = await deleteDocument(session.token, session.uid, 'projects', projectIdToDelete);
 
     if (result.success) {
@@ -64,7 +84,10 @@ export async function deleteHandler() {
       );
     }
 
-    const localSpinner = ora('Cleaning up local files...').start();
+    const localSpinner = ora({
+      text: `${icons.folder} Cleaning up local files...`,
+      ...spinnerConfig,
+    }).start();
     try {
       // Remove derivo.json
       if (fs.existsSync(derivoJsonPath)) {
@@ -78,21 +101,24 @@ export async function deleteHandler() {
       localSpinner.succeed('Local configuration files removed');
     } catch (err) {
       localSpinner.fail('Failed to remove local configuration files');
-      console.log(pc.red(`  ${err instanceof Error ? err.message : String(err)}\n`));
+      printStatus('error', err instanceof Error ? err.message : String(err));
     }
 
-    console.log(pc.green('\n  ✓ Project deleted successfully.\n'));
+    printSuccessBox('Project Deleted', [pc.dim('Cloud and local files removed successfully.')]);
     closePrompt();
     process.exit(0);
   }
 
   // ── Step 3: Check/Select cloud projects ───────────
-  const fetchSpinner = ora('Fetching projects from Derivo Cloud...').start();
+  const fetchSpinner = ora({
+    text: `${icons.globe} Fetching projects from Derivo Cloud...`,
+    ...spinnerConfig,
+  }).start();
   const listResult = await listDocuments(session.token, session.uid, 'projects');
 
   if (listResult.error) {
     fetchSpinner.fail('Failed to fetch projects from Derivo Cloud');
-    console.log(pc.red(`  Error: ${listResult.error}\n`));
+    printErrorBox('Fetch Error', [pc.dim(listResult.error)]);
     closePrompt();
     process.exit(1);
   }
@@ -100,7 +126,9 @@ export async function deleteHandler() {
   fetchSpinner.succeed('Fetched projects successfully');
 
   if (listResult.documents.length === 0) {
-    console.log(pc.yellow('  ⚠ You have no projects registered in Derivo Cloud.\n'));
+    nl();
+    printStatus('warning', 'You have no projects registered in Derivo Cloud.');
+    nl();
     closePrompt();
     process.exit(0);
   }
@@ -120,28 +148,36 @@ export async function deleteHandler() {
   const selectedProjId = selectedDoc.data.projectId as string;
   const selectedProjName = selectedDoc.data.name as string;
 
-  console.log('');
+  nl();
   const confirmCloud = await promptConfirm(
     `  Are you sure you want to delete project "${selectedProjName}" from Derivo Cloud?`,
     false,
   );
 
   if (!confirmCloud) {
-    console.log(pc.dim('\n  Deletion canceled.\n'));
+    nl();
+    printStatus('info', 'Deletion canceled.');
+    nl();
     closePrompt();
     process.exit(0);
   }
 
-  console.log('');
-  const deleteSpinner = ora('Deleting project from cloud...').start();
+  nl();
+  const deleteSpinner = ora({
+    text: `${icons.trash}  Deleting project from cloud...`,
+    ...spinnerConfig,
+  }).start();
   const result = await deleteDocument(session.token, session.uid, 'projects', selectedProjId);
 
   if (result.success) {
     deleteSpinner.succeed('Project deleted from Derivo Cloud');
-    console.log(pc.green('\n  ✓ Project deleted successfully.\n'));
+    printSuccessBox('Project Deleted', [
+      `${pc.dim('Name:')}  ${pc.white(selectedProjName)}`,
+      pc.dim('Removed from Derivo Cloud successfully.'),
+    ]);
   } else {
-    deleteSpinner.fail(`Failed to delete project: ${result.error}`);
-    console.log('');
+    deleteSpinner.fail('Failed to delete project');
+    printErrorBox('Delete Failed', [pc.dim(result.error || 'Unknown error')]);
   }
 
   closePrompt();

@@ -5,11 +5,26 @@ import pc from 'picocolors';
 import ora from 'ora';
 import { saveSession } from '../../utils/session.js';
 import { registerOrUpdateDevice } from '../../utils/device.js';
+import {
+  printBanner,
+  printSuccessBox,
+  printErrorBox,
+  printStatus,
+  icons,
+  colors,
+  spinnerConfig,
+  nl,
+} from '../../utils/ui.js';
 
 const CLI_VERSION = '0.1.0';
 
 export async function loginHandler() {
-  const spinner = ora('Starting login flow...').start();
+  printBanner('Derivo Login', 'Authenticate with your Derivo account');
+
+  const spinner = ora({
+    text: `${icons.lock} Starting secure login flow...`,
+    ...spinnerConfig,
+  }).start();
 
   try {
     const server = http.createServer();
@@ -26,15 +41,21 @@ export async function loginHandler() {
       const webUrl = process.env.DERIVO_WEB_URL || 'http://localhost:3000';
       const loginUrl = `${webUrl}/cli-login?port=${port}`;
 
-      spinner.text = 'Waiting for authentication in browser...';
+      spinner.text = `${icons.globe} Waiting for authentication in browser...`;
 
       try {
         await open(loginUrl);
+        nl();
+        printStatus('info', 'Browser opened automatically');
         console.log(
-          `\nIf your browser does not open automatically, visit:\n${pc.cyan(loginUrl)}\n`,
+          `    ${pc.dim(icons.arrow)} If it didn't open, visit: ${colors.link(loginUrl)}`,
         );
+        nl();
       } catch (err) {
-        console.log(`\nPlease open the following URL in your browser:\n${pc.cyan(loginUrl)}\n`);
+        nl();
+        printStatus('warning', 'Could not open browser automatically');
+        console.log(`    ${pc.dim(icons.arrow)} Please visit: ${colors.link(loginUrl)}`);
+        nl();
       }
     });
 
@@ -80,7 +101,11 @@ export async function loginHandler() {
             </html>
           `);
 
-          spinner.succeed(`Successfully logged in as ${pc.green(email)}`);
+          spinner.stop();
+          printSuccessBox('Logged In', [
+            `${pc.dim('Email:')}  ${pc.white(email)}`,
+            pc.dim('Session saved to local config.'),
+          ]);
 
           // Gracefully shut down
           setTimeout(() => {
@@ -92,7 +117,10 @@ export async function loginHandler() {
           res.writeHead(400, { 'Content-Type': 'text/html' });
           res.end('Missing required parameters in callback.');
 
-          spinner.fail('Authentication failed: Missing parameters.');
+          spinner.stop();
+          printErrorBox('Authentication Failed', [
+            pc.dim('Missing required parameters in callback.'),
+          ]);
 
           setTimeout(() => {
             server.close();
@@ -105,7 +133,8 @@ export async function loginHandler() {
       }
     });
   } catch (error) {
-    spinner.fail(`An error occurred: ${error instanceof Error ? error.message : String(error)}`);
+    spinner.stop();
+    printErrorBox('Login Error', [pc.dim(error instanceof Error ? error.message : String(error))]);
     process.exit(1);
   }
 }

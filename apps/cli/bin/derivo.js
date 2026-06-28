@@ -13,8 +13,19 @@ import { setupCommand } from '../dist/commands/setup/command.js';
 import { deleteCommand } from '../dist/commands/delete/command.js';
 import { verifySubscriptionActive } from '../dist/utils/session.js';
 import { cleanupOrphanedProjects } from '../dist/utils/cleanup.js';
+import { printLogo } from '../dist/utils/ui.js';
 
-program.name('derivo').description('Derivo CLI').version('0.1.0');
+program
+  .name('derivo')
+  .description('Developer Experience, Automated.')
+  .version('0.1.0')
+  .addHelpText('beforeAll', () => {
+    printLogo();
+    return '';
+  })
+  .configureHelp({
+    sortSubcommands: true,
+  });
 
 program.hook('preAction', async (thisCommand, actionCommand) => {
   const name = actionCommand.name();
