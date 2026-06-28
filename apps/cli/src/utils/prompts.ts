@@ -1,13 +1,23 @@
 import readline from 'readline';
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+// The readline interface is created lazily on first use. Creating it at module
+// load opens a handle on process.stdin, which keeps the process (and any test
+// runner that imports this module transitively) alive indefinitely.
+let rl: readline.Interface | null = null;
+
+function getInterface(): readline.Interface {
+  if (!rl) {
+    rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+  }
+  return rl;
+}
 
 export function prompt(question: string): Promise<string> {
   return new Promise((resolve) => {
-    rl.question(question, (answer) => {
+    getInterface().question(question, (answer) => {
       resolve(answer.trim());
     });
   });
@@ -37,5 +47,8 @@ export async function promptConfirm(question: string, defaultYes = true): Promis
 }
 
 export function closePrompt() {
-  rl.close();
+  if (rl) {
+    rl.close();
+    rl = null;
+  }
 }

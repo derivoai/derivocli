@@ -15,6 +15,8 @@ import type {
   RiskLevel,
   WorkspaceMember,
 } from '../../analysis/index.js';
+import { PluginRuntime, type CapabilityResult } from '../../plugins/index.js';
+import { CommandReporter, renderError } from '../../utils/cli-runtime.js';
 import { printBanner, printSection, printDivider, nl, icons } from '../../utils/ui.js';
 
 interface InspectOptions {
@@ -23,6 +25,7 @@ interface InspectOptions {
   packages: boolean;
   graph: boolean;
   deps: boolean;
+  verbose: boolean;
 }
 
 const YES = pc.green('Detected');
@@ -33,34 +36,98 @@ const SAMPLE_SIZE = 6;
 type MemberAnalysis = { member: WorkspaceMember; analysis: ProjectAnalysis | null };
 
 export async function inspectHandler(options: InspectOptions): Promise<void> {
+  const reporter = new CommandReporter({ json: options.json, verbose: options.verbose });
   const cwd = options.path ? path.resolve(options.path) : process.cwd();
 
   let analysis: ProjectAnalysis;
   try {
     analysis = analyzeProject(cwd);
   } catch (error) {
-    if (options.json) console.log(JSON.stringify({ error: errorMessage(error) }, null, 2));
-    else console.error(pc.red(`${icons.error} Analysis failed: ${errorMessage(error)}`));
+    renderError(error, options.json);
     process.exit(1);
   }
+  reporter.setConfidence(analysis.confidence);
 
-  if (options.json) {
-    console.log(JSON.stringify(analysis, null, 2));
-    process.exit(0);
-  }
-
+  // Structural views are plugin-independent and exit early.
   if (options.graph) {
     renderGraph(analysis, cwd);
     process.exit(0);
   }
-
   if (options.deps) {
     renderDeps(analysis, cwd);
     process.exit(0);
   }
 
+  // Load plugins and run the inspect capability around the core analysis.
+  const runtime = new PluginRuntime({ cwd, verbose: options.verbose });
+  let pluginResults: CapabilityResult[] = [];
+  try {
+    const loaded = await runtime.init();
+    reporter.setPluginsLoaded(loaded.loaded.length);
+    if (options.verbose) reporter.step(`Loaded ${loaded.loaded.length} plugins`);
+    await runtime.emitHook('beforeInspect', analysis);
+    pluginResults = await runtime.runCapability('inspect', analysis);
+    await runtime.emitHook('afterInspect', analysis);
+  } catch (error) {
+    reporter.debug(`plugin runtime error: ${error instanceof Error ? error.message : error}`);
+  }
+  for (const r of pluginResults) if (!r.ok) reporter.recordError();
+
+  if (options.json) {
+    console.log(
+      JSON.stringify({ ...analysis, plugins: serializePluginResults(pluginResults) }, null, 2),
+    );
+    process.exit(0);
+  }
+
   render(analysis, cwd, options);
+  renderPluginFindings(pluginResults, options.verbose);
+  reporter.printFooter();
   process.exit(0);
+}
+
+function serializePluginResults(results: CapabilityResult[]) {
+  return results.map((r) => ({
+    plugin: r.pluginId,
+    ok: r.ok,
+    durationMs: r.durationMs,
+    applies: r.result?.applies ?? false,
+    findings: r.result?.findings ?? [],
+    recommendations: r.result?.recommendations ?? [],
+    error: r.error,
+  }));
+}
+
+function renderPluginFindings(results: CapabilityResult[], verbose: boolean): void {
+  const applicable = results.filter((r) => r.ok && r.result?.applies);
+  if (applicable.length === 0 && !verbose) return;
+
+  printSection('Plugins');
+  if (applicable.length === 0) {
+    console.log(`    ${pc.dim('No plugins matched this project')}`);
+  }
+  for (const r of applicable) {
+    const timing = verbose ? pc.dim(` (${r.durationMs}ms)`) : '';
+    console.log(`    ${pc.cyan(icons.bullet)} ${pc.white(r.pluginId)}${timing}`);
+    for (const f of r.result?.findings ?? []) {
+      console.log(`        ${findingIcon(f.level)} ${pc.dim(f.message)}`);
+    }
+    for (const rec of r.result?.recommendations ?? []) {
+      console.log(`        ${pc.yellow(icons.arrow)} ${pc.dim(rec)}`);
+    }
+  }
+  if (verbose) {
+    for (const r of results.filter((x) => !x.ok)) {
+      console.log(`    ${pc.red(icons.error)} ${r.pluginId}: ${pc.dim(r.error ?? 'failed')}`);
+    }
+  }
+}
+
+function findingIcon(level: 'info' | 'success' | 'warning' | 'error'): string {
+  if (level === 'success') return pc.green(icons.success);
+  if (level === 'warning') return pc.yellow(icons.warning);
+  if (level === 'error') return pc.red(icons.error);
+  return pc.blue(icons.info);
 }
 
 // ── Main report ─────────────────────────────────────
@@ -416,9 +483,7 @@ function coreStack(
   return [...stack];
 }
 
-function readPackageJson(
-  dir: string,
-): {
+function readPackageJson(dir: string): {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   packageManager?: string;
@@ -540,8 +605,4 @@ function flag(name: string, on: boolean, detail?: string): void {
   const status = on ? YES : NO;
   const extra = on && detail ? pc.dim(` (${detail})`) : '';
   console.log(`    ${pc.dim(name.padEnd(18))} ${status}${extra}`);
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

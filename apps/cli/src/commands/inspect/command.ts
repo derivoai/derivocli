@@ -8,6 +8,7 @@ export const inspectCommand = new Command('inspect')
   .option('--packages', 'List every workspace package (default shows a sample)')
   .option('--graph', 'Render the project structure as a tree')
   .option('--deps', 'Show core first-party dependencies and versions')
+  .option('--verbose', 'Show detector reasoning, plugin execution, and timing')
   .action(
     async (options: {
       json?: boolean;
@@ -15,6 +16,7 @@ export const inspectCommand = new Command('inspect')
       packages?: boolean;
       graph?: boolean;
       deps?: boolean;
+      verbose?: boolean;
     }) => {
       await inspectHandler({
         json: !!options.json,
@@ -22,6 +24,7 @@ export const inspectCommand = new Command('inspect')
         packages: !!options.packages,
         graph: !!options.graph,
         deps: !!options.deps,
+        verbose: !!options.verbose,
       });
     },
   );

@@ -28,6 +28,10 @@ import {
 const CLI_VERSION = '0.1.0';
 const TOTAL_STEPS = 8;
 
+interface SetupOptions {
+  verbose?: boolean;
+}
+
 function execPromise(cmd: string, cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     exec(cmd, { cwd }, (error, stdout) => {
@@ -40,95 +44,78 @@ function execPromise(cmd: string, cwd: string): Promise<string> {
   });
 }
 
-function runInstallerWithProgress(pkgManager: string, cwd: string, spinner: any): Promise<void> {
+/** Print a dimmed verbose-only line. */
+function vlog(verbose: boolean, message: string): void {
+  if (verbose) console.log(`    ${pc.dim(`${icons.arrow} ${message}`)}`);
+}
+
+/**
+ * Run a command and stream its stdout/stderr live (used in --verbose mode).
+ * Each line is prefixed so it's clearly part of the sub-process output.
+ */
+function streamCommand(
+  cmd: string,
+  args: string[],
+  cwd: string,
+  highlight?: (line: string) => string | null,
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const installCmd = pkgManager;
-    const args = ['install'];
+    const child = spawn(cmd, args, { cwd, shell: true });
 
-    if (pkgManager === 'npm') {
-      args.push('--no-audit', '--no-fund');
-    }
-
-    const child = spawn(installCmd, args, { cwd, shell: true });
-
-    let lastActivePackage = '';
-
-    const processLine = (line: string) => {
-      const cleanLine = line.trim();
-      if (!cleanLine) return;
-
-      let pkg = '';
-
-      if (pkgManager === 'pnpm') {
-        const resolvingMatch = cleanLine.match(/Resolving:?\s+([@a-zA-Z0-9./_-]+)/);
-        const additionMatch = cleanLine.match(/\+\s+([@a-zA-Z0-9./_-]+)/);
-        const fetchMatch = cleanLine.match(/Fetching\s+([@a-zA-Z0-9./_-]+)/);
-
-        if (resolvingMatch && resolvingMatch[1]) {
-          pkg = resolvingMatch[1];
-        } else if (additionMatch && additionMatch[1]) {
-          pkg = additionMatch[1];
-        } else if (fetchMatch && fetchMatch[1]) {
-          pkg = fetchMatch[1];
-        }
-      } else if (pkgManager === 'npm') {
-        const reifyMatch = cleanLine.match(/reify:([a-zA-Z0-9./_-]+)/);
-        const httpMatch = cleanLine.match(/fetch GET .*?\/([a-zA-Z0-9./_-]+)$/);
-
-        if (reifyMatch && reifyMatch[1]) {
-          pkg = reifyMatch[1];
-        } else if (httpMatch && httpMatch[1]) {
-          pkg = httpMatch[1];
-        }
-      } else if (pkgManager === 'yarn') {
-        const resolvingMatch = cleanLine.match(/resolving\s+([@a-zA-Z0-9./_-]+)/);
-        const fetchMatch = cleanLine.match(/fetch\s+.*?\/([a-zA-Z0-9./_-]+)$/);
-
-        if (resolvingMatch && resolvingMatch[1]) {
-          pkg = resolvingMatch[1];
-        } else if (fetchMatch && fetchMatch[1]) {
-          pkg = fetchMatch[1];
-        }
-      } else if (pkgManager === 'bun') {
-        const installMatch = cleanLine.match(/install\s+([@a-zA-Z0-9./_-]+)/);
-        if (installMatch && installMatch[1]) {
-          pkg = installMatch[1];
-        }
-      }
-
-      if (pkg) {
-        pkg = pkg.replace(/[/\s]+$/, '');
-        if (pkg !== lastActivePackage && pkg.length > 2 && pkg.length < 50) {
-          lastActivePackage = pkg;
-          spinner.text = `  ${icons.package} Installing: ${pc.cyan(pkg)}...`;
+    const onData = (data: Buffer) => {
+      for (const raw of data.toString().split('\n')) {
+        const line = raw.replace(/\r$/, '').trimEnd();
+        if (!line.trim()) continue;
+        const tag = highlight?.(line) ?? null;
+        if (tag) {
+          console.log(`    ${pc.dim('│')} ${pc.cyan(tag)}`);
+        } else {
+          console.log(`    ${pc.dim('│')} ${pc.dim(line)}`);
         }
       }
     };
 
-    child.stdout.on('data', (data) => {
-      const lines = data.toString().split('\n');
-      lines.forEach(processLine);
-    });
-
-    child.stderr.on('data', (data) => {
-      const lines = data.toString().split('\n');
-      lines.forEach(processLine);
-    });
-
+    child.stdout.on('data', onData);
+    child.stderr.on('data', onData);
+    child.on('error', reject);
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Exit code ${code}`));
-      }
+      if (code === 0) resolve();
+      else reject(new Error(`Exit code ${code}`));
     });
   });
 }
 
-export async function setupHandler() {
+/** Extract a package name from an installer output line, if present. */
+function highlightPackage(pkgManager: string, line: string): string | null {
+  const clean = line.trim();
+  let match: RegExpMatchArray | null = null;
+  if (pkgManager === 'pnpm') {
+    match =
+      clean.match(/^\+\s+([@a-zA-Z0-9./_-]+)\s/) ||
+      clean.match(/(?:Fetching|Resolving)\s+([@a-zA-Z0-9./_-]+)/);
+  } else if (pkgManager === 'npm') {
+    match = clean.match(/reify:([@a-zA-Z0-9./_-]+)/);
+  } else if (pkgManager === 'yarn') {
+    match = clean.match(/(?:resolving|fetch)\s+([@a-zA-Z0-9./_-]+)/);
+  } else if (pkgManager === 'bun') {
+    match = clean.match(/\+\s+([@a-zA-Z0-9./_-]+)/);
+  }
+  return match && match[1] ? `${icons.package} ${match[1]}` : null;
+}
+
+/** Verbose install: stream the package manager output line-by-line. */
+function streamInstall(pkgManager: string, cwd: string): Promise<void> {
+  const args = ['install'];
+  if (pkgManager === 'npm') args.push('--no-audit', '--no-fund');
+  return streamCommand(pkgManager, args, cwd, (line) => highlightPackage(pkgManager, line));
+}
+
+export async function setupHandler(options: SetupOptions = {}) {
+  const verbose = !!options.verbose;
   const startTime = Date.now();
 
   printBanner('Project Setup', `${icons.tools} Prepare your environment for development`);
+  if (verbose) vlog(true, 'verbose mode enabled');
 
   const cwd = process.cwd();
   const session = getSession();
@@ -157,6 +144,8 @@ export async function setupHandler() {
   try {
     derivoJson = JSON.parse(fs.readFileSync(derivoJsonPath, 'utf8'));
     printStatus('success', `Project found: ${pc.white(derivoJson.name || 'Unknown')}`);
+    vlog(verbose, `derivo.json: ${derivoJsonPath}`);
+    vlog(verbose, `projectId: ${derivoJson.projectId ?? 'unknown'}`);
   } catch (err) {
     printStatus('error', 'Corrupt derivo.json file. Aborting setup.');
     nl();
@@ -174,6 +163,7 @@ export async function setupHandler() {
   }).start();
   try {
     const derivoBin = process.argv[1];
+    vlog(verbose, `running: node "${derivoBin}" doctor --json`);
     const doctorOutput = await execPromise(`node "${derivoBin}" doctor --json`, cwd);
     const doctorData = JSON.parse(doctorOutput);
     if (doctorData.summary && doctorData.summary.fail > 0) {
@@ -222,6 +212,12 @@ export async function setupHandler() {
   if (depCount > 0) {
     console.log(pc.dim(`    ${icons.arrow} ${depCount} dependencies to install`));
   }
+  if (verbose) {
+    const deps = Object.keys(packageJson.dependencies || {});
+    const devDeps = Object.keys(packageJson.devDependencies || {});
+    for (const d of deps) vlog(true, `dependency: ${d}@${packageJson.dependencies[d]}`);
+    for (const d of devDeps) vlog(true, `devDependency: ${d}@${packageJson.devDependencies[d]}`);
+  }
 
   // ── Validation & Auto-Fix ─────────────────
   nl();
@@ -232,6 +228,12 @@ export async function setupHandler() {
     const validator = new ProjectValidator();
     const report = validator.validate(analysis);
     const issues = report.results.filter((r) => r.status !== 'pass');
+
+    if (verbose) {
+      for (const r of report.results.filter((x) => x.status === 'pass')) {
+        vlog(true, `pass: ${r.title}`);
+      }
+    }
 
     if (issues.length === 0) {
       printStatus('success', `Validation passed ${pc.dim(`(score: ${report.score}/100)`)}`);
@@ -283,22 +285,43 @@ export async function setupHandler() {
   nl();
 
   const installCmd = `${pkgManager} install`;
-  const depSpinner = ora({
-    text: `  ${icons.package} Running ${pc.cyan(installCmd)}...`,
-    ...spinnerConfig,
-  }).start();
 
-  try {
-    await execPromise(installCmd, cwd);
-    depSpinner.succeed(`  ${icons.package} Dependencies installed ${pc.dim(`via ${pkgManager}`)}`);
-  } catch (err) {
-    depSpinner.text = `  ${icons.package} Retrying installation...`;
+  if (verbose) {
+    // Verbose: stream the package manager output live (shows each package).
+    vlog(true, `running: ${installCmd}`);
+    nl();
+    try {
+      await streamInstall(pkgManager, cwd);
+      nl();
+      printStatus('success', `Dependencies installed ${pc.dim(`via ${pkgManager}`)}`);
+    } catch (err) {
+      nl();
+      printStatus(
+        'error',
+        `Failed to install dependencies (${err instanceof Error ? err.message : 'error'})`,
+      );
+      console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd(installCmd)} manually.`);
+    }
+  } else {
+    const depSpinner = ora({
+      text: `  ${icons.package} Running ${pc.cyan(installCmd)}...`,
+      ...spinnerConfig,
+    }).start();
+
     try {
       await execPromise(installCmd, cwd);
-      depSpinner.succeed(`  ${icons.package} Dependencies installed on retry`);
-    } catch {
-      depSpinner.fail(`  ${icons.error} Failed to install dependencies`);
-      console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd(installCmd)} manually.`);
+      depSpinner.succeed(
+        `  ${icons.package} Dependencies installed ${pc.dim(`via ${pkgManager}`)}`,
+      );
+    } catch (err) {
+      depSpinner.text = `  ${icons.package} Retrying installation...`;
+      try {
+        await execPromise(installCmd, cwd);
+        depSpinner.succeed(`  ${icons.package} Dependencies installed on retry`);
+      } catch {
+        depSpinner.fail(`  ${icons.error} Failed to install dependencies`);
+        console.log(`    ${pc.dim(icons.arrow)} Run ${colors.cmd(installCmd)} manually.`);
+      }
     }
   }
 
@@ -351,16 +374,31 @@ export async function setupHandler() {
   nl();
 
   if (packageJson.scripts && packageJson.scripts.build) {
-    const buildSpinner = ora({
-      text: `  ${icons.bolt} Running build verification...`,
-      ...spinnerConfig,
-    }).start();
-    try {
-      await execPromise(`${pkgManager} run build`, cwd);
-      buildSpinner.succeed(`  ${icons.bolt} Build successful`);
-    } catch {
-      buildSpinner.fail(`  ${icons.error} Build failed`);
-      console.log(`    ${pc.dim(icons.arrow)} Check your build script output manually.`);
+    vlog(verbose, `build script: ${packageJson.scripts.build}`);
+    if (verbose) {
+      vlog(true, `running: ${pkgManager} run build`);
+      nl();
+      try {
+        await streamCommand(pkgManager, ['run', 'build'], cwd);
+        nl();
+        printStatus('success', 'Build successful');
+      } catch (err) {
+        nl();
+        printStatus('error', `Build failed (${err instanceof Error ? err.message : 'error'})`);
+        console.log(`    ${pc.dim(icons.arrow)} Check your build script output above.`);
+      }
+    } else {
+      const buildSpinner = ora({
+        text: `  ${icons.bolt} Running build verification...`,
+        ...spinnerConfig,
+      }).start();
+      try {
+        await execPromise(`${pkgManager} run build`, cwd);
+        buildSpinner.succeed(`  ${icons.bolt} Build successful`);
+      } catch {
+        buildSpinner.fail(`  ${icons.error} Build failed`);
+        console.log(`    ${pc.dim(icons.arrow)} Check your build script output manually.`);
+      }
     }
   } else {
     printStatus('info', `No build script found in package.json ${pc.dim('(skipped)')}`);
