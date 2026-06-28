@@ -104,6 +104,7 @@ export class ProjectAnalyzer {
         packageCount: 0,
         large: false,
         patterns: [],
+        members: [],
       }),
       language: this.data<LanguageInfo>(outcomes, 'language', {
         primary: 'Unknown',

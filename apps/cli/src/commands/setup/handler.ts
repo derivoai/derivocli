@@ -5,6 +5,8 @@ import pc from 'picocolors';
 import ora from 'ora';
 import { getSession } from '../../utils/session.js';
 import { detectProject } from '../../utils/detect.js';
+import { analyzeProject } from '../../analysis/index.js';
+import { ProjectValidator, FixEngine } from '../../validation/index.js';
 import { updateDocument } from '../../utils/firestore.js';
 import { promptConfirm, closePrompt } from '../../utils/prompts.js';
 import {
@@ -210,7 +212,7 @@ export async function setupHandler() {
     process.exit(1);
   }
 
-  const pkgManager = detected.packageManager || 'npm';
+  let pkgManager = detected.packageManager || 'npm';
   printStatus('success', `Package manager: ${pc.white(pkgManager)}`);
 
   // Count dependencies for progress display
@@ -219,6 +221,60 @@ export async function setupHandler() {
     Object.keys(packageJson.devDependencies || {}).length;
   if (depCount > 0) {
     console.log(pc.dim(`    ${icons.arrow} ${depCount} dependencies to install`));
+  }
+
+  // ── Validation & Auto-Fix ─────────────────
+  nl();
+  console.log(`  ${pc.bold('Validating project')}`);
+  nl();
+  try {
+    const analysis = analyzeProject(cwd);
+    const validator = new ProjectValidator();
+    const report = validator.validate(analysis);
+    const issues = report.results.filter((r) => r.status !== 'pass');
+
+    if (issues.length === 0) {
+      printStatus('success', `Validation passed ${pc.dim(`(score: ${report.score}/100)`)}`);
+    } else {
+      for (const issue of issues) {
+        printStatus(issue.status === 'fail' ? 'error' : 'warning', issue.message);
+      }
+
+      // Surface README manual-setup steps (display only — never executed).
+      const manual = report.results.find(
+        (r) => r.ruleId === 'readme-manual-setup' && r.status !== 'pass',
+      );
+      const manualCmds = (manual?.meta?.commands as string[] | undefined) ?? [];
+      if (manualCmds.length > 0) {
+        nl();
+        console.log(`    ${pc.dim('Manual setup steps detected (run these yourself):')}`);
+        for (const cmd of manualCmds) {
+          console.log(`    ${pc.cyan(icons.bullet)} ${pc.white(cmd)}`);
+        }
+      }
+
+      // Offer interactive, confirmed fixes for fixable issues.
+      if (report.fixable.length > 0) {
+        nl();
+        const engine = new FixEngine({
+          root: cwd,
+          analysis,
+          rules: validator.getRules(),
+          confirm: promptConfirm,
+          log: (msg) => console.log(`    ${pc.dim(icons.arrow)} ${pc.dim(msg)}`),
+        });
+        const fixes = await engine.run(report.fixable);
+        for (const fix of fixes) {
+          if (fix.applied) printStatus('success', fix.message);
+          else if (fix.error) printStatus('error', `${fix.message}: ${fix.error}`);
+        }
+
+        // Re-detect package manager in case a stray lockfile was removed.
+        pkgManager = detectProject(cwd).packageManager || pkgManager;
+      }
+    }
+  } catch (err) {
+    printStatus('warning', 'Validation skipped (analysis error)');
   }
 
   // ── Step 4: Dependencies ──────────────────

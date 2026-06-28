@@ -6,6 +6,7 @@ import type {
   Recommendation,
   Risk,
   WorkspaceInfo,
+  WorkspaceMember,
   WorkspaceTool,
 } from '../types.js';
 
@@ -22,7 +23,8 @@ export class WorkspaceDetector extends BaseDetector<WorkspaceInfo> {
   analyze(ctx: IProjectContext): WorkspaceInfo {
     const tool = this.resolveTool(ctx);
     const patterns = this.resolvePatterns(ctx);
-    const packageCount = this.countPackages(ctx, patterns);
+    const members = this.resolveMembers(ctx, patterns);
+    const packageCount = members.length;
     const isMonorepo = tool !== null || patterns.length > 0;
 
     return {
@@ -31,6 +33,7 @@ export class WorkspaceDetector extends BaseDetector<WorkspaceInfo> {
       packageCount,
       large: packageCount >= LARGE_MONOREPO_THRESHOLD,
       patterns,
+      members,
     };
   }
 
@@ -120,30 +123,43 @@ export class WorkspaceDetector extends BaseDetector<WorkspaceInfo> {
     return patterns;
   }
 
-  private countPackages(ctx: IProjectContext, patterns: string[]): number {
-    // Best-effort count of glob roots like `apps/*` and `packages/*`.
+  private resolveMembers(ctx: IProjectContext, patterns: string[]): WorkspaceMember[] {
+    // Resolve glob roots like `apps/*` and `packages/*` into their member dirs.
     const roots = new Set<string>();
     for (const pattern of patterns) {
       const root = pattern.split('/')[0];
       if (root && !root.includes('*')) roots.add(root);
     }
     if (roots.size === 0) {
-      // Fall back to conventional monorepo folders.
       for (const folder of ['apps', 'packages']) {
         if (ctx.exists(folder)) roots.add(folder);
       }
     }
 
-    let count = 0;
     const fsCtx = ctx instanceof ProjectContext ? ctx : null;
+    const members: WorkspaceMember[] = [];
+
     for (const root of roots) {
       if (!ctx.exists(root)) continue;
-      if (fsCtx) {
-        count += fsCtx.listSubdirectories(root).length;
-      } else {
-        count += ctx.listDir(root).length;
+      const subdirs = fsCtx ? fsCtx.listSubdirectories(root) : ctx.listDir(root);
+      for (const dir of subdirs) {
+        const relativePath = `${root}/${dir}`;
+        const pkg = ctx.readJSON<{ name?: string }>(`${relativePath}/package.json`);
+        members.push({
+          name: pkg?.name ?? dir,
+          relativePath,
+          kind: this.classifyKind(root),
+        });
       }
     }
-    return count;
+
+    // Stable, predictable ordering for consumers.
+    return members.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  }
+
+  private classifyKind(root: string): WorkspaceMember['kind'] {
+    if (root === 'apps' || root === 'app') return 'app';
+    if (root === 'packages' || root === 'libs' || root === 'lib') return 'package';
+    return 'other';
   }
 }

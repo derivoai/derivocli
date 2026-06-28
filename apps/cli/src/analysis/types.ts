@@ -131,12 +131,20 @@ export interface PackageManagerInfo {
 
 export type WorkspaceTool = 'turborepo' | 'nx' | 'pnpm' | 'lerna' | 'npm/yarn' | null;
 
+export interface WorkspaceMember {
+  name: string;
+  relativePath: string;
+  /** Conventional grouping inferred from the path root. */
+  kind: 'app' | 'package' | 'other';
+}
+
 export interface WorkspaceInfo {
   isMonorepo: boolean;
   tool: WorkspaceTool;
   packageCount: number;
   large: boolean;
   patterns: string[];
+  members: WorkspaceMember[];
 }
 
 export interface LanguageInfo {

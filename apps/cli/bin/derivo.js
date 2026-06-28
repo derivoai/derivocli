@@ -12,6 +12,7 @@ import { statusCommand } from '../dist/commands/status/command.js';
 import { setupCommand } from '../dist/commands/setup/command.js';
 import { deleteCommand } from '../dist/commands/delete/command.js';
 import { inspectCommand } from '../dist/commands/inspect/command.js';
+import { validateCommand } from '../dist/commands/validate/command.js';
 import { verifySubscriptionActive } from '../dist/utils/session.js';
 import { cleanupOrphanedProjects } from '../dist/utils/cleanup.js';
 import { printLogo } from '../dist/utils/ui.js';
@@ -63,5 +64,6 @@ program.addCommand(statusCommand);
 program.addCommand(setupCommand);
 program.addCommand(deleteCommand);
 program.addCommand(inspectCommand);
+program.addCommand(validateCommand);
 
 program.parse(process.argv);
