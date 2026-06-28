@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-/* global process */
+/* global process, console */
 
 import { program } from 'commander';
+import pc from 'picocolors';
 import { loginCommand } from '../dist/commands/login/command.js';
 import { logoutCommand } from '../dist/commands/logout/command.js';
 import { whoamiCommand } from '../dist/commands/whoami/command.js';
@@ -14,14 +15,50 @@ import { deleteCommand } from '../dist/commands/delete/command.js';
 import { inspectCommand } from '../dist/commands/inspect/command.js';
 import { validateCommand } from '../dist/commands/validate/command.js';
 import { pluginCommand } from '../dist/commands/plugin/command.js';
+import { versionCommand } from '../dist/commands/version/command.js';
+import { telemetryCommand } from '../dist/commands/telemetry/command.js';
 import { verifySubscriptionActive } from '../dist/utils/session.js';
 import { cleanupOrphanedProjects } from '../dist/utils/cleanup.js';
 import { printLogo } from '../dist/utils/ui.js';
+import { getCliVersion } from '../dist/utils/version.js';
+import {
+  notifyUpdateFromCache,
+  refreshUpdateCacheInBackground,
+} from '../dist/utils/update-checker.js';
+
+const VERBOSE = process.argv.includes('--verbose') || !!process.env.DERIVO_VERBOSE;
+
+// ── Friendly global error handling ──────────────────
+// Production builds never dump raw stack traces; use --verbose for details.
+function reportFatal(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error('');
+  console.error(`  ${pc.red('✗')} ${pc.red(message)}`);
+  if (VERBOSE && error instanceof Error && error.stack) {
+    console.error(pc.dim(error.stack));
+  } else {
+    console.error(pc.dim('  Run with --verbose for technical details.'));
+  }
+  console.error('');
+  process.exit(1);
+}
+
+process.on('uncaughtException', reportFatal);
+process.on('unhandledRejection', reportFatal);
+
+// ── Non-blocking update notice ──────────────────────
+try {
+  notifyUpdateFromCache();
+  refreshUpdateCacheInBackground();
+} catch {
+  // Update checks must never affect command execution.
+}
 
 program
   .name('derivo')
   .description('Developer Experience, Automated.')
-  .version('0.1.0')
+  .version(getCliVersion(), '-V, --version', 'Output the CLI version')
+  .option('--verbose', 'Show technical details and stack traces on error')
   .addHelpText('beforeAll', () => {
     printLogo();
     return '';
@@ -31,24 +68,20 @@ program
   });
 
 // Core / offline-capable commands that never require an active subscription.
-// Everything else is gated by default (safer for a paid platform — new
-// commands are protected unless explicitly listed here).
 const FREE_COMMANDS = new Set([
-  'login', // auth flow
+  'login',
   'logout',
   'help',
-  'whoami', // local identity, works offline
-  'doctor', // diagnostics, works offline
-  'inspect', // local project analysis
-  'validate', // local validation
-  'plugin', // local plugin management
-  'config', // local configuration
+  'version',
+  'telemetry',
+  'whoami',
+  'doctor',
+  'inspect',
+  'validate',
+  'plugin',
+  'config',
 ]);
 
-/**
- * Resolve the top-level command name for an action command, walking up through
- * any subcommands (e.g. `derivo plugin list` -> "plugin").
- */
 function topLevelName(actionCommand) {
   let cmd = actionCommand;
   while (cmd.parent && cmd.parent.parent) {
@@ -92,5 +125,7 @@ program.addCommand(deleteCommand);
 program.addCommand(inspectCommand);
 program.addCommand(validateCommand);
 program.addCommand(pluginCommand);
+program.addCommand(versionCommand);
+program.addCommand(telemetryCommand);
 
-program.parse(process.argv);
+program.parseAsync(process.argv).catch(reportFatal);

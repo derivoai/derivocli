@@ -7,6 +7,15 @@ import pc from 'picocolors';
 import { getSession, ensureDerivoDir } from '../../utils/session.js';
 import { detectProject, isFrameworkSupported } from '../../utils/detect.js';
 import { getRealOSName, registerOrUpdateDevice } from '../../utils/device.js';
+import { derivoPaths } from '../../utils/paths.js';
+import {
+  getConfigPath,
+  isConfigCorrupted,
+  isConfigOutdated,
+  migrateGlobalConfig,
+  repairCorruptedConfig,
+} from '../../utils/config.js';
+import { createRequire } from 'module';
 import {
   printBanner,
   printSection,
@@ -313,6 +322,138 @@ function checkOsInfo(): CheckResult {
   return { name: 'OS / PC Name', status: 'pass', message: `${osName} (${hostname})` };
 }
 
+// ── Installation checks (Phase 10) ──────────────────
+
+function checkGlobalInstall(): CheckResult {
+  const probe = os.platform() === 'win32' ? 'where derivo' : 'which derivo';
+  const resolved = tryExec(probe);
+  if (resolved) {
+    const first = resolved.split(/\r?\n/)[0]?.trim();
+    return { name: 'Global Install', status: 'pass', message: first || 'on PATH' };
+  }
+  return {
+    name: 'Global Install',
+    status: 'warn',
+    message: 'derivo not found on PATH',
+    detail: 'Install globally with: npm install -g derivo',
+  };
+}
+
+function checkPluginDirectory(fix: boolean): CheckResult {
+  const dir = derivoPaths.pluginsDir();
+  // Broken: the path exists but is not a directory.
+  if (fs.existsSync(dir)) {
+    try {
+      if (!fs.statSync(dir).isDirectory()) {
+        return {
+          name: 'Plugin Directory',
+          status: 'fail',
+          message: 'Path exists but is not a directory',
+          detail: `Remove the file at ${dir} and run: derivo doctor --fix`,
+        };
+      }
+    } catch {
+      return {
+        name: 'Plugin Directory',
+        status: 'fail',
+        message: 'Unreadable',
+        detail: `Check permissions on ${dir}`,
+      };
+    }
+    return { name: 'Plugin Directory', status: 'pass', message: dir };
+  }
+  if (fix) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      return {
+        name: 'Plugin Directory',
+        status: 'pass',
+        message: 'Created',
+        fixable: true,
+        fixed: true,
+      };
+    } catch {
+      /* fall through */
+    }
+  }
+  return {
+    name: 'Plugin Directory',
+    status: 'pass',
+    message: 'Not created yet (optional)',
+    detail: 'Created automatically when needed. Run: derivo doctor --fix',
+    fixable: true,
+  };
+}
+
+function checkConfigIntegrity(fix: boolean): CheckResult {
+  if (!isConfigCorrupted()) {
+    return { name: 'Configuration', status: 'pass', message: 'Valid' };
+  }
+  if (fix) {
+    const backup = repairCorruptedConfig();
+    return {
+      name: 'Configuration',
+      status: 'pass',
+      message: backup ? 'Repaired (backup saved)' : 'Reset to defaults',
+      detail: backup ? `Backup: ${backup}` : undefined,
+      fixable: true,
+      fixed: true,
+    };
+  }
+  return {
+    name: 'Configuration',
+    status: 'fail',
+    message: 'Corrupt config.json',
+    detail: `Run: derivo doctor --fix (backs up ${getConfigPath()} and resets it)`,
+    fixable: true,
+  };
+}
+
+function checkConfigVersion(fix: boolean): CheckResult {
+  if (!isConfigOutdated()) {
+    return { name: 'Config Version', status: 'pass', message: 'Up to date' };
+  }
+  if (fix) {
+    migrateGlobalConfig();
+    return {
+      name: 'Config Version',
+      status: 'pass',
+      message: 'Migrated to latest',
+      fixable: true,
+      fixed: true,
+    };
+  }
+  return {
+    name: 'Config Version',
+    status: 'warn',
+    message: 'Outdated configuration schema',
+    detail: 'Run: derivo doctor --fix',
+    fixable: true,
+  };
+}
+
+function checkRuntimeDependencies(): CheckResult {
+  const required = ['commander', 'ora', 'picocolors', 'zod', 'open'];
+  const require = createRequire(import.meta.url);
+  const missing: string[] = [];
+  for (const dep of required) {
+    try {
+      require.resolve(dep);
+    } catch {
+      missing.push(dep);
+    }
+  }
+  if (missing.length > 0) {
+    return {
+      name: 'Runtime Dependencies',
+      status: 'fail',
+      message: `Missing: ${missing.join(', ')}`,
+      detail: 'Reinstall the CLI: npm install -g derivo',
+    };
+  }
+  return { name: 'Runtime Dependencies', status: 'pass', message: `${required.length} present` };
+}
+
 function checkCpuArch(): CheckResult {
   return {
     name: 'CPU Architecture',
@@ -505,6 +646,11 @@ export async function doctorHandler(options: DoctorOptions) {
   results.push(checkWorkspace(cwd));
   results.push(checkWritePermissions(cwd));
   results.push(checkLocalDerivoDir(cwd, options.fix));
+  results.push(checkGlobalInstall());
+  results.push(checkPluginDirectory(options.fix));
+  results.push(checkConfigIntegrity(options.fix));
+  results.push(checkConfigVersion(options.fix));
+  results.push(checkRuntimeDependencies());
 
   if (!options.json) {
     for (let i = 14; i < results.length; i++) {

@@ -10,12 +10,14 @@ const port = Number(process.env.PORT || 3001);
 const appUrl = process.env.APP_URL || 'http://localhost:3000';
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: [appUrl, 'http://localhost:3000', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-}));
+app.use(
+  cors({
+    origin: [appUrl, 'http://localhost:3000', 'http://localhost:5173'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  }),
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -54,7 +56,7 @@ app.get('/health', (_req, res) => {
 async function requireAuth(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ) {
   try {
     const authHeader = req.headers.authorization;
@@ -97,9 +99,7 @@ app.post(
     try {
       let verifiedPhoneNumber = phoneNumber || '';
 
-      const isMock =
-        idToken === 'mock-phone-token' ||
-        process.env.VITE_FIREBASE_MOCK === 'true';
+      const isMock = idToken === 'mock-phone-token' || process.env.VITE_FIREBASE_MOCK === 'true';
 
       if (isMock) {
         console.log('📱 Phone verification — mock mode active');
@@ -118,17 +118,14 @@ app.post(
         return;
       }
 
-      const phoneNumberHash = crypto
-        .createHash('sha256')
-        .update(verifiedPhoneNumber)
-        .digest('hex');
+      const phoneNumberHash = crypto.createHash('sha256').update(verifiedPhoneNumber).digest('hex');
 
       const now = new Date();
       const trialExpiresAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
       if (adminInitialized) {
         const db = admin.firestore();
-        
+
         // Check uniqueness of phone number hash
         const trialRef = db.collection('trials').doc(phoneNumberHash);
         const trialDoc = await trialRef.get();
@@ -155,10 +152,12 @@ app.post(
             role: 'pro_trial',
             updatedAt: now.toISOString(),
           },
-          { merge: true }
+          { merge: true },
         );
       } else {
-        console.log(`ℹ️ [Mock mode] Active Trial for UID ${user.uid} using phone hash: ${phoneNumberHash}`);
+        console.log(
+          `ℹ️ [Mock mode] Active Trial for UID ${user.uid} using phone hash: ${phoneNumberHash}`,
+        );
       }
 
       res.json({
@@ -167,15 +166,172 @@ app.post(
         trial: {
           trialStartedAt: now,
           trialExpiresAt,
-          plan: 'Pro Trial'
+          plan: 'Pro Trial',
         },
       });
     } catch (error: any) {
       console.error('Phone verification failed:', error);
       res.status(500).json({ error: error.message || 'Verification failed.' });
     }
-  }
+  },
 );
+
+// ─── Subscription evaluation (server-side, authoritative) ────────────────────
+function parseEpochMs(value: any): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null;
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const asNumber = Number(trimmed);
+    if (!Number.isNaN(asNumber)) return asNumber < 1e12 ? asNumber * 1000 : asNumber;
+    const parsed = Date.parse(trimmed);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toMillis === 'function') {
+      try {
+        return value.toMillis();
+      } catch {
+        /* ignore */
+      }
+    }
+    const seconds = value.seconds ?? value._seconds;
+    if (seconds !== undefined) return Number(seconds) * 1000;
+  }
+  return null;
+}
+
+function resolveEndDate(sub: any): number | null {
+  const candidates = [
+    sub.trialEndsAt,
+    sub.trialEndAt,
+    sub.trialEnd,
+    sub.trialExpiresAt,
+    sub.expiresAt,
+    sub.currentPeriodEnd,
+    sub.periodEnd,
+    sub.endsAt,
+    sub.endDate,
+  ];
+  for (const candidate of candidates) {
+    const ms = parseEpochMs(candidate);
+    if (ms !== null) return ms;
+  }
+  return null;
+}
+
+interface SubscriptionResult {
+  active: boolean;
+  plan: string;
+  status: string;
+  endsAt: number | null;
+  reason: string;
+}
+
+function computeSubscription(sub: any): SubscriptionResult {
+  if (!sub) {
+    return {
+      active: false,
+      plan: 'none',
+      status: 'none',
+      endsAt: null,
+      reason: 'No subscription found',
+    };
+  }
+
+  const plan = String(sub.plan ?? sub.tier ?? sub.role ?? '').toLowerCase();
+  const status = String(sub.status ?? '').toLowerCase();
+  const expired = ['canceled', 'cancelled', 'expired', 'inactive', 'past_due', 'unpaid'];
+  const isExpiredStatus = expired.includes(status);
+  const endsAt = resolveEndDate(sub);
+  const hasFutureEnd = endsAt !== null && endsAt > Date.now();
+
+  const base = { plan: plan || 'unknown', status: status || 'unknown', endsAt };
+
+  // Paid plans.
+  if (['pro', 'enterprise', 'paid', 'team', 'pro_trial'].includes(plan)) {
+    if ((status === 'active' || status === 'trialing') && !isExpiredStatus) {
+      return { ...base, active: true, reason: 'Active paid plan' };
+    }
+    if (hasFutureEnd && !isExpiredStatus) {
+      return { ...base, active: true, reason: 'Paid plan within period' };
+    }
+  }
+
+  // Trials.
+  if (plan === 'trial' || plan === 'free_trial' || status.includes('trial')) {
+    const activeTrialStatus =
+      status === 'active' || status === 'trialing' || status === 'trial' || status === '';
+    if (activeTrialStatus && hasFutureEnd) {
+      return { ...base, active: true, reason: 'Active trial' };
+    }
+    if (activeTrialStatus && endsAt === null) {
+      return { ...base, active: true, reason: 'Active trial (no end date)' };
+    }
+    if (endsAt !== null && endsAt <= Date.now()) {
+      return { ...base, active: false, reason: 'Trial expired' };
+    }
+  }
+
+  if (status === 'active' && !isExpiredStatus && (hasFutureEnd || endsAt === null)) {
+    return { ...base, active: true, reason: 'Active subscription' };
+  }
+
+  return {
+    ...base,
+    active: false,
+    reason: isExpiredStatus ? `Subscription ${status}` : 'No active subscription',
+  };
+}
+
+// ─── CLI Verification Endpoint ───────────────────────────────────────────────
+// The CLI calls this to learn whether the authenticated user may run premium
+// commands. ALL enforcement happens here, server-side — the CLI cannot be
+// patched to bypass it.
+app.get('/api/cli/verify', requireAuth, async (req: express.Request, res: express.Response) => {
+  const user = (req as any).user;
+
+  // Mock mode (no Firebase Admin configured): allow, for local development.
+  if (!adminInitialized) {
+    res.json({
+      authenticated: true,
+      uid: user.uid,
+      active: true,
+      plan: 'dev',
+      status: 'mock',
+      endsAt: null,
+      reason: 'Mock mode (Firebase Admin not configured)',
+    });
+    return;
+  }
+
+  try {
+    const db = admin.firestore();
+    let sub: any = null;
+
+    const subDoc = await db.collection('subscriptions').doc(user.uid).get();
+    if (subDoc.exists) {
+      sub = subDoc.data();
+    } else {
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        const data = userDoc.data() || {};
+        // Either a nested subscription object or a role-based field.
+        sub = data.subscription ?? { plan: data.role, status: 'active' };
+      }
+    }
+
+    const result = computeSubscription(sub);
+    res.json({ authenticated: true, uid: user.uid, ...result });
+  } catch (err: any) {
+    console.error('CLI verify error:', err.message);
+    res.status(500).json({ error: 'Subscription verification failed' });
+  }
+});
 
 // ─── Start server ────────────────────────────────────────────────────────────
 app.listen(port, () => {

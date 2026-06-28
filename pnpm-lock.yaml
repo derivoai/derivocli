@@ -108,24 +108,6 @@ importers:
 
   apps/cli:
     dependencies:
-      '@derivo/cli-config':
-        specifier: workspace:*
-        version: link:../../packages/cli-config
-      '@derivo/cli-core':
-        specifier: workspace:*
-        version: link:../../packages/cli-core
-      '@derivo/cli-logger':
-        specifier: workspace:*
-        version: link:../../packages/cli-logger
-      '@derivo/cli-types':
-        specifier: workspace:*
-        version: link:../../packages/cli-types
-      '@derivo/cli-utils':
-        specifier: workspace:*
-        version: link:../../packages/cli-utils
-      '@derivo/terminal-ui':
-        specifier: workspace:*
-        version: link:../../packages/terminal-ui
       commander:
         specifier: ^11.0.0
         version: 11.1.0

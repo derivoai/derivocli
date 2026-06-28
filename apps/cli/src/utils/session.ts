@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import pc from 'picocolors';
-import { getTopLevelDocument } from './firestore.js';
+import { apiRequest, getApiBaseUrl } from './api.js';
 
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
 const SESSION_FILE = path.join(DERIVO_DIR, 'session.json');
@@ -91,143 +91,60 @@ export function clearSession() {
 }
 
 /**
- * Robustly parse a subscription end date into epoch milliseconds.
- * Handles ISO strings, epoch numbers (seconds or ms), numeric strings, and
- * Firestore Timestamp-like objects ({ seconds } / { _seconds } / toMillis()).
+ * Verify subscription via the BACKEND (single source of truth).
+ *
+ * Security model: the CLI never decides access itself. It asks the backend,
+ * which validates the Firebase ID token and the subscription server-side.
+ * For premium commands this FAILS CLOSED — if the backend is unreachable or
+ * the token is invalid, access is denied. Free/offline commands never call
+ * this, so they keep working without a backend.
  */
-function parseEpochMs(value: any): number | null {
-  if (value === null || value === undefined) return null;
-
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return null;
-    // Values below ~Sep 2001 in ms are almost certainly seconds.
-    return value < 1e12 ? value * 1000 : value;
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed === '') return null;
-    const asNumber = Number(trimmed);
-    if (!Number.isNaN(asNumber)) return asNumber < 1e12 ? asNumber * 1000 : asNumber;
-    const parsed = Date.parse(trimmed);
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-
-  if (typeof value === 'object') {
-    if (typeof value.toMillis === 'function') {
-      try {
-        return value.toMillis();
-      } catch {
-        /* ignore */
-      }
-    }
-    const seconds = value.seconds ?? value._seconds;
-    if (seconds !== undefined) return Number(seconds) * 1000;
-  }
-
-  return null;
-}
-
-/** First defined end-date field among the common naming variants. */
-function resolveEndDate(subData: any): number | null {
-  const candidates = [
-    subData.trialEndsAt,
-    subData.trialEndAt,
-    subData.trialEnd,
-    subData.trialExpiresAt,
-    subData.trialExpiry,
-    subData.expiresAt,
-    subData.currentPeriodEnd,
-    subData.periodEnd,
-    subData.endsAt,
-    subData.endDate,
-  ];
-  for (const candidate of candidates) {
-    const ms = parseEpochMs(candidate);
-    if (ms !== null) return ms;
-  }
-  return null;
-}
-
 export async function verifySubscriptionActive(): Promise<boolean> {
   const session = getSession();
-  if (!session) return true; // Let commands handle basic login checks
+  if (!session) return true; // commands themselves handle the "please log in" path
 
   try {
-    // 1. Get subscription document
-    const subDoc = await getTopLevelDocument(session.token, 'subscriptions', session.uid);
-    let subData: any = null;
-
-    if (subDoc.exists && subDoc.data) {
-      subData = subDoc.data;
-    } else if (subDoc.error) {
-      // The read FAILED (expired token, denied by rules, server error, etc.).
-      // We cannot verify the subscription — never lock a user out on a failure.
-      if (process.env.DERIVO_DEBUG) {
-        console.log(pc.dim('  [debug] subscription fetch error: ' + subDoc.error));
-      }
-      return true;
-    } else {
-      // Definitive 404 on subscriptions/{uid} — try the users/{uid} fallback.
-      const userDoc = await getTopLevelDocument(session.token, 'users', session.uid);
-      if (userDoc.exists && userDoc.data && userDoc.data.subscription) {
-        subData = userDoc.data.subscription;
-      } else if (userDoc.error) {
-        if (process.env.DERIVO_DEBUG) {
-          console.log(pc.dim('  [debug] users fetch error: ' + userDoc.error));
-        }
-        return true;
-      }
-      if (process.env.DERIVO_DEBUG) {
-        console.log(pc.dim('  [debug] users doc: ' + JSON.stringify(userDoc.data ?? null)));
-      }
-    }
+    const res = await apiRequest<{
+      active?: boolean;
+      plan?: string;
+      status?: string;
+      reason?: string;
+    }>('/api/cli/verify', { token: session.token, timeoutMs: 8000 });
 
     if (process.env.DERIVO_DEBUG) {
-      console.log(pc.dim('  [debug] subData: ' + JSON.stringify(subData)));
+      console.log(
+        pc.dim(`  [debug] verify ${getApiBaseUrl()} -> ${res.status} ${JSON.stringify(res.data)}`),
+      );
     }
 
-    if (!subData) {
-      console.log(pc.red('  ✗ Trial/Subscription expired. Purchase a subscription.'));
+    if (res.status === 200 && res.data?.active) {
+      return true;
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      console.log(pc.red('  ✗ Your session is invalid or expired.'));
+      console.log(pc.dim('    Run: derivo login'));
       return false;
     }
 
-    const plan = String(subData.plan ?? subData.tier ?? '').toLowerCase();
-    const status = String(subData.status ?? '').toLowerCase();
-
-    const expiredStatuses = ['canceled', 'cancelled', 'expired', 'inactive', 'past_due', 'unpaid'];
-    const isExpiredStatus = expiredStatuses.includes(status);
-    const endMs = resolveEndDate(subData);
-    const hasFutureEnd = endMs !== null && endMs > Date.now();
-
-    // Paid plans: active (or trialing into a paid plan) grants access.
-    if (plan === 'pro' || plan === 'enterprise' || plan === 'paid' || plan === 'team') {
-      if ((status === 'active' || status === 'trialing') && !isExpiredStatus) return true;
-      // Some billing models only set a period-end date.
-      if (hasFutureEnd && !isExpiredStatus) return true;
+    if (res.status === 200 && res.data && res.data.active === false) {
+      console.log(pc.red('  ✗ No active subscription.'));
+      if (res.data.reason) console.log(pc.dim(`    ${res.data.reason}`));
+      console.log(pc.dim('    Upgrade your plan to use this command.'));
+      return false;
     }
 
-    // Trial: accept the common active-trial status values, and honour a valid
-    // future end date as long as the subscription isn't explicitly cancelled.
-    if (plan === 'trial' || plan === 'free_trial' || status.includes('trial')) {
-      const activeTrialStatus =
-        status === 'active' || status === 'trialing' || status === 'trial' || status === '';
-      if (activeTrialStatus && hasFutureEnd) return true;
-      // If no parseable end date exists but the trial is marked active, allow it
-      // rather than locking out a legitimately active trial.
-      if (activeTrialStatus && endMs === null) return true;
-    }
-
-    // Generic fallback: an explicitly active subscription with a future (or
-    // unspecified) period end should not be treated as expired.
-    if (status === 'active' && !isExpiredStatus && (hasFutureEnd || endMs === null)) {
-      return true;
-    }
-
-    console.log(pc.red('  ✗ Trial/Subscription expired. Purchase a subscription.'));
+    // Any other backend response is treated as a denial (fail closed).
+    console.log(pc.red(`  ✗ Could not verify your subscription (HTTP ${res.status}).`));
     return false;
-  } catch (e) {
-    // If offline, let it pass (allow offline CLI checks where applicable, doctor handles offline test)
-    return true;
+  } catch (err) {
+    // Backend unreachable: premium commands fail CLOSED for security.
+    const base = getApiBaseUrl();
+    console.log(pc.red(`  ✗ Cannot reach the Derivo backend at ${base}`));
+    console.log(pc.dim('    Start the backend (apps/api) or set DERIVO_API_URL, then retry.'));
+    if (process.env.DERIVO_DEBUG && err instanceof Error) {
+      console.log(pc.dim(`    [debug] ${err.message}`));
+    }
+    return false;
   }
 }

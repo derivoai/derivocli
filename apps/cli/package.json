@@ -1,25 +1,64 @@
 {
-  "name": "@derivo/cli",
-  "version": "0.1.0",
+  "name": "derivo",
+  "version": "0.1.0-beta.1",
   "type": "module",
-  "description": "Derivo CLI",
+  "description": "Derivo — Developer Experience, Automated. An intelligent CLI that analyzes, validates, and sets up projects, with an extensible plugin platform.",
+  "keywords": [
+    "cli",
+    "devex",
+    "developer-experience",
+    "project-analysis",
+    "scaffolding",
+    "setup",
+    "monorepo",
+    "plugins",
+    "automation"
+  ],
+  "license": "MIT",
+  "author": "Derivo",
+  "homepage": "https://derivo.in",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/derivo/derivo.git",
+    "directory": "apps/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/derivo/derivo/issues"
+  },
   "bin": {
     "derivo": "bin/derivo.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugin-sdk": {
+      "types": "./dist/plugins/plugin-sdk/index.d.ts",
+      "import": "./dist/plugins/plugin-sdk/index.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "audit:package": "node scripts/audit-package.mjs",
+    "pack:tgz": "npm run build && npm pack",
+    "pack:standalone": "node scripts/prepare-standalone.mjs",
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@derivo/cli-config": "workspace:*",
-    "@derivo/cli-core": "workspace:*",
-    "@derivo/cli-logger": "workspace:*",
-    "@derivo/cli-types": "workspace:*",
-    "@derivo/cli-utils": "workspace:*",
-    "@derivo/terminal-ui": "workspace:*",
     "commander": "^11.0.0",
     "open": "^11.0.0",
     "ora": "^7.0.1",
@@ -30,5 +69,9 @@
     "@derivo/config-eslint": "workspace:*",
     "@derivo/config-typescript": "workspace:*",
     "@types/node": "^22.20.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta"
   }
 }

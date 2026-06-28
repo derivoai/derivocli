@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// Derivo Firestore Security Rules
+//
+// Security is enforced HERE, at the database — never trusting the client.
+// A forked or patched CLI cannot bypass these rules:
+//   - users can only read/write their OWN data
+//   - subscription/trial documents are written ONLY by the backend (Admin SDK,
+//     which bypasses rules); clients can never grant themselves a plan
+//   - creating project records requires an ACTIVE subscription
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // True when the user has an active subscription/trial.
+    // The backend keeps `status` authoritative (active | trialing | expired …).
+    function hasActiveSubscription(uid) {
+      return exists(/databases/$(database)/documents/subscriptions/$(uid)) &&
+        get(/databases/$(database)/documents/subscriptions/$(uid)).data.status in ['active', 'trialing', 'trial'];
+    }
+
+    // ── Subscriptions: readable by owner, writable ONLY by the backend ──────
+    match /subscriptions/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false; // Admin SDK (backend) bypasses rules; clients cannot write
+    }
+
+    // ── Trials: backend-only (anti-abuse: keyed by phone hash) ──────────────
+    match /trials/{trialId} {
+      allow read, write: if false;
+    }
+
+    // ── Users: owner can read; updates cannot touch privileged fields ───────
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid);
+      // Clients may update their own profile but NOT `role` or `subscription`.
+      allow update: if isOwner(uid) &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'subscription']);
+      allow delete: if false;
+
+      // Devices: free to manage for the owner.
+      match /devices/{deviceId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Projects: a premium feature — requires an active subscription to write.
+      match /projects/{projectId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid) && hasActiveSubscription(uid);
+      }
+
+      // Any other per-user subcollection: owner-only.
+      match /{collection}/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── Everything else: denied by default ──────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

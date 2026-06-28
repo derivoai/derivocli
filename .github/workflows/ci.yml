@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Build, Lint, Typecheck & Test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [20]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test (CLI)
+        run: pnpm --filter derivo test
+
+  package:
+    name: Package Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Pack the CLI tarball
+        working-directory: apps/cli
+        run: pnpm pack
+
+      - name: Inspect tarball contents
+        working-directory: apps/cli
+        run: |
+          echo "Tarball contents:"
+          tar -tzf derivo-*.tgz
+          # Fail if dev-only files leak into the package.
+          if tar -tzf derivo-*.tgz | grep -E "package/(tests/|src/|eslint|tsconfig)" ; then
+            echo "::error::Development files were included in the package"
+            exit 1
+          fi
+
+      - name: Smoke test the packed CLI
+        working-directory: apps/cli
+        run: |
+          npm install -g ./derivo-*.tgz
+          derivo version --json
+          derivo --help

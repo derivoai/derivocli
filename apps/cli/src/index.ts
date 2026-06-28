@@ -8,6 +8,8 @@ export * from './commands/status/command.js';
 export * from './commands/inspect/command.js';
 export * from './commands/validate/command.js';
 export * from './commands/plugin/command.js';
+export * from './commands/version/command.js';
+export * from './commands/telemetry/command.js';
 
 export * from './utils/session.js';
 export * from './utils/project.js';
@@ -15,6 +17,11 @@ export * from './utils/config.js';
 export * from './utils/detect.js';
 export * from './utils/firestore.js';
 export * from './utils/prompts.js';
+export * from './utils/paths.js';
+export * from './utils/version.js';
+export * from './utils/update-checker.js';
+export * from './utils/telemetry.js';
+export * from './utils/api.js';
 
 export * from './analysis/index.js';
 export * from './validation/index.js';
