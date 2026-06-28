@@ -200,3 +200,60 @@ export async function listDocuments(
     return { documents: [], error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * Delete a document in a Firestore subcollection under the user's document.
+ * Path: users/{uid}/{collectionName}/{documentId}
+ */
+export async function deleteDocument(
+  token: string,
+  uid: string,
+  collectionName: string,
+  documentId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/users/${uid}/${collectionName}/${documentId}`;
+
+  try {
+    const response = await request(url, 'DELETE', token);
+
+    if (response.status === 200 || response.status === 204) {
+      return { success: true };
+    }
+
+    return { success: false, error: response.data?.error?.message || `HTTP ${response.status}` };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * Fetch a top-level collection document (like subscriptions/{uid})
+ */
+export async function getTopLevelDocument(
+  token: string,
+  collectionName: string,
+  documentId: string,
+): Promise<{ exists: boolean; data?: Record<string, unknown>; error?: string }> {
+  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/${collectionName}/${documentId}`;
+
+  try {
+    const response = await request(url, 'GET', token);
+
+    if (response.status === 200) {
+      const fields = response.data?.fields || {};
+      const result: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(fields)) {
+        result[k] = fromFirestoreValue(v as FirestoreValue);
+      }
+      return { exists: true, data: result };
+    }
+
+    if (response.status === 404) {
+      return { exists: false };
+    }
+
+    return { exists: false, error: response.data?.error?.message || `HTTP ${response.status}` };
+  } catch (err) {
+    return { exists: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

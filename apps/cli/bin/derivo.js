@@ -9,8 +9,19 @@ import { initCommand } from '../dist/commands/init/command.js';
 import { doctorCommand } from '../dist/commands/doctor/command.js';
 import { configCommand } from '../dist/commands/config/command.js';
 import { statusCommand } from '../dist/commands/status/command.js';
+import { verifySubscriptionActive } from '../dist/utils/session.js';
 
 program.name('derivo').description('Derivo CLI').version('0.1.0');
+
+program.hook('preAction', async (thisCommand, actionCommand) => {
+  const name = actionCommand.name();
+  if (name !== 'login' && name !== 'logout' && name !== 'help') {
+    const active = await verifySubscriptionActive();
+    if (!active) {
+      process.exit(1);
+    }
+  }
+});
 
 program.addCommand(loginCommand);
 program.addCommand(logoutCommand);

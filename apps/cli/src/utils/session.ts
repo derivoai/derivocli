@@ -2,6 +2,8 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import pc from 'picocolors';
+import { getTopLevelDocument } from './firestore.js';
 
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
 const SESSION_FILE = path.join(DERIVO_DIR, 'session.json');
@@ -85,5 +87,52 @@ export function getSession(): SessionData | null {
 export function clearSession() {
   if (fs.existsSync(SESSION_FILE)) {
     fs.unlinkSync(SESSION_FILE);
+  }
+}
+
+export async function verifySubscriptionActive(): Promise<boolean> {
+  const session = getSession();
+  if (!session) return true; // Let commands handle basic login checks
+
+  try {
+    // 1. Get subscription document
+    const subDoc = await getTopLevelDocument(session.token, 'subscriptions', session.uid);
+    let subData: any = null;
+
+    if (subDoc.exists && subDoc.data) {
+      subData = subDoc.data;
+    } else {
+      // Fallback: check users/{uid}
+      const userDoc = await getTopLevelDocument(session.token, 'users', session.uid);
+      if (userDoc.exists && userDoc.data && userDoc.data.subscription) {
+        subData = userDoc.data.subscription;
+      }
+    }
+
+    if (!subData) {
+      console.log(pc.red('  ✗ Trial/Subcription expired Purchase the subcription'));
+      return false;
+    }
+
+    const plan = subData.plan;
+    const status = subData.status;
+
+    if (plan === 'pro' || plan === 'enterprise') {
+      if (status === 'active') return true;
+    } else if (plan === 'trial') {
+      if (status === 'active') {
+        const trialEndsAt = subData.trialEndsAt;
+        const ends = new Date(trialEndsAt).getTime();
+        if (ends > Date.now()) {
+          return true;
+        }
+      }
+    }
+
+    console.log(pc.red('  ✗ Trial/Subcription expired Purchase the subcription'));
+    return false;
+  } catch (e) {
+    // If offline, let it pass (allow offline CLI checks where applicable, doctor handles offline test)
+    return true;
   }
 }

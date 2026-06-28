@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { Search, Plus, Filter, MoreVertical, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, ArrowRight, AlertTriangle, X } from 'lucide-react';
 import { useProjects } from '../../hooks/useDashboardData';
+import type { Project } from '../../hooks/useDashboardData';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { isPremium } from '../../lib/subscription';
 import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
@@ -10,6 +11,7 @@ export function Projects() {
   const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
   const { subscription, loading: profileLoading, error: profileError } = useUserProfile();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const loading = projectsLoading || profileLoading;
   const error = projectsError || profileError;
@@ -56,12 +58,8 @@ export function Projects() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
-        
         {/* Upgrade Modal */}
-        <UpgradeModal
-          isOpen={isUpgradeModalOpen}
-          onClose={() => setIsUpgradeModalOpen(false)}
-        />
+        <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
 
         <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
@@ -84,7 +82,9 @@ export function Projects() {
           <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>Project creation is disabled because you do not have an active premium subscription.</span>
+              <span>
+                Project creation is disabled because you do not have an active premium subscription.
+              </span>
             </div>
             <button
               onClick={() => setIsUpgradeModalOpen(true)}
@@ -118,7 +118,8 @@ export function Projects() {
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className="p-5 rounded-xl border border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent hover:border-white/[0.12] transition-colors flex flex-col group relative overflow-hidden"
+                  onClick={() => setSelectedProject(project)}
+                  className="p-5 rounded-xl border border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent hover:border-white/[0.12] transition-colors flex flex-col group relative overflow-hidden cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-8 relative z-10">
                     <div className="flex flex-col gap-1">
@@ -169,6 +170,77 @@ export function Projects() {
           </div>
         </div>
       </div>
+
+      {selectedProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0b0b0b] border border-white/[0.08] w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
+              <h2 className="text-lg font-semibold text-white">Project Details</h2>
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="p-1 hover:bg-white/5 rounded-lg text-white/50 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Project Name</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium">
+                  {selectedProject.name}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Project ID</span>
+                <span className="col-span-2 text-xs font-mono text-white/90 bg-white/[0.02] border border-white/[0.04] px-2 py-1 rounded w-fit select-all">
+                  {selectedProject.id}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Framework</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium">
+                  {selectedProject.framework}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Environment</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium">
+                  {selectedProject.env}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Status</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium flex items-center gap-1.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${selectedProject.status === 'synced' ? 'bg-emerald-500' : selectedProject.status === 'error' ? 'bg-red-500' : 'bg-amber-500'}`}
+                  />
+                  {selectedProject.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Last Synced</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium">
+                  {selectedProject.lastSync}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-xs text-white/40">Created At</span>
+                <span className="col-span-2 text-xs text-white/90 font-medium">
+                  {new Date(selectedProject.createdAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-white/[0.04] bg-white/[0.01]">
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="h-9 px-4 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold border border-white/[0.06] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

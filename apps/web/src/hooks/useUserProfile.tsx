@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db, doc, getDoc, setDoc } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { getSubscription, createDefaultSubscription, Subscription, isTrialActive } from '../lib/subscription';
+import {
+  getSubscription,
+  createDefaultSubscription,
+  Subscription,
+  isTrialActive,
+} from '../lib/subscription';
 
 export interface UserProfile {
   uid: string;
@@ -75,19 +80,24 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       }
 
       // Dynamically check and compute role based on active subscription
-      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' = currentSub.plan === 'enterprise'
-        ? 'enterprise'
-        : currentSub.plan === 'pro'
-          ? 'pro'
-          : (currentSub.plan === 'trial' && isTrialActive(currentSub))
-            ? 'pro_trial'
-            : 'community';
+      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
+        currentSub.plan === 'enterprise'
+          ? 'enterprise'
+          : currentSub.plan === 'pro'
+            ? 'pro'
+            : currentSub.plan === 'trial' && isTrialActive(currentSub)
+              ? 'pro_trial'
+              : 'community';
 
       // Update role in Firestore if it has changed to keep it in sync
       if (currentProfile.role !== derivedRole) {
         currentProfile.role = derivedRole;
         try {
-          await setDoc(userRef, { role: derivedRole, updatedAt: new Date().toISOString() }, { merge: true });
+          await setDoc(
+            userRef,
+            { role: derivedRole, updatedAt: new Date().toISOString() },
+            { merge: true },
+          );
         } catch (e) {
           console.warn('Could not update profile role in Firestore:', e);
         }
@@ -100,19 +110,22 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       setProfile(currentProfile);
       setSubscription(currentSub);
     } catch (err: any) {
-      console.warn('Error fetching/creating profile and subscription from Firestore, checking local storage:', err);
-      
+      console.warn(
+        'Error fetching/creating profile and subscription from Firestore, checking local storage:',
+        err,
+      );
+
       if (err.code === 'permission-denied' || err.code === 'unavailable' || !db) {
         // Fallback to Local Storage database
         const localProfileKey = `derivo_profile_${user.uid}`;
         const localSubKey = `derivo_sub_${user.uid}`;
-        
+
         const localProfileStr = localStorage.getItem(localProfileKey);
         const localSubStr = localStorage.getItem(localSubKey);
-        
+
         let localProfile: UserProfile;
         let localSub: Subscription;
-        
+
         if (localProfileStr) {
           localProfile = JSON.parse(localProfileStr);
         } else {
@@ -121,11 +134,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             name: user.displayName || user.email?.split('@')[0] || 'User',
             email: user.email || '',
             role: 'pro_trial', // Active premium trial by default locally
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
           };
           localStorage.setItem(localProfileKey, JSON.stringify(localProfile));
         }
-        
+
         if (localSubStr) {
           localSub = JSON.parse(localSubStr);
         } else {
@@ -138,20 +151,21 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             trialStartedAt: now.toISOString(),
             trialEndsAt: ends.toISOString(),
             createdAt: now.toISOString(),
-            updatedAt: now.toISOString()
+            updatedAt: now.toISOString(),
           };
           localStorage.setItem(localSubKey, JSON.stringify(localSub));
         }
 
         // Keep local state in sync
-        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' = localSub.plan === 'enterprise'
-          ? 'enterprise'
-          : localSub.plan === 'pro'
-            ? 'pro'
-            : (localSub.plan === 'trial' && isTrialActive(localSub))
-              ? 'pro_trial'
-              : 'community';
-            
+        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
+          localSub.plan === 'enterprise'
+            ? 'enterprise'
+            : localSub.plan === 'pro'
+              ? 'pro'
+              : localSub.plan === 'trial' && isTrialActive(localSub)
+                ? 'pro_trial'
+                : 'community';
+
         if (localProfile.role !== derivedRole) {
           localProfile.role = derivedRole;
           localStorage.setItem(localProfileKey, JSON.stringify(localProfile));
@@ -177,40 +191,52 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       }
       setSubscription(currentSub);
 
-      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' = currentSub.plan === 'enterprise'
-        ? 'enterprise'
-        : currentSub.plan === 'pro'
-          ? 'pro'
-          : (currentSub.plan === 'trial' && isTrialActive(currentSub))
-            ? 'pro_trial'
-            : 'community';
+      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
+        currentSub.plan === 'enterprise'
+          ? 'enterprise'
+          : currentSub.plan === 'pro'
+            ? 'pro'
+            : currentSub.plan === 'trial' && isTrialActive(currentSub)
+              ? 'pro_trial'
+              : 'community';
 
       if (profile && profile.role !== derivedRole) {
         const updatedProfile = { ...profile, role: derivedRole };
         setProfile(updatedProfile);
         const userRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userRef, { role: derivedRole, updatedAt: new Date().toISOString() }, { merge: true });
+        await setDoc(
+          userRef,
+          { role: derivedRole, updatedAt: new Date().toISOString() },
+          { merge: true },
+        );
       }
 
       localStorage.setItem(`derivo_sub_${currentUser.uid}`, JSON.stringify(currentSub));
       if (profile) {
-        localStorage.setItem(`derivo_profile_${currentUser.uid}`, JSON.stringify({ ...profile, role: derivedRole }));
+        localStorage.setItem(
+          `derivo_profile_${currentUser.uid}`,
+          JSON.stringify({ ...profile, role: derivedRole }),
+        );
       }
     } catch (err) {
-      console.warn('Failed to refresh subscription from Firestore, using local storage state:', err);
+      console.warn(
+        'Failed to refresh subscription from Firestore, using local storage state:',
+        err,
+      );
       const localSubStr = localStorage.getItem(`derivo_sub_${currentUser.uid}`);
       if (localSubStr) {
         const localSub = JSON.parse(localSubStr);
         setSubscription(localSub);
-        
-        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' = localSub.plan === 'enterprise'
-          ? 'enterprise'
-          : localSub.plan === 'pro'
-            ? 'pro'
-            : (localSub.plan === 'trial' && isTrialActive(localSub))
-              ? 'pro_trial'
-              : 'community';
-            
+
+        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
+          localSub.plan === 'enterprise'
+            ? 'enterprise'
+            : localSub.plan === 'pro'
+              ? 'pro'
+              : localSub.plan === 'trial' && isTrialActive(localSub)
+                ? 'pro_trial'
+                : 'community';
+
         if (profile && profile.role !== derivedRole) {
           const updatedProfile = { ...profile, role: derivedRole };
           setProfile(updatedProfile);
@@ -234,8 +260,21 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   };
 
   useEffect(() => {
+    let unsubscribeProfile: (() => void) | null = null;
+    let unsubscribeSubscription: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       setCurrentUser(user);
+
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+      if (unsubscribeSubscription) {
+        unsubscribeSubscription();
+        unsubscribeSubscription = null;
+      }
+
       if (!user) {
         setProfile(null);
         setSubscription(null);
@@ -243,14 +282,92 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         setError(null);
         return;
       }
+
+      // Set up real-time listener for profile
+      const userRef = doc(db, 'users', user.uid);
+      const importFirestore = async () => {
+        const { onSnapshot } = await import('firebase/firestore');
+
+        unsubscribeProfile = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const currentProfile: UserProfile = {
+              uid: user.uid,
+              name: data.name || user.displayName || user.email?.split('@')[0] || 'User',
+              email: data.email || user.email || '',
+              role: data.role || 'community',
+              createdAt: data.createdAt,
+            };
+            setProfile(currentProfile);
+            localStorage.setItem(`derivo_profile_${user.uid}`, JSON.stringify(currentProfile));
+          }
+        });
+
+        // Set up real-time listener for subscription
+        const subRef = doc(db, 'subscriptions', user.uid);
+        unsubscribeSubscription = onSnapshot(subRef, async (subSnap) => {
+          if (subSnap.exists()) {
+            const subData = subSnap.data() as Subscription;
+            setSubscription(subData);
+            localStorage.setItem(`derivo_sub_${user.uid}`, JSON.stringify(subData));
+
+            // Re-calculate derived role
+            const derivedRole =
+              subData.plan === 'enterprise'
+                ? 'enterprise'
+                : subData.plan === 'pro'
+                  ? 'pro'
+                  : subData.plan === 'trial' && isTrialActive(subData)
+                    ? 'pro_trial'
+                    : 'community';
+
+            const localProfileStr = localStorage.getItem(`derivo_profile_${user.uid}`);
+            if (localProfileStr) {
+              const localProfile = JSON.parse(localProfileStr);
+              if (localProfile.role !== derivedRole) {
+                localProfile.role = derivedRole;
+                localStorage.setItem(`derivo_profile_${user.uid}`, JSON.stringify(localProfile));
+                setProfile(localProfile);
+                try {
+                  const { setDoc } = await import('firebase/firestore');
+                  await setDoc(
+                    userRef,
+                    { role: derivedRole, updatedAt: new Date().toISOString() },
+                    { merge: true },
+                  );
+                } catch (e) {
+                  // ignore
+                }
+              }
+            }
+          }
+        });
+      };
+
+      importFirestore().catch(console.error);
+
       await fetchProfileAndSubscription(user);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeProfile) unsubscribeProfile();
+      if (unsubscribeSubscription) unsubscribeSubscription();
+    };
   }, []);
 
   return (
-    <UserProfileContext.Provider value={{ currentUser, profile, subscription, loading, error, refreshSubscription, updateProfileData }}>
+    <UserProfileContext.Provider
+      value={{
+        currentUser,
+        profile,
+        subscription,
+        loading,
+        error,
+        refreshSubscription,
+        updateProfileData,
+      }}
+    >
       {children}
     </UserProfileContext.Provider>
   );
