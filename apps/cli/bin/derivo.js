@@ -11,6 +11,7 @@ import { configCommand } from '../dist/commands/config/command.js';
 import { statusCommand } from '../dist/commands/status/command.js';
 import { setupCommand } from '../dist/commands/setup/command.js';
 import { deleteCommand } from '../dist/commands/delete/command.js';
+import { inspectCommand } from '../dist/commands/inspect/command.js';
 import { verifySubscriptionActive } from '../dist/utils/session.js';
 import { cleanupOrphanedProjects } from '../dist/utils/cleanup.js';
 import { printLogo } from '../dist/utils/ui.js';
@@ -27,19 +28,28 @@ program
     sortSubcommands: true,
   });
 
+// Commands that require an active subscription. Everything else is free to run.
+const SUBSCRIPTION_REQUIRED_COMMANDS = new Set(['setup']);
+
 program.hook('preAction', async (thisCommand, actionCommand) => {
   const name = actionCommand.name();
-  if (name !== 'login' && name !== 'logout' && name !== 'help') {
+  if (name === 'login' || name === 'logout' || name === 'help') {
+    return;
+  }
+
+  // Only premium commands are gated behind an active subscription.
+  if (SUBSCRIPTION_REQUIRED_COMMANDS.has(name)) {
     const active = await verifySubscriptionActive();
     if (!active) {
       process.exit(1);
     }
-    // Automatically clean up orphaned projects (whose directories were deleted)
-    try {
-      await cleanupOrphanedProjects();
-    } catch {
-      // ignore silently to prevent blocking normal CLI execution
-    }
+  }
+
+  // Automatically clean up orphaned projects (whose directories were deleted).
+  try {
+    await cleanupOrphanedProjects();
+  } catch {
+    // ignore silently to prevent blocking normal CLI execution
   }
 });
 
@@ -52,5 +62,6 @@ program.addCommand(configCommand);
 program.addCommand(statusCommand);
 program.addCommand(setupCommand);
 program.addCommand(deleteCommand);
+program.addCommand(inspectCommand);
 
 program.parse(process.argv);
