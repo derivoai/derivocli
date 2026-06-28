@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
 import { Github, AlertTriangle, User as UserIcon, Check, Loader2 } from 'lucide-react';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { isTrialActive } from '../../lib/subscription';
 import { auth, db, doc, setDoc, deleteDoc } from '../../lib/firebase';
 import {
   updateProfile,
@@ -16,7 +17,7 @@ import {
 
 export function Settings() {
   const navigate = useNavigate();
-  const { currentUser, profile, loading } = useUserProfile();
+  const { currentUser, profile, subscription, loading } = useUserProfile();
 
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -326,6 +327,43 @@ export function Settings() {
                 </button>
               </div>
             </form>
+          </div>
+        </section>
+
+        {/* Subscription Section */}
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold text-white/90">Subscription & Plan</h2>
+          <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-white/40">Current Plan</span>
+                <span className="text-sm font-semibold text-white">
+                  {subscription?.plan === 'pro'
+                    ? 'Pro Plan'
+                    : subscription?.plan === 'trial'
+                      ? (subscription && isTrialActive(subscription) ? 'Pro Trial' : 'Trial Expired')
+                      : 'Community Plan'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-white/40">Subscription Status</span>
+                <span className="text-sm font-semibold text-white capitalize">
+                  {subscription?.status || 'Inactive'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-white/40">Trial Expiration</span>
+                <span className="text-sm font-semibold text-white">
+                  {subscription?.plan === 'trial'
+                    ? new Date(subscription.trialEndsAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : 'N/A'}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 

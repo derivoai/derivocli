@@ -1,9 +1,18 @@
+import { useState } from 'react';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { Search, Plus, Filter, MoreVertical, ArrowRight } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useProjects } from '../../hooks/useDashboardData';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { isPremium } from '../../lib/subscription';
+import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
 
 export function Projects() {
-  const { data: projects, loading, error } = useProjects();
+  const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
+  const { subscription, loading: profileLoading, error: profileError } = useUserProfile();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  const loading = projectsLoading || profileLoading;
+  const error = projectsError || profileError;
 
   if (loading) {
     return (
@@ -24,19 +33,7 @@ export function Projects() {
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-red-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+              <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
             <span className="text-sm text-white/60">{error}</span>
           </div>
@@ -44,9 +41,28 @@ export function Projects() {
       </DashboardLayout>
     );
   }
+
+  const hasPremium = subscription ? isPremium(subscription) : false;
+
+  const handleNewProjectClick = () => {
+    if (!hasPremium) {
+      setIsUpgradeModalOpen(true);
+    } else {
+      // Mock action / creation popup
+      setIsUpgradeModalOpen(true); // Treat as prompt for Stripe
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
+        
+        {/* Upgrade Modal */}
+        <UpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+        />
+
         <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Projects</h1>
@@ -54,11 +70,30 @@ export function Projects() {
               Manage your connected repositories and environments.
             </p>
           </div>
-          <button className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(255,255,255,0.15)] w-full sm:w-auto">
+          <button
+            onClick={handleNewProjectClick}
+            className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(255,255,255,0.15)] w-full sm:w-auto"
+          >
             <Plus className="w-3.5 h-3.5" />
             New Project
           </button>
         </header>
+
+        {/* Expired/Non-premium Banner for Projects page */}
+        {!hasPremium && (
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>Project creation is disabled because you do not have an active premium subscription.</span>
+            </div>
+            <button
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0 shadow-sm"
+            >
+              Upgrade to Pro
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4">
           {/* Controls */}

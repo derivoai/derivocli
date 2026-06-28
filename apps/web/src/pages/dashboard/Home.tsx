@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
 import {
   Plus,
@@ -10,17 +11,23 @@ import {
   Key,
   User,
   Activity as ActivityIcon,
+  AlertTriangle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useDashboardOverview } from '../../hooks/useDashboardData';
+import { isPremium, isTrialActive, getRemainingTrialTime } from '../../lib/subscription';
+import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
 
 export function DashboardHome() {
-  const { profile, loading } = useUserProfile();
-  const { projects, devices, activity, loading: dataLoading, error } = useDashboardOverview();
+  const { profile, subscription, loading: profileLoading, error: profileError } = useUserProfile();
+  const { projects, devices, activity, loading: dataLoading, error: dataError } = useDashboardOverview();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
-  if (loading || dataLoading) {
+  const error = profileError || dataError;
+
+  if (profileLoading || dataLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -39,19 +46,7 @@ export function DashboardHome() {
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-red-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+              <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
             <span className="text-sm text-white/60">{error}</span>
           </div>
@@ -60,19 +55,29 @@ export function DashboardHome() {
     );
   }
 
-  const userPlan =
-    profile?.role === 'pro'
-      ? 'Pro Plan'
-      : profile?.role === 'pro_trial'
-        ? 'Pro Trial'
-        : 'Community Plan';
+  const hasPremium = subscription ? isPremium(subscription) : false;
+  const trialActive = subscription ? isTrialActive(subscription) : false;
+  const remainingTimeMs = subscription ? getRemainingTrialTime(subscription) : 0;
+  
+  // Calculate remaining days
+  const trialDaysLeft = Math.ceil(remainingTimeMs / (1000 * 60 * 60 * 24));
 
-  let trialDaysLeft = 0;
-  if (profile?.trialExpiresAt) {
-    const expires = new Date(profile.trialExpiresAt).getTime();
-    const now = new Date().getTime();
-    trialDaysLeft = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
-  }
+  const userPlan = subscription?.plan === 'pro'
+    ? 'Pro Plan'
+    : subscription?.plan === 'trial'
+      ? (trialActive ? 'Pro Trial' : 'Trial Expired')
+      : 'Community Plan';
+
+  const subStatus = subscription?.status || 'inactive';
+
+  const handleNewProjectClick = () => {
+    if (!hasPremium) {
+      setIsUpgradeModalOpen(true);
+    } else {
+      // Allow or redirect to creation flow
+      setIsUpgradeModalOpen(true); // Since Stripe isn't integrated yet, treat as prompt
+    }
+  };
 
   const getActivityIcon = (iconName: string) => {
     const props = { className: 'w-4 h-4 text-white/70' };
@@ -95,11 +100,18 @@ export function DashboardHome() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
+        
+        {/* Upgrade Modal */}
+        <UpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+        />
+
         {/* Welcome Section */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-              Welcome back, {profile?.name.split(' ')[0] || 'User'}
+              Welcome back, {profile?.name?.split(' ')[0] || 'User'}
             </h1>
             <p className="text-sm text-white/50">
               Here is what's happening with your workspace today.
@@ -110,41 +122,67 @@ export function DashboardHome() {
               <Terminal className="w-3.5 h-3.5" />
               Install CLI
             </button>
-            <button className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center gap-2 shadow-[0_2px_8px_rgba(255,255,255,0.15)]">
+            <button
+              onClick={handleNewProjectClick}
+              className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center gap-2 shadow-[0_2px_8px_rgba(255,255,255,0.15)]"
+            >
               <Plus className="w-3.5 h-3.5" />
               New Project
             </button>
           </div>
         </header>
 
+        {/* Trial Expired Alert Banner */}
+        {!hasPremium && subscription?.plan === 'trial' && (
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold uppercase tracking-wider text-[10px] bg-red-500/20 px-2 py-0.5 rounded text-red-300">
+                Expired
+              </span>
+              <span>Your premium trial has expired. Upgrade to Pro to continue creating projects and using premium CLI endpoints.</span>
+            </div>
+            <button
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0 shadow-sm"
+            >
+              Upgrade to Pro
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Status Card 1 */}
+          {/* Status Card 1: Subscription */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-5 rounded-2xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/[0.06] flex flex-col gap-4 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-xs font-medium text-white/50">Current Plan</span>
+              <span className="text-xs font-medium text-white/50">Subscription Status</span>
               <Zap className="w-4 h-4 text-amber-400" />
             </div>
             <div className="relative z-10">
               <div className="text-2xl font-semibold text-white tracking-tight">{userPlan}</div>
-              {profile?.role === 'pro_trial' && (
-                <div className="text-xs text-white/40 mt-1">{trialDaysLeft} days remaining</div>
+              <div className="text-xs text-white/40 mt-1 flex items-center gap-1.5 capitalize">
+                Status: {subStatus}
+              </div>
+              {subscription?.plan === 'trial' && trialActive && (
+                <div className="text-xs text-white/40 mt-1">
+                  Trial Remaining: {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'}
+                </div>
               )}
             </div>
             <div className="absolute right-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <Link
                 to="/dashboard/billing"
-                className="text-[10px] text-white/40 hover:text-white flex items-center gap-1 uppercase tracking-wider"
+                className="text-[10px] text-white/40 hover:text-white flex items-center gap-1 uppercase tracking-wider font-mono"
               >
-                Manage <ArrowRight className="w-3 h-3" />
+                Billing <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </motion.div>
 
-          {/* Status Card 2 */}
+          {/* Status Card 2: Active Projects */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,7 +201,7 @@ export function DashboardHome() {
             </div>
           </motion.div>
 
-          {/* Status Card 3 */}
+          {/* Status Card 3: Environment Health */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -188,7 +226,7 @@ export function DashboardHome() {
               <h2 className="text-sm font-semibold text-white/90">Recent Projects</h2>
               <Link
                 to="/dashboard/projects"
-                className="text-xs text-white/40 hover:text-white transition-colors"
+                className="text-xs text-white/40 hover:text-white transition-colors font-medium"
               >
                 View all
               </Link>
@@ -236,7 +274,7 @@ export function DashboardHome() {
               <h2 className="text-sm font-semibold text-white/90">Activity</h2>
               <Link
                 to="/dashboard/activity"
-                className="text-xs text-white/40 hover:text-white transition-colors"
+                className="text-xs text-white/40 hover:text-white transition-colors font-medium"
               >
                 View log
               </Link>
