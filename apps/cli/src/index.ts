@@ -9,3 +9,6 @@ export * from './commands/status/command.js';
 export * from './utils/session.js';
 export * from './utils/project.js';
 export * from './utils/config.js';
+export * from './utils/detect.js';
+export * from './utils/firestore.js';
+export * from './utils/prompts.js';
