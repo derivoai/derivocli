@@ -29,6 +29,14 @@ export class EnvironmentDetector extends BaseDetector<EnvironmentInfo> {
     return this.detect(ctx) ? 95 : 90;
   }
 
+  override evidence(_ctx: IProjectContext, data: EnvironmentInfo): string[] {
+    const evidence = [...data.files];
+    if (data.declaredVariables.length > 0) {
+      evidence.push(`${data.declaredVariables.length} variables declared`);
+    }
+    return evidence;
+  }
+
   override recommendations(_ctx: IProjectContext, data: EnvironmentInfo): Recommendation[] {
     const recs: Recommendation[] = [];
     if (data.hasExample && !data.hasEnv) {

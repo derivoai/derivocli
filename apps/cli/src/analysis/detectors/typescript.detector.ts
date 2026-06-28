@@ -36,4 +36,13 @@ export class TypeScriptDetector extends BaseDetector<TypeScriptInfo> {
     if (info.hasConfig && info.version) return 100;
     return info.hasConfig || info.version ? 90 : 0;
   }
+
+  override evidence(_ctx: IProjectContext, data: TypeScriptInfo): string[] {
+    if (!data.used) return [];
+    const evidence: string[] = [];
+    if (data.hasConfig) evidence.push('tsconfig.json');
+    if (data.version) evidence.push('typescript dependency');
+    if (data.strict) evidence.push('strict mode enabled');
+    return evidence;
+  }
 }

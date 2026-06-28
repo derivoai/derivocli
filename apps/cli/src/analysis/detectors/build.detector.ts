@@ -56,6 +56,14 @@ export class BuildDetector extends BaseDetector<BuildInfo> {
     return 50;
   }
 
+  override evidence(_ctx: IProjectContext, data: BuildInfo): string[] {
+    const evidence: string[] = [];
+    if (data.buildTool) evidence.push(`build tool: ${data.buildTool}`);
+    if (data.hasBuildScript) evidence.push('build script');
+    if (data.hasDevScript) evidence.push('dev script');
+    return evidence;
+  }
+
   override recommendations(_ctx: IProjectContext, data: BuildInfo): Recommendation[] {
     const recs: Recommendation[] = [];
     if (!data.buildTool && !data.hasBuildScript) {

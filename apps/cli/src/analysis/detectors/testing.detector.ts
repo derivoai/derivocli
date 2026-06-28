@@ -41,4 +41,11 @@ export class TestingDetector extends BaseDetector<TestingInfo> {
     if (!info.used) return 90;
     return info.framework ? 95 : 70;
   }
+
+  override evidence(_ctx: IProjectContext, data: TestingInfo): string[] {
+    const evidence: string[] = [];
+    if (data.framework) evidence.push(`${data.framework} dependency`);
+    if (data.hasScript) evidence.push('test script');
+    return evidence;
+  }
 }

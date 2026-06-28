@@ -60,18 +60,38 @@ export class WorkspaceDetector extends BaseDetector<WorkspaceInfo> {
   }
 
   override risks(_ctx: IProjectContext, data: WorkspaceInfo): Risk[] {
+    const risks: Risk[] = [];
     if (data.large) {
-      return [
-        {
-          id: 'large-monorepo',
-          severity: 'info',
-          title: 'Large monorepo',
-          detail: `${data.packageCount} packages`,
-          source: this.id,
-        },
-      ];
+      risks.push({
+        id: 'large-monorepo',
+        severity: 'info',
+        title: 'Large monorepo',
+        detail: `${data.packageCount} packages`,
+        source: this.id,
+      });
     }
-    return [];
+    // Workspace config declares globs but resolves to zero members → broken.
+    if (data.patterns.length > 0 && data.members.length === 0) {
+      risks.push({
+        id: 'invalid-workspace',
+        severity: 'critical',
+        title: 'Invalid workspace configuration',
+        detail: `Patterns ${data.patterns.join(', ')} match no packages.`,
+        source: this.id,
+      });
+    }
+    return risks;
+  }
+
+  override evidence(ctx: IProjectContext, data: WorkspaceInfo): string[] {
+    const evidence: string[] = [];
+    if (ctx.existsWithExt('turbo', ['.json', '.jsonc'])) evidence.push('turbo.json');
+    if (ctx.exists('nx.json')) evidence.push('nx.json');
+    if (ctx.exists('pnpm-workspace.yaml')) evidence.push('pnpm-workspace.yaml');
+    if (ctx.exists('lerna.json')) evidence.push('lerna.json');
+    if (data.patterns.length > 0) evidence.push(`patterns: ${data.patterns.join(', ')}`);
+    if (data.members.length > 0) evidence.push(`${data.members.length} packages`);
+    return evidence;
   }
 
   private resolveTool(ctx: IProjectContext): WorkspaceTool {
@@ -124,40 +144,49 @@ export class WorkspaceDetector extends BaseDetector<WorkspaceInfo> {
   }
 
   private resolveMembers(ctx: IProjectContext, patterns: string[]): WorkspaceMember[] {
-    // Resolve glob roots like `apps/*` and `packages/*` into their member dirs.
-    const roots = new Set<string>();
-    for (const pattern of patterns) {
-      const root = pattern.split('/')[0];
-      if (root && !root.includes('*')) roots.add(root);
-    }
-    if (roots.size === 0) {
-      for (const folder of ['apps', 'packages']) {
-        if (ctx.exists(folder)) roots.add(folder);
-      }
-    }
+    const effectivePatterns =
+      patterns.length > 0
+        ? patterns
+        : ['apps', 'packages'].filter((f) => ctx.exists(f)).map((f) => `${f}/*`);
 
     const fsCtx = ctx instanceof ProjectContext ? ctx : null;
+    const seen = new Set<string>();
     const members: WorkspaceMember[] = [];
 
-    for (const root of roots) {
-      if (!ctx.exists(root)) continue;
-      const subdirs = fsCtx ? fsCtx.listSubdirectories(root) : ctx.listDir(root);
-      for (const dir of subdirs) {
-        const relativePath = `${root}/${dir}`;
-        const pkg = ctx.readJSON<{ name?: string }>(`${relativePath}/package.json`);
-        members.push({
-          name: pkg?.name ?? dir,
-          relativePath,
-          kind: this.classifyKind(root),
-        });
+    const addMember = (relativePath: string): void => {
+      const normalized = relativePath.replace(/\\/g, '/').replace(/\/+$/, '');
+      if (seen.has(normalized)) return;
+      // A workspace member MUST have its own package.json.
+      const pkg = ctx.readJSON<{ name?: string }>(`${normalized}/package.json`);
+      if (!pkg) return;
+      seen.add(normalized);
+      members.push({
+        name: pkg.name ?? normalized.split('/').pop() ?? normalized,
+        relativePath: normalized,
+        kind: this.classifyKind(normalized),
+      });
+    };
+
+    for (const pattern of effectivePatterns) {
+      const wildcardIndex = pattern.indexOf('*');
+      if (wildcardIndex === -1) {
+        // Direct package path (e.g. `tooling`, `packages/x/y`).
+        addMember(pattern);
+        continue;
       }
+      // Glob container (e.g. `apps/*`): enumerate its immediate subdirectories.
+      const container = pattern.slice(0, wildcardIndex).replace(/\/+$/, '');
+      if (!container || !ctx.exists(container)) continue;
+      const subdirs = fsCtx ? fsCtx.listSubdirectories(container) : ctx.listDir(container);
+      for (const dir of subdirs) addMember(`${container}/${dir}`);
     }
 
     // Stable, predictable ordering for consumers.
     return members.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
   }
 
-  private classifyKind(root: string): WorkspaceMember['kind'] {
+  private classifyKind(relativePath: string): WorkspaceMember['kind'] {
+    const root = relativePath.split('/')[0];
     if (root === 'apps' || root === 'app') return 'app';
     if (root === 'packages' || root === 'libs' || root === 'lib') return 'package';
     return 'other';

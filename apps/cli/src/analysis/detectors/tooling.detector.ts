@@ -61,4 +61,15 @@ export class ToolingDetector extends BaseDetector<ToolingInfo> {
   confidence(ctx: IProjectContext): number {
     return this.detect(ctx) ? 92 : 90;
   }
+
+  override evidence(ctx: IProjectContext, data: ToolingInfo): string[] {
+    const evidence: string[] = [];
+    if (data.lint.used) {
+      evidence.push(ctx.firstExisting(ESLINT_CONFIGS) ?? 'eslint dependency');
+    }
+    if (data.format.used) {
+      evidence.push(ctx.firstExisting(PRETTIER_CONFIGS) ?? 'prettier dependency');
+    }
+    return evidence;
+  }
 }

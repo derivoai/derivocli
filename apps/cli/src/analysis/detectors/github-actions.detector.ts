@@ -19,4 +19,8 @@ export class GithubActionsDetector extends BaseDetector<GithubActionsInfo> {
   confidence(ctx: IProjectContext): number {
     return this.analyze(ctx).used ? 100 : 95;
   }
+
+  override evidence(_ctx: IProjectContext, data: GithubActionsInfo): string[] {
+    return data.workflows.map((w) => `.github/workflows/${w}`);
+  }
 }

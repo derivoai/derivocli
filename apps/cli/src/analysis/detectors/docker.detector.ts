@@ -33,6 +33,10 @@ export class DockerDetector extends BaseDetector<DockerInfo> {
     return this.analyze(ctx).used ? 98 : 100;
   }
 
+  override evidence(_ctx: IProjectContext, data: DockerInfo): string[] {
+    return [...data.files];
+  }
+
   override recommendations(_ctx: IProjectContext, data: DockerInfo): Recommendation[] {
     if (data.used) {
       return [

@@ -34,8 +34,8 @@ function depMatch(
   if (!hasDep && !config) return { matched: false, confidence: 0, evidence: [] };
 
   const evidence: string[] = [];
-  if (hasDep) evidence.push(`dependency: ${dep}`);
-  if (config) evidence.push(`config: ${config}`);
+  if (hasDep) evidence.push(`${dep} dependency`);
+  if (config) evidence.push(config);
 
   // Dependency + config => very high. Single signal => solid but lower.
   const confidence = hasDep && config ? 99 : hasDep ? 90 : 75;
@@ -128,9 +128,24 @@ export const FRAMEWORK_DEFINITIONS: FrameworkDefinition[] = [
     priority: 1,
     match: (ctx) =>
       ctx.packageJson()
-        ? { matched: true, confidence: 60, evidence: ['package.json present'] }
+        ? { matched: true, confidence: 70, evidence: ['package.json present'] }
         : { matched: false, confidence: 0, evidence: [] },
   },
+];
+
+/** Common framework entry points, used as supplementary evidence. */
+const ENTRY_FILES = [
+  'src/main.tsx',
+  'src/main.ts',
+  'src/main.jsx',
+  'src/main.js',
+  'src/index.tsx',
+  'src/index.ts',
+  'src/index.jsx',
+  'src/index.js',
+  'app/page.tsx',
+  'pages/index.tsx',
+  'src/App.tsx',
 ];
 
 export class FrameworkDetector extends BaseDetector<FrameworkInfo> {
@@ -161,6 +176,22 @@ export class FrameworkDetector extends BaseDetector<FrameworkInfo> {
 
   confidence(ctx: IProjectContext): number {
     return this.resolve(ctx).primary?.match.confidence ?? 0;
+  }
+
+  override evidence(ctx: IProjectContext, data: FrameworkInfo): string[] {
+    const evidence = [...data.evidence];
+    // Surface a detected entry point as additional evidence.
+    const entry = ctx.firstExisting(ENTRY_FILES);
+    if (entry) evidence.push(entry);
+    return evidence;
+  }
+
+  override reasoning(_ctx: IProjectContext, data: FrameworkInfo): string | undefined {
+    if (!data.name) return 'No framework signature matched';
+    if (data.candidates.length > 0) {
+      return `${data.name} selected over ${data.candidates.join(', ')} by specificity`;
+    }
+    return `${data.name} matched by ${data.evidence.join(' + ') || 'package.json'}`;
   }
 
   override recommendations(ctx: IProjectContext, data: FrameworkInfo): Recommendation[] {

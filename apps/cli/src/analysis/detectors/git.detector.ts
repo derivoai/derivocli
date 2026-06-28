@@ -21,6 +21,13 @@ export class GitDetector extends BaseDetector<GitInfo> {
     return 100;
   }
 
+  override evidence(_ctx: IProjectContext, data: GitInfo): string[] {
+    const evidence: string[] = [];
+    if (data.initialized) evidence.push('.git');
+    if (data.hasGitignore) evidence.push('.gitignore');
+    return evidence;
+  }
+
   override recommendations(_ctx: IProjectContext, data: GitInfo): Recommendation[] {
     if (!data.initialized) {
       return [

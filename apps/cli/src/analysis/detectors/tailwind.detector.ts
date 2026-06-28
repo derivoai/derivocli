@@ -21,4 +21,12 @@ export class TailwindDetector extends BaseDetector<TailwindInfo> {
     if (info.hasConfig && info.version) return 100;
     return 88;
   }
+
+  override evidence(_ctx: IProjectContext, data: TailwindInfo): string[] {
+    if (!data.used) return [];
+    const evidence: string[] = [];
+    if (data.hasConfig) evidence.push('tailwind.config');
+    if (data.version) evidence.push('tailwindcss dependency');
+    return evidence;
+  }
 }

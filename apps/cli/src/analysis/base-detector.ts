@@ -30,6 +30,16 @@ export abstract class BaseDetector<TData> implements Detector<TData> {
     return [];
   }
 
+  /** Concrete signals justifying the detection. Override to explain WHY. */
+  evidence(_ctx: IProjectContext, _data: TData): string[] {
+    return [];
+  }
+
+  /** One-line explanation of the conclusion. Override for richer output. */
+  reasoning(_ctx: IProjectContext, _data: TData): string | undefined {
+    return undefined;
+  }
+
   run(ctx: IProjectContext): DetectorOutcome<TData> {
     const detected = this.detect(ctx);
     const data = this.analyze(ctx);
@@ -39,6 +49,8 @@ export abstract class BaseDetector<TData> implements Detector<TData> {
       title: this.title,
       detected,
       confidence,
+      evidence: this.evidence(ctx, data),
+      reasoning: this.reasoning(ctx, data),
       data,
       recommendations: this.recommendations(ctx, data),
       risks: this.risks(ctx, data),

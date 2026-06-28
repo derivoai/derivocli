@@ -79,6 +79,16 @@ export class ProjectAnalyzer {
     }
 
     const risks = outcomes.flatMap((o) => o.risks);
+    // Engine-level integrity check: package.json present but unparseable.
+    if (ctx.exists('package.json') && ctx.packageJson() === null) {
+      risks.push({
+        id: 'corrupt-package-json',
+        severity: 'critical',
+        title: 'Corrupt package.json',
+        detail: 'package.json exists but could not be parsed.',
+        source: 'engine',
+      });
+    }
     const recommendations = this.dedupeRecommendations(outcomes.flatMap((o) => o.recommendations));
 
     return {
@@ -201,10 +211,9 @@ export class ProjectAnalyzer {
   }
 
   private deriveRiskLevel(risks: Risk[]): RiskLevel {
+    // Severity-based: critical → high, warning → medium, only info/none → low.
     if (risks.some((r) => r.severity === 'critical')) return 'high';
-    const warnings = risks.filter((r) => r.severity === 'warning').length;
-    if (warnings >= 3) return 'high';
-    if (warnings >= 1) return 'medium';
+    if (risks.some((r) => r.severity === 'warning')) return 'medium';
     return 'low';
   }
 
@@ -231,6 +240,8 @@ export class ProjectAnalyzer {
       title: detector.title,
       detected: false,
       confidence: 0,
+      evidence: [],
+      reasoning: 'Detector threw an error during analysis',
       data: {},
       recommendations: [],
       risks: [

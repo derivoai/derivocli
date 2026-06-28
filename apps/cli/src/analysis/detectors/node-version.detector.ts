@@ -1,5 +1,5 @@
 import { BaseDetector } from '../base-detector.js';
-import type { IProjectContext, NodeVersionInfo } from '../types.js';
+import type { IProjectContext, NodeVersionInfo, Risk } from '../types.js';
 
 export class NodeVersionDetector extends BaseDetector<NodeVersionInfo> {
   readonly id = 'node-version';
@@ -31,5 +31,30 @@ export class NodeVersionDetector extends BaseDetector<NodeVersionInfo> {
 
   confidence(ctx: IProjectContext): number {
     return this.analyze(ctx).required !== null ? 100 : 40;
+  }
+
+  override evidence(_ctx: IProjectContext, data: NodeVersionInfo): string[] {
+    if (data.required === null) return [];
+    return [`${data.source}: ${data.required}`];
+  }
+
+  override risks(_ctx: IProjectContext, data: NodeVersionInfo): Risk[] {
+    if (data.required === null) return [];
+    const match = data.required.match(/(\d+)/);
+    if (!match) return [];
+    const requiredMajor = parseInt(match[1]!, 10);
+    const currentMajor = parseInt(process.versions.node.split('.')[0]!, 10);
+    if (currentMajor < requiredMajor) {
+      return [
+        {
+          id: 'unsupported-node-version',
+          severity: 'critical',
+          title: 'Unsupported Node version',
+          detail: `Running Node ${process.versions.node}, project requires ${data.required}.`,
+          source: this.id,
+        },
+      ];
+    }
+    return [];
   }
 }

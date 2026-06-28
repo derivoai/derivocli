@@ -32,6 +32,16 @@ export class PrismaDetector extends BaseDetector<PrismaInfo> {
     return info.hasSchema ? 98 : 85;
   }
 
+  override evidence(ctx: IProjectContext, data: PrismaInfo): string[] {
+    if (!data.used) return [];
+    const evidence: string[] = [];
+    if (data.hasSchema) evidence.push('prisma/schema.prisma');
+    if (ctx.hasDependency('@prisma/client')) evidence.push('@prisma/client dependency');
+    else if (ctx.hasDependency('prisma')) evidence.push('prisma dependency');
+    if (data.hasMigrations) evidence.push('prisma/migrations');
+    return evidence;
+  }
+
   override recommendations(_ctx: IProjectContext, data: PrismaInfo): Recommendation[] {
     if (data.used) {
       return [

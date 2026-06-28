@@ -51,6 +51,10 @@ export interface DetectorOutcome<TData = unknown> {
   detected: boolean;
   /** Confidence in the detection/analysis, 0–100. */
   confidence: number;
+  /** Concrete signals that justify the detection (e.g. "react dependency"). */
+  evidence: string[];
+  /** One-line human explanation of how the conclusion was reached. */
+  reasoning?: string;
   data: TData;
   recommendations: Recommendation[];
   risks: Risk[];
@@ -66,6 +70,8 @@ export interface Detector<TData = unknown> {
   detect(ctx: IProjectContext): boolean;
   analyze(ctx: IProjectContext): TData;
   confidence(ctx: IProjectContext): number;
+  evidence(ctx: IProjectContext, data: TData): string[];
+  reasoning(ctx: IProjectContext, data: TData): string | undefined;
   recommendations(ctx: IProjectContext, data: TData): Recommendation[];
   risks(ctx: IProjectContext, data: TData): Risk[];
   run(ctx: IProjectContext): DetectorOutcome<TData>;

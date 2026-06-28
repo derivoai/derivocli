@@ -25,6 +25,29 @@ const DEFAULT_CONFIG_EXTENSIONS = [
   '.yml',
 ];
 
+/**
+ * Build artifacts, tooling caches, and VCS/editor folders that are never
+ * meaningful project structure. Excluded from directory enumeration so they
+ * never appear as workspace members or in the project graph.
+ */
+export const IGNORED_DIRECTORIES = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  'out',
+  '.turbo',
+  '.next',
+  '.nuxt',
+  '.svelte-kit',
+  '.cache',
+  'coverage',
+  '.git',
+  '.idea',
+  '.vscode',
+  '.derivo',
+  '.husky',
+]);
+
 export class ProjectContext implements IProjectContext {
   public readonly root: string;
 
@@ -112,9 +135,13 @@ export class ProjectContext implements IProjectContext {
     return entries;
   }
 
-  /** Returns names of subdirectories within `relativePath`. */
+  /**
+   * Names of subdirectories within `relativePath`, excluding build artifacts,
+   * caches, and VCS/editor folders (see `IGNORED_DIRECTORIES`).
+   */
   listSubdirectories(relativePath: string): string[] {
     return this.listDir(relativePath).filter((entry) => {
+      if (IGNORED_DIRECTORIES.has(entry)) return false;
       try {
         return fs.statSync(this.abs(path.join(relativePath, entry))).isDirectory();
       } catch {

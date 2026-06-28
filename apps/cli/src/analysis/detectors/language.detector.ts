@@ -28,4 +28,16 @@ export class LanguageDetector extends BaseDetector<LanguageInfo> {
   confidence(ctx: IProjectContext): number {
     return this.analyze(ctx).primary === 'Unknown' ? 30 : 95;
   }
+
+  override evidence(ctx: IProjectContext, data: LanguageInfo): string[] {
+    const evidence: string[] = [];
+    if (data.primary === 'TypeScript') {
+      if (ctx.exists('tsconfig.json')) evidence.push('tsconfig.json');
+      if (ctx.hasDependency('typescript')) evidence.push('typescript dependency');
+    } else if (data.primary === 'JavaScript') {
+      evidence.push('package.json (no TypeScript)');
+    }
+    if (data.moduleSystem !== 'unknown') evidence.push(`${data.moduleSystem} modules`);
+    return evidence;
+  }
 }
