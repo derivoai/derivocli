@@ -13,4 +13,5 @@ export const whoamiCommand = new Command('whoami')
     }
 
     console.log(`Logged in as ${pc.green(session!.email)} (UID: ${session!.uid})`);
+    process.exit(0);
   });

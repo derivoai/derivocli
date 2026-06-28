@@ -8,6 +8,8 @@ const CONFIG_FILE = path.join(DERIVO_DIR, 'config.json');
 export interface GlobalConfig {
   telemetryEnabled?: boolean;
   theme?: 'dark' | 'light';
+  deviceId?: string;
+  deviceName?: string;
 }
 
 export function getGlobalConfig(): GlobalConfig {

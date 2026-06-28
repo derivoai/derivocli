@@ -13,4 +13,5 @@ export const logoutCommand = new Command('logout')
 
     clearSession();
     console.log(pc.green('Successfully logged out.'));
+    process.exit(0);
   });

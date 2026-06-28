@@ -6,6 +6,7 @@ import https from 'https';
 import pc from 'picocolors';
 import { getSession, ensureDerivoDir } from '../../utils/session.js';
 import { detectProject, isFrameworkSupported } from '../../utils/detect.js';
+import { getRealOSName, registerOrUpdateDevice } from '../../utils/device.js';
 
 const CLI_VERSION = '0.1.0';
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
@@ -297,17 +298,9 @@ function checkWritePermissions(cwd: string): CheckResult {
 }
 
 function checkOsInfo(): CheckResult {
-  const platform = os.platform();
-  const release = os.release();
-  const name =
-    platform === 'win32'
-      ? 'Windows'
-      : platform === 'darwin'
-        ? 'macOS'
-        : platform === 'linux'
-          ? 'Linux'
-          : platform;
-  return { name: 'OS', status: 'pass', message: `${name} ${release}` };
+  const osName = getRealOSName();
+  const hostname = os.hostname();
+  return { name: 'OS / PC Name', status: 'pass', message: `${osName} (${hostname})` };
 }
 
 function checkCpuArch(): CheckResult {
@@ -550,6 +543,16 @@ export async function doctorHandler(options: DoctorOptions) {
     console.log('');
   }
 
+  // ── Register/Update Device ────────────────────────
+  const session = getSession();
+  if (session) {
+    try {
+      await registerOrUpdateDevice(session, CLI_VERSION);
+    } catch {
+      // ignore
+    }
+  }
+
   // ── Write log ─────────────────────────────────────
   try {
     ensureDerivoDir();
@@ -565,4 +568,7 @@ export async function doctorHandler(options: DoctorOptions) {
   } catch {
     // Silently fail — logging should never crash the doctor
   }
+
+  // Force exit to prevent hanging from active sockets
+  process.exit(0);
 }

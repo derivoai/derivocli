@@ -198,4 +198,5 @@ export async function initHandler() {
   console.log(pc.dim(`  Run ${pc.cyan('derivo status')} to check your project.\n`));
 
   closePrompt();
+  process.exit(0);
 }

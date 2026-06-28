@@ -4,6 +4,9 @@ import open from 'open';
 import pc from 'picocolors';
 import ora from 'ora';
 import { saveSession } from '../../utils/session.js';
+import { registerOrUpdateDevice } from '../../utils/device.js';
+
+const CLI_VERSION = '0.1.0';
 
 export async function loginHandler() {
   const spinner = ora('Starting login flow...').start();
@@ -35,7 +38,7 @@ export async function loginHandler() {
       }
     });
 
-    server.on('request', (req: http.IncomingMessage, res: http.ServerResponse) => {
+    server.on('request', async (req: http.IncomingMessage, res: http.ServerResponse) => {
       if (!req.url) return;
 
       const url = new URL(req.url, `http://localhost`);
@@ -45,8 +48,15 @@ export async function loginHandler() {
         const email = url.searchParams.get('email');
 
         if (token && uid && email) {
+          const session = { token, uid, email };
           // Success
-          saveSession({ token, uid, email });
+          saveSession(session);
+
+          try {
+            await registerOrUpdateDevice(session, CLI_VERSION);
+          } catch (e) {
+            // ignore
+          }
 
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(`
