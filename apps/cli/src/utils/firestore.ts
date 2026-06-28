@@ -257,3 +257,42 @@ export async function getTopLevelDocument(
     return { exists: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * Update a document in a Firestore subcollection under the user's document.
+ * Path: users/{uid}/{collectionName}/{documentId}
+ */
+export async function updateDocument(
+  token: string,
+  uid: string,
+  collectionName: string,
+  documentId: string,
+  data: Record<string, unknown>,
+): Promise<{ success: boolean; error?: string }> {
+  const fields: Record<string, FirestoreValue> = {};
+  const updateMask: string[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    fields[key] = toFirestoreValue(value);
+    updateMask.push(`updateMask.fieldPaths=${encodeURIComponent(key)}`);
+  }
+
+  const queryParams = updateMask.join('&');
+  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/users/${uid}/${collectionName}/${documentId}?${queryParams}`;
+
+  try {
+    const response = await request(url, 'PATCH', token, {
+      name: `projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/users/${uid}/${collectionName}/${documentId}`,
+      fields,
+    });
+
+    if (response.status === 200) {
+      return { success: true };
+    }
+
+    const errorMessage = response.data?.error?.message || `HTTP ${response.status}`;
+    return { success: false, error: errorMessage };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

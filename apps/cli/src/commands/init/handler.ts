@@ -5,9 +5,10 @@ import pc from 'picocolors';
 import ora from 'ora';
 import { getSession } from '../../utils/session.js';
 import { detectProject, isFrameworkSupported } from '../../utils/detect.js';
-import { createDocument, listDocuments } from '../../utils/firestore.js';
+import { createDocument, listDocuments, updateDocument } from '../../utils/firestore.js';
 import { prompt, promptSelect, promptConfirm, closePrompt } from '../../utils/prompts.js';
 import { ensureDerivoDir } from '../../utils/session.js';
+import { getGlobalConfig } from '../../utils/config.js';
 
 const CLI_VERSION = '0.1.0';
 
@@ -68,6 +69,8 @@ export async function initHandler() {
 
   // ── Step 3: Check existing derivo.json ────────────
   const derivoJsonPath = path.join(cwd, 'derivo.json');
+  let existingProjectId: string | null = null;
+  let existingCreatedAt: string | null = null;
 
   if (detected.hasDerivoJson) {
     console.log(pc.yellow('  ⚠ A derivo.json already exists in this directory.'));
@@ -76,6 +79,13 @@ export async function initHandler() {
       console.log(pc.dim('\n  Initialization canceled.\n'));
       closePrompt();
       process.exit(0);
+    }
+    try {
+      const existingConfig = JSON.parse(fs.readFileSync(derivoJsonPath, 'utf8'));
+      existingProjectId = existingConfig.projectId || null;
+      existingCreatedAt = existingConfig.createdAt || null;
+    } catch {
+      // ignore corrupt files
     }
     console.log('');
   }
@@ -92,8 +102,8 @@ export async function initHandler() {
 
   console.log('');
 
-  // Generate unique project ID
-  const projectId = `proj_${crypto.randomBytes(8).toString('hex')}`;
+  // Reuse existing project ID or generate a new unique one
+  const projectId = existingProjectId || `proj_${crypto.randomBytes(8).toString('hex')}`;
 
   // ── Step 5: Check for duplicates in Firestore ─────
   const dupSpinner = ora('Checking for duplicate projects...').start();
@@ -103,18 +113,24 @@ export async function initHandler() {
   if (existingProjects.error) {
     dupSpinner.warn('Could not verify duplicates (Firestore might be unavailable)');
   } else {
+    // Only flag as duplicate if it's a different project ID
     const duplicate = existingProjects.documents.find(
-      (doc) => doc.data.name === projectName && doc.data.env === environment,
+      (doc) =>
+        doc.data.name === projectName &&
+        doc.data.env === environment &&
+        doc.data.projectId !== projectId,
     );
 
     if (duplicate) {
       dupSpinner.fail(`A project named "${projectName}" already exists in ${environment}.`);
-      console.log(pc.dim(`  Use a different name or environment.\n`));
+      console.log(pc.dim('  Use a different name or environment.\n'));
       closePrompt();
       process.exit(1);
     }
 
-    dupSpinner.succeed('No duplicate projects found');
+    dupSpinner.succeed(
+      existingProjectId ? 'Updating existing project details' : 'No duplicate projects found',
+    );
   }
 
   // ── Step 6: Write derivo.json ─────────────────────
@@ -125,7 +141,7 @@ export async function initHandler() {
     name: projectName,
     framework: detected.framework || 'Unknown',
     environment: environment.toLowerCase(),
-    createdAt: new Date().toISOString(),
+    createdAt: existingCreatedAt || new Date().toISOString(),
     cliVersion: CLI_VERSION,
   };
 
@@ -153,7 +169,12 @@ export async function initHandler() {
   ensureDerivoDir();
 
   // ── Step 8: Register project in Firestore ─────────
-  const firestoreSpinner = ora('Registering project...').start();
+  const firestoreSpinner = ora(
+    existingProjectId ? 'Updating project in Derivo Cloud...' : 'Registering project...',
+  ).start();
+
+  const globalConfig = getGlobalConfig();
+  const deviceId = globalConfig.deviceId || 'unknown';
 
   const firestoreData: Record<string, unknown> = {
     projectId,
@@ -164,20 +185,23 @@ export async function initHandler() {
     environment: environment.toLowerCase(),
     status: 'synced',
     lastSync: 'Just now',
-    createdAt: new Date().toISOString(),
+    createdAt: existingCreatedAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    localPath: cwd,
+    deviceId: deviceId,
   };
 
-  const result = await createDocument(
-    session.token,
-    session.uid,
-    'projects',
-    projectId,
-    firestoreData,
-  );
+  let result;
+  if (existingProjectId) {
+    result = await updateDocument(session.token, session.uid, 'projects', projectId, firestoreData);
+  } else {
+    result = await createDocument(session.token, session.uid, 'projects', projectId, firestoreData);
+  }
 
   if (result.success) {
-    firestoreSpinner.succeed('Project registered in Derivo Cloud');
+    firestoreSpinner.succeed(
+      existingProjectId ? 'Project updated in Derivo Cloud' : 'Project registered in Derivo Cloud',
+    );
   } else {
     firestoreSpinner.warn(`Could not register project remotely: ${result.error}`);
     console.log(pc.dim('  The project was created locally. Cloud sync will retry later.\n'));

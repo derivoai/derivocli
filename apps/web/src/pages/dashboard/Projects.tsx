@@ -6,12 +6,54 @@ import type { Project } from '../../hooks/useDashboardData';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { isPremium } from '../../lib/subscription';
 import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
+import { db, doc, deleteDoc } from '../../lib/firebase';
 
 export function Projects() {
   const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
-  const { subscription, loading: profileLoading, error: profileError } = useUserProfile();
+  const {
+    subscription,
+    currentUser,
+    loading: profileLoading,
+    error: profileError,
+  } = useUserProfile();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!currentUser) return;
+    if (
+      !window.confirm('Are you sure you want to delete this project? This action cannot be undone.')
+    )
+      return;
+
+    setIsDeleting(true);
+    try {
+      // 1. Delete from Firestore
+      const docRef = doc(db, 'users', currentUser.uid, 'projects', projectId);
+      await deleteDoc(docRef);
+
+      // 2. Also delete from localStorage fallback database
+      const localKey = `derivo_local_projects_${currentUser.uid}`;
+      const localDataStr = localStorage.getItem(localKey);
+      if (localDataStr) {
+        try {
+          const items = JSON.parse(localDataStr) as Project[];
+          const updated = items.filter((item) => item.id !== projectId);
+          localStorage.setItem(localKey, JSON.stringify(updated));
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      setSelectedProject(null);
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      alert('Failed to delete project: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const loading = projectsLoading || profileLoading;
   const error = projectsError || profileError;
@@ -231,6 +273,13 @@ export function Projects() {
               </div>
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-white/[0.04] bg-white/[0.01]">
+              <button
+                onClick={() => handleDeleteProject(selectedProject.id)}
+                disabled={isDeleting}
+                className="h-9 px-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-semibold border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-auto"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Project'}
+              </button>
               <button
                 onClick={() => setSelectedProject(null)}
                 className="h-9 px-4 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold border border-white/[0.06] transition-colors"
