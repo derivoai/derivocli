@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 
 export function CliLogin() {
   const [searchParams] = useSearchParams();
-  const { userProfile, loading } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const [status, setStatus] = useState<'authenticating' | 'redirecting' | 'error'>(
     'authenticating',
   );
@@ -23,7 +23,7 @@ export function CliLogin() {
       return;
     }
 
-    if (!userProfile) {
+    if (!profile) {
       // If the user isn't logged in to the web app, redirect to normal login with return URL
       const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/login?callbackUrl=${currentUrl}`;
@@ -51,7 +51,7 @@ export function CliLogin() {
     };
 
     handleRedirect();
-  }, [loading, userProfile, port]);
+  }, [loading, profile, port]);
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
