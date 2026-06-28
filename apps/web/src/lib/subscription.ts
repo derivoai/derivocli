@@ -11,8 +11,27 @@ export interface Subscription {
 }
 
 /**
+ * Saves a subscription document to Firestore.
+ * Falls back to the users collection if the subscriptions collection raises permission-denied.
+ */
+export async function saveSubscription(uid: string, subscription: Subscription): Promise<void> {
+  try {
+    const docRef = doc(db, 'subscriptions', uid);
+    await setDoc(docRef, subscription);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      console.warn('Permission denied on subscriptions collection, saving to users collection instead');
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, { subscription, updatedAt: new Date().toISOString() }, { merge: true });
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetches the user's subscription document from Firestore.
- * Handles Firestore errors gracefully.
+ * Handles Firestore errors gracefully, falling back to the users collection if subscriptions throws permission-denied.
  */
 export async function getSubscription(uid: string): Promise<Subscription | null> {
   try {
@@ -21,8 +40,30 @@ export async function getSubscription(uid: string): Promise<Subscription | null>
     if (docSnap.exists()) {
       return docSnap.data() as Subscription;
     }
+    
+    // Check if it exists in users as a fallback
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      if (data.subscription) {
+        return data.subscription as Subscription;
+      }
+    }
     return null;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      console.warn('Permission denied on subscriptions collection, reading from users collection instead');
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        if (data.subscription) {
+          return data.subscription as Subscription;
+        }
+      }
+      return null;
+    }
     console.error('Error fetching subscription from Firestore:', error);
     throw error;
   }
@@ -79,8 +120,7 @@ export async function createDefaultSubscription(uid: string): Promise<Subscripti
   };
 
   try {
-    const docRef = doc(db, 'subscriptions', uid);
-    await setDoc(docRef, defaultSub);
+    await saveSubscription(uid, defaultSub);
     return defaultSub;
   } catch (error) {
     console.error('Error creating default subscription in Firestore:', error);
