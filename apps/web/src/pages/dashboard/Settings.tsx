@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
 import { Github, AlertTriangle, User as UserIcon, Check, Loader2 } from 'lucide-react';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { isTrialActive } from '../../lib/subscription';
+import { isTrialActive, parseFirebaseDate } from '../../lib/subscription';
 import { auth, db, doc, setDoc, deleteDoc } from '../../lib/firebase';
 import {
   updateProfile,
@@ -355,7 +355,7 @@ export function Settings() {
                 <span className="text-xs text-white/40">Trial Expiration</span>
                 <span className="text-sm font-semibold text-white">
                   {subscription?.plan === 'trial'
-                    ? new Date(subscription.trialEndsAt).toLocaleDateString('en-US', {
+                    ? parseFirebaseDate(subscription.trialEndsAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

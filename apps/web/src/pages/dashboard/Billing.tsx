@@ -3,7 +3,7 @@ import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayo
 import { Zap, CreditCard, Download, ArrowUpRight, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { isPremium, isTrialActive, getRemainingTrialTime } from '../../lib/subscription';
+import { isPremium, isTrialActive, getRemainingTrialTime, parseFirebaseDate } from '../../lib/subscription';
 
 export function Billing() {
   const { subscription, loading, error: profileError } = useUserProfile();
@@ -38,10 +38,10 @@ export function Billing() {
 
   const subStatus = subscription?.status || 'inactive';
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'N/A';
+  const formatDate = (dateVal?: any) => {
+    if (!dateVal) return 'N/A';
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
+      return parseFirebaseDate(dateVal).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',

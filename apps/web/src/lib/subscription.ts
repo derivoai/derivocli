@@ -70,13 +70,31 @@ export async function getSubscription(uid: string): Promise<Subscription | null>
 }
 
 /**
+ * Safely parses a date value that may be a Firestore Timestamp, an ISO string, or milliseconds.
+ */
+export function parseFirebaseDate(val: any): Date {
+  if (!val) return new Date();
+  if (typeof val.toDate === 'function') {
+    return val.toDate();
+  }
+  if (val.seconds !== undefined) {
+    return new Date(val.seconds * 1000);
+  }
+  const parsed = new Date(val);
+  if (isNaN(parsed.getTime())) {
+    return new Date();
+  }
+  return parsed;
+}
+
+/**
  * Checks if a subscription is in a trial plan and the trial is active (has not expired).
  */
 export function isTrialActive(subscription: Subscription): boolean {
   if (subscription.plan !== 'trial' || subscription.status !== 'active') {
     return false;
   }
-  const endsAt = new Date(subscription.trialEndsAt).getTime();
+  const endsAt = parseFirebaseDate(subscription.trialEndsAt).getTime();
   return endsAt > Date.now();
 }
 
@@ -104,7 +122,7 @@ export function getRemainingTrialTime(subscription: Subscription): number {
   if (subscription.plan !== 'trial') {
     return 0;
   }
-  const endsAt = new Date(subscription.trialEndsAt).getTime();
+  const endsAt = parseFirebaseDate(subscription.trialEndsAt).getTime();
   return Math.max(0, endsAt - Date.now());
 }
 
