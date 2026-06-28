@@ -91,25 +91,74 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         }
       }
 
+      // Sync to local storage for local fallbacks
+      localStorage.setItem(`derivo_profile_${user.uid}`, JSON.stringify(currentProfile));
+      localStorage.setItem(`derivo_sub_${user.uid}`, JSON.stringify(currentSub));
+
       setProfile(currentProfile);
       setSubscription(currentSub);
     } catch (err: any) {
-      console.error('Error fetching/creating profile and subscription:', err);
-      if (err.code === 'permission-denied') {
-        setError('Permission denied when accessing user data. Please check your credentials.');
-      } else if (err.code === 'unavailable') {
-        setError('Firestore service is temporarily unavailable. Check your internet connection.');
+      console.warn('Error fetching/creating profile and subscription from Firestore, checking local storage:', err);
+      
+      if (err.code === 'permission-denied' || err.code === 'unavailable' || !db) {
+        // Fallback to Local Storage database
+        const localProfileKey = `derivo_profile_${user.uid}`;
+        const localSubKey = `derivo_sub_${user.uid}`;
+        
+        const localProfileStr = localStorage.getItem(localProfileKey);
+        const localSubStr = localStorage.getItem(localSubKey);
+        
+        let localProfile: UserProfile;
+        let localSub: Subscription;
+        
+        if (localProfileStr) {
+          localProfile = JSON.parse(localProfileStr);
+        } else {
+          localProfile = {
+            uid: user.uid,
+            name: user.displayName || user.email?.split('@')[0] || 'User',
+            email: user.email || '',
+            role: 'pro_trial', // Active premium trial by default locally
+            createdAt: new Date().toISOString()
+          };
+          localStorage.setItem(localProfileKey, JSON.stringify(localProfile));
+        }
+        
+        if (localSubStr) {
+          localSub = JSON.parse(localSubStr);
+        } else {
+          const now = new Date();
+          const ends = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days trial
+          localSub = {
+            uid: user.uid,
+            plan: 'trial',
+            status: 'active',
+            trialStartedAt: now.toISOString(),
+            trialEndsAt: ends.toISOString(),
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString()
+          };
+          localStorage.setItem(localSubKey, JSON.stringify(localSub));
+        }
+
+        // Keep local state in sync
+        const derivedRole: 'community' | 'pro_trial' | 'pro' = localSub.plan === 'pro'
+          ? 'pro'
+          : (localSub.plan === 'trial' && isTrialActive(localSub))
+            ? 'pro_trial'
+            : 'community';
+            
+        if (localProfile.role !== derivedRole) {
+          localProfile.role = derivedRole;
+          localStorage.setItem(localProfileKey, JSON.stringify(localProfile));
+        }
+
+        setProfile(localProfile);
+        setSubscription(localSub);
+        setError(null); // Clear errors for smooth UX
       } else {
         setError(err.message || 'Failed to load user account details.');
       }
-
-      // Fallback
-      setProfile({
-        uid: user.uid,
-        name: user.displayName || user.email?.split('@')[0] || 'User',
-        email: user.email || '',
-        role: 'community',
-      });
     } finally {
       setLoading(false);
     }
@@ -124,7 +173,6 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       }
       setSubscription(currentSub);
 
-      // Re-derive role
       const derivedRole: 'community' | 'pro_trial' | 'pro' = currentSub.plan === 'pro'
         ? 'pro'
         : (currentSub.plan === 'trial' && isTrialActive(currentSub))
@@ -137,16 +185,44 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         const userRef = doc(db, 'users', currentUser.uid);
         await setDoc(userRef, { role: derivedRole, updatedAt: new Date().toISOString() }, { merge: true });
       }
+
+      localStorage.setItem(`derivo_sub_${currentUser.uid}`, JSON.stringify(currentSub));
+      if (profile) {
+        localStorage.setItem(`derivo_profile_${currentUser.uid}`, JSON.stringify({ ...profile, role: derivedRole }));
+      }
     } catch (err) {
-      console.error('Failed to refresh subscription:', err);
+      console.warn('Failed to refresh subscription from Firestore, using local storage state:', err);
+      const localSubStr = localStorage.getItem(`derivo_sub_${currentUser.uid}`);
+      if (localSubStr) {
+        const localSub = JSON.parse(localSubStr);
+        setSubscription(localSub);
+        
+        const derivedRole: 'community' | 'pro_trial' | 'pro' = localSub.plan === 'pro'
+          ? 'pro'
+          : (localSub.plan === 'trial' && isTrialActive(localSub))
+            ? 'pro_trial'
+            : 'community';
+            
+        if (profile && profile.role !== derivedRole) {
+          const updatedProfile = { ...profile, role: derivedRole };
+          setProfile(updatedProfile);
+          localStorage.setItem(`derivo_profile_${currentUser.uid}`, JSON.stringify(updatedProfile));
+        }
+      }
     }
   };
 
   const updateProfileData = async (name: string) => {
     if (!currentUser || !profile) return;
-    const userRef = doc(db, 'users', currentUser.uid);
-    await setDoc(userRef, { name, updatedAt: new Date().toISOString() }, { merge: true });
-    setProfile({ ...profile, name });
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userRef, { name, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e) {
+      console.warn('Could not update Firestore profile, writing to local storage instead:', e);
+    }
+    const updated = { ...profile, name };
+    setProfile(updated);
+    localStorage.setItem(`derivo_profile_${currentUser.uid}`, JSON.stringify(updated));
   };
 
   useEffect(() => {
