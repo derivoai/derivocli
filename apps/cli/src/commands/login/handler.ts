@@ -20,8 +20,8 @@ export async function loginHandler() {
       }
 
       const port = address.port;
-      // Using development URL for now. In production, this would be the actual production URL.
-      const loginUrl = `http://localhost:5173/cli-login?port=${port}`;
+      const webUrl = process.env.DERIVO_WEB_URL || 'http://localhost:3000';
+      const loginUrl = `${webUrl}/cli-login?port=${port}`;
 
       spinner.text = 'Waiting for authentication in browser...';
 
