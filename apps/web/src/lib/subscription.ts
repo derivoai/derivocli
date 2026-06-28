@@ -2,7 +2,7 @@ import { db, doc, getDoc, setDoc } from './firebase';
 
 export interface Subscription {
   uid: string;
-  plan: 'trial' | 'pro' | 'community';
+  plan: 'trial' | 'pro' | 'enterprise' | 'community';
   status: 'active' | 'expired' | 'canceled';
   trialStartedAt: string;
   trialEndsAt: string;
@@ -82,13 +82,19 @@ export function isTrialActive(subscription: Subscription): boolean {
 
 /**
  * Checks if the subscription grants premium privileges.
- * Pro plans are premium. Active trials are also premium.
+ * Pro, Enterprise, and active Trial plans are premium.
  */
 export function isPremium(subscription: Subscription): boolean {
+  if (subscription.plan === 'enterprise' && subscription.status === 'active') {
+    return true;
+  }
   if (subscription.plan === 'pro' && subscription.status === 'active') {
     return true;
   }
-  return isTrialActive(subscription);
+  if (subscription.plan === 'trial') {
+    return isTrialActive(subscription);
+  }
+  return false;
 }
 
 /**

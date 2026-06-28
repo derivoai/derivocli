@@ -4,12 +4,9 @@ import { Zap, CreditCard, Download, ArrowUpRight, Loader2, CheckCircle2, AlertTr
 import { motion } from 'motion/react';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { isPremium, isTrialActive, getRemainingTrialTime } from '../../lib/subscription';
-import { db, doc, setDoc } from '../../lib/firebase';
 
 export function Billing() {
-  const { subscription, loading, error: profileError, refreshSubscription } = useUserProfile();
-  const [upgrading, setUpgrading] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const { subscription, loading, error: profileError } = useUserProfile();
   const [upgradeError, setUpgradeError] = useState('');
 
   if (loading) {
@@ -56,29 +53,9 @@ export function Billing() {
     }
   };
 
-  // Simulate upgrade to Pro in Firestore (writing real data)
-  const handleUpgradeToPro = async () => {
-    if (!subscription) return;
-    setUpgrading(true);
-    setUpgradeError('');
-    setUpgradeSuccess(false);
-
-    try {
-      const docRef = doc(db, 'subscriptions', subscription.uid);
-      await setDoc(docRef, {
-        ...subscription,
-        plan: 'pro',
-        status: 'active',
-        updatedAt: new Date().toISOString(),
-      });
-      setUpgradeSuccess(true);
-      await refreshSubscription();
-    } catch (err: any) {
-      console.error('Failed to simulate upgrade in Firestore:', err);
-      setUpgradeError(err.message || 'Failed to update subscription. Please try again.');
-    } finally {
-      setUpgrading(false);
-    }
+  // Inform the user that payment processing is pending Stripe integration
+  const handleUpgradeToPro = () => {
+    setUpgradeError('Stripe Integration Pending: Checkout and billing portals are not yet available. Plan upgrades will be unlocked in the upcoming Phase 5 payments implementation.');
   };
 
   return (
@@ -96,15 +73,8 @@ export function Billing() {
           </div>
         )}
 
-        {upgradeSuccess && (
-          <div className="px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Successfully upgraded to Pro Plan! You now have unlimited access.</span>
-          </div>
-        )}
-
         {upgradeError && (
-          <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
+          <div className="px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{upgradeError}</span>
           </div>
@@ -180,11 +150,9 @@ export function Billing() {
               {subscription?.plan !== 'pro' ? (
                 <button
                   onClick={handleUpgradeToPro}
-                  disabled={upgrading}
                   className="flex-1 py-2.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors shadow-[0_2px_8px_rgba(255,255,255,0.15)] flex items-center justify-center gap-2"
                 >
-                  {upgrading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {upgrading ? 'Processing Upgrade...' : 'Upgrade to Pro'}
+                  Upgrade to Pro
                 </button>
               ) : (
                 <button
