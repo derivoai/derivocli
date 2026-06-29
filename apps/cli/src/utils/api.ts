@@ -45,6 +45,7 @@ interface RequestOptions {
   token?: string;
   body?: unknown;
   timeoutMs?: number;
+  headers?: Record<string, string>;
 }
 
 /**
@@ -61,7 +62,10 @@ export function apiRequest<T = unknown>(
   const transport = isHttps ? https : http;
   const timeout = options.timeoutMs ?? 8000;
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers ?? {}),
+  };
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
 
   return new Promise((resolve, reject) => {

@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import pc from 'picocolors';
 import { apiRequest, getApiBaseUrl } from './api.js';
 import { derivoPaths } from './paths.js';
+import { getGlobalConfig } from './config.js';
 
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
 const SESSION_FILE = path.join(DERIVO_DIR, 'session.json');
@@ -147,7 +148,11 @@ export async function verifySubscriptionActive(): Promise<boolean> {
       plan?: string;
       status?: string;
       reason?: string;
-    }>('/api/cli/verify', { token: session.token, timeoutMs: 8000 });
+    }>('/api/cli/verify', {
+      token: session.token,
+      timeoutMs: 8000,
+      headers: getGlobalConfig().deviceId ? { 'x-device-id': getGlobalConfig().deviceId! } : {},
+    });
 
     if (process.env.DERIVO_DEBUG) {
       console.log(

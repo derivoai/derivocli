@@ -14,6 +14,7 @@ import {
   Search,
   Menu,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, firebaseSignOut } from '../../../lib/firebase';
@@ -63,6 +64,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Overview', href: '/dashboard', icon: Home },
     { name: 'Projects', href: '/dashboard/projects', icon: FolderGit2 },
     { name: 'Devices', href: '/dashboard/devices', icon: MonitorSmartphone },
+    { name: 'Sessions', href: '/dashboard/sessions', icon: ShieldCheck },
     { name: 'API Keys', href: '/dashboard/keys', icon: KeyRound },
     { name: 'Activity', href: '/dashboard/activity', icon: Activity },
   ];

@@ -1,111 +1,203 @@
+import { useMemo, useState } from 'react';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { Activity as ActivityIcon, Check, Terminal, Key, User, Zap } from 'lucide-react';
-import { useActivity } from '../../hooks/useDashboardData';
+import {
+  Activity as ActivityIcon,
+  Search,
+  LogIn,
+  LogOut,
+  RefreshCw,
+  MonitorSmartphone,
+  ShieldAlert,
+  KeyRound,
+} from 'lucide-react';
+import { historyApi, type LoginHistoryEvent } from '../../lib/api';
+import { useApiQuery } from '../../hooks/useApi';
+import {
+  EmptyState,
+  ErrorState,
+  RefreshButton,
+  SkeletonList,
+} from '../../components/dashboard/shared/States';
+import { relativeTime, formatDateTime } from '../../lib/relative-time';
+
+const TYPE_META: Record<string, { label: string; icon: typeof LogIn; tone: string }> = {
+  login: { label: 'Signed in', icon: LogIn, tone: 'text-emerald-400 bg-emerald-500/10' },
+  logout: { label: 'Signed out', icon: LogOut, tone: 'text-white/60 bg-white/[0.06]' },
+  logout_all: {
+    label: 'Logged out all sessions',
+    icon: ShieldAlert,
+    tone: 'text-amber-400 bg-amber-500/10',
+  },
+  refresh: { label: 'Session refreshed', icon: RefreshCw, tone: 'text-blue-400 bg-blue-500/10' },
+  refresh_failed: {
+    label: 'Refresh failed',
+    icon: ShieldAlert,
+    tone: 'text-red-400 bg-red-500/10',
+  },
+  device_registered: {
+    label: 'Device registered',
+    icon: MonitorSmartphone,
+    tone: 'text-blue-400 bg-blue-500/10',
+  },
+  token_revoked: { label: 'Token revoked', icon: ShieldAlert, tone: 'text-red-400 bg-red-500/10' },
+};
+
+const FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'auth', label: 'Auth', types: ['login', 'logout', 'logout_all', 'refresh'] },
+  { id: 'security', label: 'Security', types: ['refresh_failed', 'token_revoked'] },
+  { id: 'devices', label: 'Devices', types: ['device_registered'] },
+];
+
+const PAGE_SIZE = 15;
 
 export function Activity() {
-  const { data: activity, loading, error } = useActivity();
-  const getIcon = (iconName: string) => {
-    const props = { className: 'w-4 h-4 text-white/70' };
-    switch (iconName) {
-      case 'check':
-        return <Check {...props} />;
-      case 'terminal':
-        return <Terminal {...props} />;
-      case 'key':
-        return <Key {...props} />;
-      case 'user':
-        return <User {...props} />;
-      case 'zap':
-        return <Zap className="w-4 h-4 text-amber-400" />;
-      default:
-        return <ActivityIcon {...props} />;
-    }
-  };
+  const { data, loading, error, refetch } = useApiQuery(() => historyApi.list(), []);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
-            <span className="text-xs text-white/40 font-mono">Loading activity...</span>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const events = data?.history ?? [];
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center gap-4 text-center px-4">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-red-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-            <span className="text-sm text-white/60">{error}</span>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const filtered = useMemo(() => {
+    const def = FILTERS.find((f) => f.id === filter);
+    return events.filter((e) => {
+      if (def?.types && !def.types.includes(e.type)) return false;
+      if (search) {
+        const hay = `${e.type} ${e.detail ?? ''} ${e.deviceId ?? ''}`.toLowerCase();
+        if (!hay.includes(search.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [events, filter, search]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-8 max-w-3xl">
-        <header className="flex flex-col justify-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Activity Log</h1>
-          <p className="text-sm text-white/50">
-            A complete history of events and actions within your workspace.
-          </p>
+      <div className="flex flex-col gap-8">
+        <header className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Activity</h1>
+            <p className="text-sm text-white/50">
+              Authentication, session, and security events on your account.
+            </p>
+          </div>
+          <RefreshButton onClick={refetch} busy={loading} />
         </header>
 
-        <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01]">
-          {activity.length > 0 ? (
-            <div className="flex flex-col gap-8">
-              {activity.map((act, index) => (
-                <div key={act.id} className="flex gap-4 relative group">
-                  {index !== activity.length - 1 && (
-                    <div className="absolute left-[15px] top-8 bottom-[-32px] w-px bg-white/[0.06] group-hover:bg-white/[0.1] transition-colors" />
-                  )}
-
-                  <div className="w-8 h-8 rounded-full bg-[#0a0a0a] border border-white/[0.1] flex items-center justify-center shrink-0 z-10">
-                    {getIcon(act.icon)}
-                  </div>
-
-                  <div className="flex flex-col flex-1 pt-1.5">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm font-medium text-white/90">{act.event}</span>
-                      <span className="text-[11px] text-white/40 shrink-0">{act.timestamp}</span>
-                    </div>
-                    <p className="text-xs text-white/50 mt-1 leading-relaxed">{act.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-16 flex flex-col items-center justify-center text-center">
-              <ActivityIcon className="w-10 h-10 text-white/20 mb-3" />
-              <p className="text-sm text-white/60 font-medium">No recent activity</p>
-              <p className="text-xs text-white/40 mt-1">
-                Activity will appear here once you start using Derivo.
-              </p>
-            </div>
-          )}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search events..."
+              className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
+            />
+          </div>
+          <div className="flex gap-1.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => {
+                  setFilter(f.id);
+                  setPage(1);
+                }}
+                className={`h-9 px-3 rounded-lg text-xs font-medium border transition-colors ${
+                  filter === f.id
+                    ? 'bg-white/[0.08] text-white border-white/[0.12]'
+                    : 'bg-white/[0.02] text-white/50 border-white/[0.06] hover:text-white/80'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {loading ? (
+          <SkeletonList rows={5} />
+        ) : error ? (
+          <ErrorState message={error} onRetry={refetch} />
+        ) : pageItems.length === 0 ? (
+          <EmptyState
+            icon={<ActivityIcon className="w-10 h-10" />}
+            title={search || filter !== 'all' ? 'No matching events' : 'No activity yet'}
+            description="Events appear as you sign in, register devices, and manage keys."
+          />
+        ) : (
+          <div className="relative flex flex-col">
+            {pageItems.map((e, i) => (
+              <TimelineRow key={e.id} event={e} last={i === pageItems.length - 1} />
+            ))}
+          </div>
+        )}
+
+        {pageCount > 1 && (
+          <div className="flex items-center justify-between text-xs text-white/50">
+            <span>
+              Page {page} of {pageCount} · {filtered.length} events
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                disabled={page >= pageCount}
+                onClick={() => setPage((p) => p + 1)}
+                className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function TimelineRow({ event, last }: { event: LoginHistoryEvent; last: boolean }) {
+  const meta = TYPE_META[event.type] ?? {
+    label: event.type,
+    icon: KeyRound,
+    tone: 'text-white/60 bg-white/[0.06]',
+  };
+  const Icon = meta.icon;
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${meta.tone}`}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
+        {!last && <div className="w-px flex-1 bg-white/[0.06] my-1" />}
+      </div>
+      <div className="pb-6 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-white/90">{meta.label}</span>
+          <span className="text-xs text-white/40" title={formatDateTime(event.at)}>
+            {relativeTime(event.at)}
+          </span>
+        </div>
+        {(event.detail || event.deviceId) && (
+          <p className="text-xs text-white/45 mt-0.5">
+            {event.detail}
+            {event.detail && event.deviceId ? ' · ' : ''}
+            {event.deviceId ? `device ${event.deviceId}` : ''}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

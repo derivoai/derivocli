@@ -16,6 +16,7 @@ import { Devices } from './pages/dashboard/Devices';
 import { ApiKeys } from './pages/dashboard/ApiKeys';
 import { Activity } from './pages/dashboard/Activity';
 import { Billing } from './pages/dashboard/Billing';
+import { Sessions } from './pages/dashboard/Sessions';
 import { Settings } from './pages/dashboard/Settings';
 import { UserProfileProvider } from './hooks/useUserProfile';
 
@@ -125,6 +126,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Billing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/sessions"
+            element={
+              <ProtectedRoute>
+                <Sessions />
               </ProtectedRoute>
             }
           />
