@@ -195,6 +195,63 @@ export function useActivity() {
   });
 }
 
+// ── Phase 13: Sessions & login history ──────────────────────────────────────
+export interface Session {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  createdAt: string;
+  lastSeenAt: string;
+  revoked: boolean;
+}
+
+export interface LoginHistoryEvent {
+  id: string;
+  type: string;
+  detail: string;
+  deviceId: string;
+  at: string;
+  createdAt: string;
+}
+
+function transformSession(doc: DocumentData): Session {
+  return {
+    id: doc.id,
+    deviceId: doc.deviceId || '',
+    deviceName: doc.deviceName || 'Unknown device',
+    createdAt: doc.createdAt || new Date().toISOString(),
+    lastSeenAt: doc.lastSeenAt || doc.createdAt || new Date().toISOString(),
+    revoked: doc.revoked ?? false,
+  };
+}
+
+function transformLoginEvent(doc: DocumentData): LoginHistoryEvent {
+  return {
+    id: doc.id,
+    type: doc.type || 'unknown',
+    detail: doc.detail || '',
+    deviceId: doc.deviceId || '',
+    at: doc.at || doc.createdAt || new Date().toISOString(),
+    createdAt: doc.createdAt || doc.at || new Date().toISOString(),
+  };
+}
+
+/** Active sessions (backend-managed; read-only here). */
+export function useSessions() {
+  return useCollection<Session>({
+    collectionName: 'sessions',
+    transform: transformSession,
+  });
+}
+
+/** Login / logout / refresh / device events (backend-written; read-only). */
+export function useLoginHistory() {
+  return useCollection<LoginHistoryEvent>({
+    collectionName: 'loginHistory',
+    transform: transformLoginEvent,
+  });
+}
+
 export function useDashboardOverview() {
   const { data: projects, loading: projectsLoading, error: projectsError } = useProjects();
   const { data: devices, loading: devicesLoading, error: devicesError } = useDevices();

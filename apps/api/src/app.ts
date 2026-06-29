@@ -15,6 +15,8 @@ import { projectsRouter } from './routes/projects.js';
 import { devicesRouter } from './routes/devices.js';
 import { keysRouter } from './routes/keys.js';
 import { trialsRouter } from './routes/trials.js';
+import { sessionsRouter } from './routes/sessions.js';
+import { loginHistoryRouter } from './routes/login-history.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -62,6 +64,8 @@ export function createApp(): express.Express {
   app.use('/api/devices', devicesRouter);
   app.use('/api/keys', keysRouter);
   app.use('/api/trials', trialsRouter);
+  app.use('/api/sessions', sessionsRouter);
+  app.use('/api/login-history', loginHistoryRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

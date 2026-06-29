@@ -51,15 +51,43 @@ export const schemas = {
       type: z.enum(['mac', 'windows', 'linux']),
       os: z.string().max(120),
       cliVersion: z.string().max(40),
+      hostname: z.string().max(200).optional(),
+      arch: z.string().max(40).optional(),
+      nodeVersion: z.string().max(40).optional(),
     })
     .strict(),
+
+  renameDevice: z.object({ name: z.string().min(1).max(120) }).strict(),
 
   createApiKey: z
     .object({
       name: safeName,
+      environment: z.enum(['live', 'test']).optional(),
+      permissions: z.array(z.string().max(40)).max(20).optional(),
+      tags: z.array(z.string().max(40)).max(20).optional(),
       expiresInDays: z.number().int().min(1).max(3650).optional(),
     })
     .strict(),
+
+  updateApiKey: z
+    .object({
+      name: safeName.optional(),
+      tags: z.array(z.string().max(40)).max(20).optional(),
+      status: z.enum(['active', 'disabled']).optional(),
+    })
+    .strict(),
+
+  rotateApiKey: z.object({ graceSeconds: z.number().int().min(0).max(604800).optional() }).strict(),
+
+  createSession: z
+    .object({ deviceId: id.optional(), deviceName: z.string().max(120).optional() })
+    .strict(),
+
+  sessionId: z.object({ sessionId: id }).strict(),
+
+  logoutAll: z.object({ exceptSessionId: id.optional() }).strict(),
+
+  refresh: z.object({ refreshToken: z.string().min(8).max(512) }).strict(),
 };
 
 export { z };

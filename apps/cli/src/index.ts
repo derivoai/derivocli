@@ -10,6 +10,8 @@ export * from './commands/validate/command.js';
 export * from './commands/plugin/command.js';
 export * from './commands/version/command.js';
 export * from './commands/telemetry/command.js';
+export * from './commands/auth/command.js';
+export * from './commands/device/command.js';
 
 export * from './utils/session.js';
 export * from './utils/project.js';

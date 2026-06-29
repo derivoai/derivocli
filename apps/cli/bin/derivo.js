@@ -17,6 +17,8 @@ import { validateCommand } from '../dist/commands/validate/command.js';
 import { pluginCommand } from '../dist/commands/plugin/command.js';
 import { versionCommand } from '../dist/commands/version/command.js';
 import { telemetryCommand } from '../dist/commands/telemetry/command.js';
+import { authCommand } from '../dist/commands/auth/command.js';
+import { deviceCommand } from '../dist/commands/device/command.js';
 import { verifySubscriptionActive } from '../dist/utils/session.js';
 import { cleanupOrphanedProjects } from '../dist/utils/cleanup.js';
 import { printLogo } from '../dist/utils/ui.js';
@@ -80,6 +82,8 @@ const FREE_COMMANDS = new Set([
   'validate',
   'plugin',
   'config',
+  'auth', // identity/session management (needs login, not subscription)
+  'device',
 ]);
 
 function topLevelName(actionCommand) {
@@ -127,5 +131,7 @@ program.addCommand(validateCommand);
 program.addCommand(pluginCommand);
 program.addCommand(versionCommand);
 program.addCommand(telemetryCommand);
+program.addCommand(authCommand);
+program.addCommand(deviceCommand);
 
 program.parseAsync(process.argv).catch(reportFatal);

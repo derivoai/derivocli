@@ -73,6 +73,18 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Sessions: created/revoked by the backend only; owner may read.
+      match /sessions/{sessionId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      // Login history: backend-written; owner may read.
+      match /loginHistory/{eventId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
       // Any OTHER per-user subcollection is denied by default (see catch-all).
     }
 
