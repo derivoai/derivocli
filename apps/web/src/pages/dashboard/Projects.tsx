@@ -29,22 +29,9 @@ export function Projects() {
 
     setIsDeleting(true);
     try {
-      // 1. Delete from Firestore
+      // Delete from Firestore (the single source of truth).
       const docRef = doc(db, 'users', currentUser.uid, 'projects', projectId);
       await deleteDoc(docRef);
-
-      // 2. Also delete from localStorage fallback database
-      const localKey = `derivo_local_projects_${currentUser.uid}`;
-      const localDataStr = localStorage.getItem(localKey);
-      if (localDataStr) {
-        try {
-          const items = JSON.parse(localDataStr) as Project[];
-          const updated = items.filter((item) => item.id !== projectId);
-          localStorage.setItem(localKey, JSON.stringify(updated));
-        } catch (e) {
-          // ignore
-        }
-      }
 
       setSelectedProject(null);
     } catch (err) {

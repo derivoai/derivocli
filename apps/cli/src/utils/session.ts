@@ -4,6 +4,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import pc from 'picocolors';
 import { apiRequest, getApiBaseUrl } from './api.js';
+import { derivoPaths } from './paths.js';
 
 const DERIVO_DIR = path.join(os.homedir(), '.derivo');
 const SESSION_FILE = path.join(DERIVO_DIR, 'session.json');
@@ -99,6 +100,43 @@ export function clearSession() {
  * the token is invalid, access is denied. Free/offline commands never call
  * this, so they keep working without a backend.
  */
+const OFFLINE_GRACE_MS = 72 * 60 * 60 * 1000; // 72 hours
+
+interface LicenseCache {
+  active: boolean;
+  at: number;
+  uid: string;
+}
+
+function licenseCachePath(): string {
+  return path.join(derivoPaths.cacheDir(), 'license.json');
+}
+
+function readLicenseCache(): LicenseCache | null {
+  try {
+    return JSON.parse(fs.readFileSync(licenseCachePath(), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function writeLicenseCache(cache: LicenseCache): void {
+  try {
+    fs.mkdirSync(derivoPaths.cacheDir(), { recursive: true });
+    fs.writeFileSync(licenseCachePath(), JSON.stringify(cache), 'utf8');
+  } catch {
+    /* best-effort */
+  }
+}
+
+function clearLicenseCache(): void {
+  try {
+    fs.rmSync(licenseCachePath(), { force: true });
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function verifySubscriptionActive(): Promise<boolean> {
   const session = getSession();
   if (!session) return true; // commands themselves handle the "please log in" path
@@ -118,16 +156,19 @@ export async function verifySubscriptionActive(): Promise<boolean> {
     }
 
     if (res.status === 200 && res.data?.active) {
+      writeLicenseCache({ active: true, at: Date.now(), uid: session.uid });
       return true;
     }
 
     if (res.status === 401 || res.status === 403) {
+      clearLicenseCache();
       console.log(pc.red('  ✗ Your session is invalid or expired.'));
       console.log(pc.dim('    Run: derivo login'));
       return false;
     }
 
     if (res.status === 200 && res.data && res.data.active === false) {
+      clearLicenseCache();
       console.log(pc.red('  ✗ No active subscription.'));
       if (res.data.reason) console.log(pc.dim(`    ${res.data.reason}`));
       console.log(pc.dim('    Upgrade your plan to use this command.'));
@@ -138,7 +179,17 @@ export async function verifySubscriptionActive(): Promise<boolean> {
     console.log(pc.red(`  ✗ Could not verify your subscription (HTTP ${res.status}).`));
     return false;
   } catch (err) {
-    // Backend unreachable: premium commands fail CLOSED for security.
+    // Backend unreachable: honor a short OFFLINE GRACE window from the last
+    // successful verification, then fail closed.
+    const cache = readLicenseCache();
+    if (cache?.active && cache.uid === session.uid && Date.now() - cache.at < OFFLINE_GRACE_MS) {
+      const hoursLeft = Math.ceil((OFFLINE_GRACE_MS - (Date.now() - cache.at)) / 3_600_000);
+      console.log(
+        pc.yellow(`  ⚠ Offline — using cached license (grace expires in ~${hoursLeft}h).`),
+      );
+      return true;
+    }
+
     const base = getApiBaseUrl();
     console.log(pc.red(`  ✗ Cannot reach the Derivo backend at ${base}`));
     console.log(pc.dim('    Start the backend (apps/api) or set DERIVO_API_URL, then retry.'));

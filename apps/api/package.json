@@ -8,7 +8,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext ts,tsx --max-warnings 0"
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@derivo/db": "workspace:*",

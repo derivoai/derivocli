@@ -56,146 +56,6 @@ interface UseCollectionOptions<T> {
   enabled?: boolean;
 }
 
-/**
- * High-fidelity fallback mock data builder for localStorage.
- * Runs in case Firestore permissions are restricted (permission-denied) in the cloud.
- */
-function getLocalStorageMockData(collectionName: string, uid: string): any[] {
-  const localKey = `derivo_local_${collectionName}_${uid}`;
-  const localDataStr = localStorage.getItem(localKey);
-  if (localDataStr) {
-    try {
-      return JSON.parse(localDataStr);
-    } catch {
-      // ignore
-    }
-  }
-
-  // Generate initial high-fidelity mock data if not exists
-  let initialMockData: any[] = [];
-  const now = new Date();
-
-  if (collectionName === 'projects') {
-    initialMockData = [
-      {
-        id: 'proj-1',
-        name: 'derivo-cli',
-        framework: 'TypeScript',
-        status: 'synced',
-        env: 'Production',
-        lastSync: '5 mins ago',
-        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: 'proj-2',
-        name: 'derivo-docs',
-        framework: 'Astro',
-        status: 'synced',
-        env: 'Staging',
-        lastSync: '2 hours ago',
-        createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: 'proj-3',
-        name: 'derivo-dashboard',
-        framework: 'React',
-        status: 'pending',
-        env: 'Development',
-        lastSync: 'Just now',
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-    ];
-  } else if (collectionName === 'devices') {
-    initialMockData = [
-      {
-        id: 'dev-1',
-        name: 'Work MacBook Pro',
-        type: 'mac',
-        os: 'macOS Sonoma (v14.5)',
-        browser: 'Chrome (v126.0)',
-        cliVersion: 'v1.2.4',
-        lastActive: 'Active now',
-        isTrusted: true,
-        location: 'San Francisco, US',
-        createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: 'dev-2',
-        name: 'Home PC Tower',
-        type: 'windows',
-        os: 'Windows 11 Home',
-        browser: 'Firefox (v127.0)',
-        cliVersion: 'v1.2.4',
-        lastActive: '2 hours ago',
-        isTrusted: true,
-        location: 'San Jose, US',
-        createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-    ];
-  } else if (collectionName === 'apiKeys') {
-    initialMockData = [
-      {
-        id: 'key-1',
-        name: 'Production Deploy Key',
-        preview: 'drv_live_a8f9c2d7e1b3c9a0f',
-        created: '2 days ago',
-        lastUsed: '10 mins ago',
-        expires: 'Never',
-        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: 'key-2',
-        name: 'Dev CLI Token',
-        preview: 'drv_test_9c2d1b0f5e7a8c3d6',
-        created: '1 week ago',
-        lastUsed: 'Yesterday',
-        expires: 'Never',
-        createdAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: now.toISOString(),
-      },
-    ];
-  } else if (collectionName === 'activity') {
-    initialMockData = [
-      {
-        id: 'act-1',
-        event: 'CLI Authenticated',
-        description: 'New login session created on Work MacBook Pro',
-        timestamp: '5 mins ago',
-        icon: 'terminal',
-        type: 'success',
-        createdAt: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'act-2',
-        event: 'Project Synced',
-        description: 'derivo-docs synced with GitHub repository main branch',
-        timestamp: '2 hours ago',
-        icon: 'check',
-        type: 'success',
-        createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'act-3',
-        event: 'API Key Created',
-        description: 'API key "Production Deploy Key" has been generated',
-        timestamp: '2 days ago',
-        icon: 'key',
-        type: 'success',
-        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
-  }
-
-  localStorage.setItem(localKey, JSON.stringify(initialMockData));
-  return initialMockData;
-}
-
 function useCollection<T>({ collectionName, transform, enabled = true }: UseCollectionOptions<T>) {
   const { currentUser, loading: profileLoading } = useUserProfile();
   const [data, setData] = useState<T[]>([]);
@@ -233,12 +93,13 @@ function useCollection<T>({ collectionName, transform, enabled = true }: UseColl
         }
       },
       (err) => {
-        console.warn(`Firestore permission denied or error listening to ${collectionName}. Falling back to localStorage database:`, err);
-        if (err.code === 'permission-denied' || err.code === 'unavailable') {
-          // Load local storage fallback data
-          const localItems = getLocalStorageMockData(collectionName, currentUser.uid) as T[];
-          setData(localItems);
-          setError(null); // Clear errors for smooth fallback UX
+        // Never fabricate data. Show the real, empty/error state instead.
+        console.error(`Firestore error listening to ${collectionName}:`, err);
+        setData([]);
+        if (err.code === 'permission-denied') {
+          setError('You do not have permission to read this data. Check your Firestore rules.');
+        } else if (err.code === 'unavailable') {
+          setError('Cannot reach the database. Check your connection.');
         } else {
           setError('Failed to load data');
         }

@@ -48,21 +48,32 @@ service cloud.firestore {
           .hasAny(['role', 'subscription']);
       allow delete: if false;
 
-      // Devices: free to manage for the owner.
+      // Devices: owner-managed (CLI registers devices; backend also enforces limits).
       match /devices/{deviceId} {
         allow read, write: if isOwner(uid);
       }
 
-      // Projects: a premium feature — requires an active subscription to write.
+      // Projects: a premium feature — writing requires an active subscription.
+      // (The backend API is the primary path; this rule is the second layer.)
       match /projects/{projectId} {
         allow read: if isOwner(uid);
         allow write: if isOwner(uid) && hasActiveSubscription(uid);
       }
 
-      // Any other per-user subcollection: owner-only.
-      match /{collection}/{docId} {
-        allow read, write: if isOwner(uid);
+      // API keys: backend-only writes (keys are hashed server-side). Owner may
+      // read metadata (never plaintext — only a hash/preview is stored).
+      match /apiKeys/{keyId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
       }
+
+      // Audit logs: append-only via the backend; owner may read their history.
+      match /auditLogs/{logId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      // Any OTHER per-user subcollection is denied by default (see catch-all).
     }
 
     // ── Everything else: denied by default ──────────────────────────────────
