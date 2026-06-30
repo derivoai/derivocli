@@ -19,9 +19,10 @@ export function VerifyEmail() {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setCurrentUser(user);
 
-      // If they somehow arrive here already verified, send them to dashboard
+      // If they somehow arrive here already verified, continue to onboarding
+      // (which forwards to the dashboard if onboarding is already done).
       if (user?.emailVerified) {
-        navigate('/dashboard', { replace: true });
+        navigate('/onboarding', { replace: true });
         return;
       }
     });
@@ -39,7 +40,7 @@ export function VerifyEmail() {
         const refreshed = auth.currentUser;
         if (refreshed?.emailVerified) {
           clearInterval(pollingRef.current!);
-          navigate('/dashboard', { replace: true });
+          navigate('/onboarding', { replace: true });
         }
       } catch {
         // silently ignore transient errors
@@ -71,7 +72,10 @@ export function VerifyEmail() {
       if (err.code === 'auth/too-many-requests') {
         setError('Too many requests. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Failed to send verification email. Make sure your Firebase email provider is active.');
+        setError(
+          err.message ||
+            'Failed to send verification email. Make sure your Firebase email provider is active.',
+        );
       }
     } finally {
       setLoading(false);
@@ -79,10 +83,7 @@ export function VerifyEmail() {
   };
 
   return (
-    <AuthLayout
-      title="Check your email"
-      subtitle={`We sent a verification link to ${email}`}
-    >
+    <AuthLayout title="Check your email" subtitle={`We sent a verification link to ${email}`}>
       <div className="flex flex-col items-center justify-center py-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -94,12 +95,15 @@ export function VerifyEmail() {
         </motion.div>
 
         <p className="text-sm text-center text-white/60 mb-8 max-w-xs leading-relaxed">
-          Click the link in the email to verify your account. This page will automatically redirect you to your dashboard once verified.
+          Click the link in the email to verify your account. This page will automatically redirect
+          you to your dashboard once verified.
         </p>
 
         {/* Auto-checking indicator */}
         <div className="flex items-center gap-2 text-xs text-white/30 mb-6">
-          <Loader2 className={`w-3.5 h-3.5 ${checkingVerification ? 'animate-spin' : 'opacity-30'}`} />
+          <Loader2
+            className={`w-3.5 h-3.5 ${checkingVerification ? 'animate-spin' : 'opacity-30'}`}
+          />
           <span>Checking verification status automatically…</span>
         </div>
 
@@ -129,7 +133,10 @@ export function VerifyEmail() {
       </div>
 
       <div className="mt-6 flex justify-center">
-        <Link to="/login" className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors group">
+        <Link
+          to="/login"
+          className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors group"
+        >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           Back to login
         </Link>

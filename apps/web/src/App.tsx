@@ -9,6 +9,7 @@ import { Register } from './pages/auth/Register';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
 import { VerifyEmail } from './pages/auth/VerifyEmail';
+import { Onboarding } from './pages/auth/Onboarding';
 import { CliLogin } from './pages/auth/CliLogin';
 import { DashboardHome } from './pages/dashboard/Home';
 import { Projects } from './pages/dashboard/Projects';
@@ -81,6 +82,14 @@ export default function App() {
           />
 
           {/* Dashboard & Protected Routes */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

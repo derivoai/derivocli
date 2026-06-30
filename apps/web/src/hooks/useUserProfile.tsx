@@ -11,10 +11,14 @@ import {
 export interface UserProfile {
   uid: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   role: 'community' | 'pro_trial' | 'pro' | 'enterprise';
   createdAt?: string;
   trialExpiresAt?: string;
+  /** Whether the user has completed (or skipped) the onboarding questionnaire. */
+  onboardingCompleted?: boolean;
 }
 
 interface UserProfileContextType {
@@ -49,24 +53,35 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         currentProfile = {
           uid: user.uid,
           name: data.name || user.displayName || user.email?.split('@')[0] || 'User',
+          firstName: data.firstName,
+          lastName: data.lastName,
           email: data.email || user.email || '',
           role: data.role || 'community',
           createdAt: data.createdAt,
+          onboardingCompleted: data.onboardingCompleted ?? false,
         };
       } else {
-        // Create profile
+        // Create profile. Best-effort split of the display name into first/last.
+        const display = user.displayName || user.email?.split('@')[0] || 'User';
+        const [firstName, ...rest] = display.trim().split(/\s+/);
         const defaultProfile: UserProfile = {
           uid: user.uid,
-          name: user.displayName || user.email?.split('@')[0] || 'User',
+          name: display,
+          firstName: firstName || display,
+          lastName: rest.join(' ') || '',
           email: user.email || '',
           role: 'community',
           createdAt: new Date().toISOString(),
+          onboardingCompleted: false,
         };
         await setDoc(userRef, {
           name: defaultProfile.name,
+          firstName: defaultProfile.firstName,
+          lastName: defaultProfile.lastName,
           email: defaultProfile.email,
           role: defaultProfile.role,
           createdAt: defaultProfile.createdAt,
+          onboardingCompleted: false,
           updatedAt: new Date().toISOString(),
         });
         currentProfile = defaultProfile;
@@ -266,9 +281,12 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             const currentProfile: UserProfile = {
               uid: user.uid,
               name: data.name || user.displayName || user.email?.split('@')[0] || 'User',
+              firstName: data.firstName,
+              lastName: data.lastName,
               email: data.email || user.email || '',
               role: data.role || 'community',
               createdAt: data.createdAt,
+              onboardingCompleted: data.onboardingCompleted ?? false,
             };
             setProfile(currentProfile);
             localStorage.setItem(`derivo_profile_${user.uid}`, JSON.stringify(currentProfile));
