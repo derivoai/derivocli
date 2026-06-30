@@ -8,6 +8,29 @@ export interface Subscription {
   trialEndsAt: string;
   createdAt: string;
   updatedAt: string;
+  /** Newer backend shape (Phase 12+): plan may be in `planId`, status `trialing`. */
+  planId?: string;
+  currentPeriodEnd?: string;
+}
+
+const PAID_PLANS = ['pro', 'enterprise', 'paid', 'team'];
+const EXPIRED_STATUSES = ['expired', 'canceled', 'cancelled', 'inactive', 'past_due', 'unpaid'];
+
+/** Read the plan from any supported field (plan / planId / tier / role). */
+function resolvePlan(sub: Subscription): string {
+  const s = sub as unknown as Record<string, unknown>;
+  const raw = s.plan ?? s.planId ?? s.tier ?? s.role ?? '';
+  return String(raw).toLowerCase();
+}
+
+function resolveStatus(sub: Subscription): string {
+  return String((sub as unknown as Record<string, unknown>).status ?? '').toLowerCase();
+}
+
+function isTrialPlan(plan: string, status: string): boolean {
+  return (
+    plan === 'trial' || plan === 'pro_trial' || plan === 'free_trial' || status.includes('trial')
+  );
 }
 
 /**
@@ -20,7 +43,9 @@ export async function saveSubscription(uid: string, subscription: Subscription):
     await setDoc(docRef, subscription);
   } catch (error: any) {
     if (error.code === 'permission-denied') {
-      console.warn('Permission denied on subscriptions collection, saving to users collection instead');
+      console.warn(
+        'Permission denied on subscriptions collection, saving to users collection instead',
+      );
       const userRef = doc(db, 'users', uid);
       await setDoc(userRef, { subscription, updatedAt: new Date().toISOString() }, { merge: true });
       return;
@@ -40,7 +65,7 @@ export async function getSubscription(uid: string): Promise<Subscription | null>
     if (docSnap.exists()) {
       return docSnap.data() as Subscription;
     }
-    
+
     // Check if it exists in users as a fallback
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
@@ -53,7 +78,9 @@ export async function getSubscription(uid: string): Promise<Subscription | null>
     return null;
   } catch (error: any) {
     if (error.code === 'permission-denied') {
-      console.warn('Permission denied on subscriptions collection, reading from users collection instead');
+      console.warn(
+        'Permission denied on subscriptions collection, reading from users collection instead',
+      );
       const userRef = doc(db, 'users', uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
@@ -88,29 +115,41 @@ export function parseFirebaseDate(val: any): Date {
 }
 
 /**
- * Checks if a subscription is in a trial plan and the trial is active (has not expired).
+ * Checks if a subscription is in a trial plan and the trial is active.
+ * Recognizes both the legacy shape (`plan:'trial'`, `status:'active'`) and the
+ * backend shape (`planId:'trial'`, `status:'trialing'`).
  */
 export function isTrialActive(subscription: Subscription): boolean {
-  if (subscription.plan !== 'trial' || subscription.status !== 'active') {
-    return false;
-  }
-  const endsAt = parseFirebaseDate(subscription.trialEndsAt).getTime();
-  return endsAt > Date.now();
+  const plan = resolvePlan(subscription);
+  const status = resolveStatus(subscription);
+  if (!isTrialPlan(plan, status)) return false;
+  if (EXPIRED_STATUSES.includes(status)) return false;
+  const activeStatus =
+    status === 'active' || status === 'trialing' || status === 'trial' || status === '';
+  if (!activeStatus) return false;
+  const ends = subscription.trialEndsAt;
+  if (!ends) return true; // active trial without an end date
+  return parseFirebaseDate(ends).getTime() > Date.now();
 }
 
 /**
  * Checks if the subscription grants premium privileges.
- * Pro, Enterprise, and active Trial plans are premium.
+ * Pro, Enterprise, and active Trials are premium.
  */
 export function isPremium(subscription: Subscription): boolean {
-  if (subscription.plan === 'enterprise' && subscription.status === 'active') {
+  const plan = resolvePlan(subscription);
+  const status = resolveStatus(subscription);
+
+  if (PAID_PLANS.includes(plan) && (status === 'active' || status === 'trialing')) {
     return true;
   }
-  if (subscription.plan === 'pro' && subscription.status === 'active') {
-    return true;
-  }
-  if (subscription.plan === 'trial') {
+  if (isTrialPlan(plan, status)) {
     return isTrialActive(subscription);
+  }
+  // A bare "active" status with a future period end is also premium.
+  if (status === 'active' && !EXPIRED_STATUSES.includes(status)) {
+    const end = subscription.trialEndsAt || subscription.currentPeriodEnd;
+    if (end && parseFirebaseDate(end).getTime() > Date.now()) return true;
   }
   return false;
 }
@@ -119,11 +158,23 @@ export function isPremium(subscription: Subscription): boolean {
  * Gets remaining trial time in milliseconds. Returns 0 if expired.
  */
 export function getRemainingTrialTime(subscription: Subscription): number {
-  if (subscription.plan !== 'trial') {
+  if (!isTrialPlan(resolvePlan(subscription), resolveStatus(subscription))) {
     return 0;
   }
+  if (!subscription.trialEndsAt) return 0;
   const endsAt = parseFirebaseDate(subscription.trialEndsAt).getTime();
   return Math.max(0, endsAt - Date.now());
+}
+
+/** Derive the user's role from any subscription shape (legacy or backend). */
+export function deriveRole(
+  subscription: Subscription,
+): 'community' | 'pro_trial' | 'pro' | 'enterprise' {
+  const plan = resolvePlan(subscription);
+  if (plan === 'enterprise') return 'enterprise';
+  if (PAID_PLANS.includes(plan) && resolveStatus(subscription) !== 'expired') return 'pro';
+  if (isTrialActive(subscription)) return 'pro_trial';
+  return 'community';
 }
 
 /**

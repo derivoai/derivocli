@@ -5,7 +5,7 @@ import {
   getSubscription,
   createDefaultSubscription,
   Subscription,
-  isTrialActive,
+  deriveRole,
 } from '../lib/subscription';
 
 export interface UserProfile {
@@ -80,14 +80,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       }
 
       // Dynamically check and compute role based on active subscription
-      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
-        currentSub.plan === 'enterprise'
-          ? 'enterprise'
-          : currentSub.plan === 'pro'
-            ? 'pro'
-            : currentSub.plan === 'trial' && isTrialActive(currentSub)
-              ? 'pro_trial'
-              : 'community';
+      const derivedRole = deriveRole(currentSub);
 
       // Update role in Firestore if it has changed to keep it in sync
       if (currentProfile.role !== derivedRole) {
@@ -157,14 +150,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         }
 
         // Keep local state in sync
-        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
-          localSub.plan === 'enterprise'
-            ? 'enterprise'
-            : localSub.plan === 'pro'
-              ? 'pro'
-              : localSub.plan === 'trial' && isTrialActive(localSub)
-                ? 'pro_trial'
-                : 'community';
+        const derivedRole = deriveRole(localSub);
 
         if (localProfile.role !== derivedRole) {
           localProfile.role = derivedRole;
@@ -191,14 +177,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       }
       setSubscription(currentSub);
 
-      const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
-        currentSub.plan === 'enterprise'
-          ? 'enterprise'
-          : currentSub.plan === 'pro'
-            ? 'pro'
-            : currentSub.plan === 'trial' && isTrialActive(currentSub)
-              ? 'pro_trial'
-              : 'community';
+      const derivedRole = deriveRole(currentSub);
 
       if (profile && profile.role !== derivedRole) {
         const updatedProfile = { ...profile, role: derivedRole };
@@ -228,14 +207,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         const localSub = JSON.parse(localSubStr);
         setSubscription(localSub);
 
-        const derivedRole: 'community' | 'pro_trial' | 'pro' | 'enterprise' =
-          localSub.plan === 'enterprise'
-            ? 'enterprise'
-            : localSub.plan === 'pro'
-              ? 'pro'
-              : localSub.plan === 'trial' && isTrialActive(localSub)
-                ? 'pro_trial'
-                : 'community';
+        const derivedRole = deriveRole(localSub);
 
         if (profile && profile.role !== derivedRole) {
           const updatedProfile = { ...profile, role: derivedRole };
@@ -312,14 +284,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             localStorage.setItem(`derivo_sub_${user.uid}`, JSON.stringify(subData));
 
             // Re-calculate derived role
-            const derivedRole =
-              subData.plan === 'enterprise'
-                ? 'enterprise'
-                : subData.plan === 'pro'
-                  ? 'pro'
-                  : subData.plan === 'trial' && isTrialActive(subData)
-                    ? 'pro_trial'
-                    : 'community';
+            const derivedRole = deriveRole(subData);
 
             const localProfileStr = localStorage.getItem(`derivo_profile_${user.uid}`);
             if (localProfileStr) {
