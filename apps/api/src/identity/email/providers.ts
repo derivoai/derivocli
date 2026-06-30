@@ -1,10 +1,8 @@
 /**
  * Provider-agnostic email abstraction.
  *
- * IMPORTANT: email SENDING is intentionally NOT implemented yet. This file only
- * prepares the abstraction so a real provider (Resend / Postmark / SendGrid)
- * can be dropped in later without touching call sites. Until a provider is
- * configured, the no-op provider is used and messages are logged, not sent.
+ * Providers: Resend (live), Postmark / SendGrid (stubs ready for future use),
+ * Noop (default until a provider is configured).
  */
 import { logger } from '../../infra/logger.js';
 
@@ -23,10 +21,7 @@ export interface EmailProvider {
   send(message: EmailMessage): Promise<void>;
 }
 
-/**
- * No-op provider used until a real one is configured. It never throws and never
- * delivers — it records intent so flows that "send" email don't break.
- */
+// ── Noop ─────────────────────────────────────────────────────────────────────
 export class NoopEmailProvider implements EmailProvider {
   readonly name = 'none';
   readonly canSend = false;
@@ -38,16 +33,49 @@ export class NoopEmailProvider implements EmailProvider {
   }
 }
 
-/** Placeholder for the future Resend integration. */
+// ── Resend ────────────────────────────────────────────────────────────────────
 export class ResendEmailProvider implements EmailProvider {
   readonly name = 'resend';
-  readonly canSend = false;
-  async send(_message: EmailMessage): Promise<void> {
-    throw new Error('Resend email provider is not implemented yet.');
+  readonly canSend = true;
+  private readonly apiKey: string;
+  private readonly from: string;
+
+  constructor() {
+    const key = process.env.RESEND_API_KEY?.trim();
+    if (!key) throw new Error('RESEND_API_KEY is not set');
+    this.apiKey = key;
+    this.from = process.env.EMAIL_FROM?.trim() || 'Derivo <noreply@derivo.in>';
+  }
+
+  async send(message: EmailMessage): Promise<void> {
+    const payload = {
+      from: message.from || this.from,
+      to: [message.to],
+      subject: message.subject,
+      html: message.html,
+      ...(message.text ? { text: message.text } : {}),
+    };
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Resend API error ${res.status}: ${body}`);
+    }
+
+    const data = await res.json().catch(() => ({}));
+    logger.info('email sent via resend', { to: message.to, subject: message.subject, id: data.id });
   }
 }
 
-/** Placeholder for the future Postmark integration. */
+// ── Postmark (stub) ───────────────────────────────────────────────────────────
 export class PostmarkEmailProvider implements EmailProvider {
   readonly name = 'postmark';
   readonly canSend = false;
@@ -56,7 +84,7 @@ export class PostmarkEmailProvider implements EmailProvider {
   }
 }
 
-/** Placeholder for the future SendGrid integration. */
+// ── SendGrid (stub) ───────────────────────────────────────────────────────────
 export class SendGridEmailProvider implements EmailProvider {
   readonly name = 'sendgrid';
   readonly canSend = false;
@@ -65,13 +93,9 @@ export class SendGridEmailProvider implements EmailProvider {
   }
 }
 
+// ── Factory ───────────────────────────────────────────────────────────────────
 let cached: EmailProvider | null = null;
 
-/**
- * Resolve the configured email provider. Returns a concrete provider object so
- * the abstraction is exercised, but only the no-op provider can actually run
- * today (the others throw until implemented).
- */
 export function getEmailProvider(name: string): EmailProvider {
   if (cached && cached.name === name) return cached;
   switch (name) {
