@@ -6,6 +6,8 @@ import { TrustedBy } from '../components/landing/TrustedBy';
 import { CLIDemo } from '../components/landing/CLIDemo';
 import { DeveloperWorkflow } from '../components/landing/DeveloperWorkflow';
 import { Features } from '../components/landing/Features';
+import { Commands } from '../components/landing/Commands';
+import { Security } from '../components/landing/Security';
 import { PricingPreview } from '../components/landing/PricingPreview';
 import { FAQ } from '../components/landing/FAQ';
 import { CTA } from '../components/landing/CTA';
@@ -42,8 +44,14 @@ export function Landing() {
         <div id="features" className="w-full flex flex-col items-center">
           <Features />
         </div>
+        <div id="commands" className="w-full flex flex-col items-center">
+          <Commands />
+        </div>
         <div id="how-it-works" className="w-full flex flex-col items-center">
           <DeveloperWorkflow />
+        </div>
+        <div id="security" className="w-full flex flex-col items-center">
+          <Security />
         </div>
         <div id="pricing" className="w-full flex flex-col items-center">
           <PricingPreview />

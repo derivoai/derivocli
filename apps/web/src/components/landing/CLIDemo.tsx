@@ -211,12 +211,9 @@ export function CLIDemo() {
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-4xl mx-auto px-6 mt-12 md:mt-20 relative z-10"
     >
-      {/* Visual signature glow background */}
-      <div className="absolute -inset-10 bg-gradient-to-b from-white/[0.03] to-transparent blur-3xl opacity-50 rounded-[4rem] pointer-events-none" />
-
-      <div className="relative rounded-2xl bg-[#030303]/80 backdrop-blur-2xl border border-white/[0.08] shadow-[0_40px_120px_-20px_rgba(255,255,255,0.05),inset_0_1px_0_rgba(255,255,255,0.1)] overflow-hidden flex flex-col h-[480px] md:h-[520px]">
+      <div className="relative rounded-2xl bg-[#0a0a0a] border border-white/[0.08] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col h-[480px] md:h-[520px]">
         {/* Terminal Top Window Bar */}
-        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-[#0c0c0c]">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0c0c]">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-white/[0.12]" />
             <div className="w-3 h-3 rounded-full bg-white/[0.12]" />
@@ -249,7 +246,7 @@ export function CLIDemo() {
         {/* Terminal Screen Body */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-8 md:p-10 font-mono text-xs md:text-sm text-white/70 flex flex-col gap-4 bg-gradient-to-b from-[#080808] to-[#040404] select-text scroll-smooth"
+          className="flex-1 overflow-y-auto thin-scroll p-8 md:p-10 font-mono text-xs md:text-sm text-white/70 flex flex-col gap-3.5 bg-[#070707] select-text scroll-smooth"
         >
           <AnimatePresence mode="popLayout">
             {lines.map((line, idx) => {
@@ -286,11 +283,11 @@ export function CLIDemo() {
                 return (
                   <motion.div 
                     key={`line-${idx}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-3 text-rose-400 bg-rose-500/[0.03] border border-rose-500/10 p-3 rounded-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-start gap-3 text-red-400/90"
                   >
-                    <span className="text-rose-400 select-none font-bold">✗</span>
+                    <span className="text-red-400/80 select-none">✗</span>
                     <span className="flex-1">{line.text}</span>
                   </motion.div>
                 );
@@ -300,11 +297,11 @@ export function CLIDemo() {
                 return (
                   <motion.div 
                     key={`line-${idx}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-3 text-amber-400 bg-amber-500/[0.02] border border-amber-500/10 p-3 rounded-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-start gap-3 text-amber-300/85"
                   >
-                    <span className="text-amber-400 select-none">!</span>
+                    <span className="text-amber-300/70 select-none">!</span>
                     <span className="flex-1">{line.text}</span>
                   </motion.div>
                 );
@@ -314,16 +311,16 @@ export function CLIDemo() {
                 return (
                   <motion.div 
                     key={`line-${idx}`}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between text-emerald-400 bg-emerald-500/[0.02] border border-emerald-500/10 p-3 rounded-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-between text-emerald-300/90"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-[#34d399] select-none font-bold">✓</span>
+                      <span className="text-emerald-300/80 select-none">✓</span>
                       <span>{line.text}</span>
                     </div>
                     {line.meta && (
-                      <span className="text-[10px] text-white/30 uppercase tracking-widest">{line.meta}</span>
+                      <span className="text-[10px] text-white/25 uppercase tracking-widest">{line.meta}</span>
                     )}
                   </motion.div>
                 );
@@ -337,7 +334,7 @@ export function CLIDemo() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="flex items-center gap-3 text-white font-semibold border-t border-white/[0.06] pt-6 mt-4"
                   >
-                    <span className="text-[#34d399] text-base">●</span>
+                    <span className="text-emerald-300/80 text-base">●</span>
                     <span className="tracking-tight">{line.text}</span>
                   </motion.div>
                 );
@@ -372,10 +369,10 @@ export function CLIDemo() {
               <span>Environment Readiness</span>
               <span className="w-10 text-right">{progress}%</span>
             </div>
-            <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]">
-              <div 
+            <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
+              <div
                 style={{ width: `${progress}%` }}
-                className="h-full bg-gradient-to-r from-white/40 to-white/90 rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(255,255,255,0.3)]"
+                className="h-full bg-white rounded-full transition-all duration-700 ease-out"
               />
             </div>
           </div>

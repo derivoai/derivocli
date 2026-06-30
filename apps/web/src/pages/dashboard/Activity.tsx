@@ -18,6 +18,7 @@ import {
   RefreshButton,
   SkeletonList,
 } from '../../components/dashboard/shared/States';
+import { PageHeader } from '../../components/dashboard/shared/PageHeader';
 import { relativeTime, formatDateTime } from '../../lib/relative-time';
 
 const TYPE_META: Record<string, { label: string; icon: typeof LogIn; tone: string }> = {
@@ -77,15 +78,11 @@ export function Activity() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
-        <header className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Activity</h1>
-            <p className="text-sm text-white/50">
-              Authentication, session, and security events on your account.
-            </p>
-          </div>
-          <RefreshButton onClick={refetch} busy={loading} />
-        </header>
+        <PageHeader
+          title="Activity"
+          description="Authentication, session, and security events on your account."
+          actions={<RefreshButton onClick={refetch} busy={loading} />}
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">

@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
 import {
   Plus,
-  Terminal,
   ArrowRight,
   Zap,
-  CheckCircle2,
   Check,
   Terminal as TerminalIcon,
   Key,
   User,
   Activity as ActivityIcon,
   AlertTriangle,
+  FolderGit2,
+  MonitorSmartphone,
+  BookOpen,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -19,6 +20,8 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { useDashboardOverview } from '../../hooks/useDashboardData';
 import { isPremium, isTrialActive, getRemainingTrialTime } from '../../lib/subscription';
 import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
+import { PageHeader } from '../../components/dashboard/shared/PageHeader';
+import { CommandLine } from '../../components/CommandLine';
 
 export function DashboardHome() {
   const { profile, subscription, loading: profileLoading, error: profileError } = useUserProfile();
@@ -65,11 +68,9 @@ export function DashboardHome() {
   const trialActive = subscription ? isTrialActive(subscription) : false;
   const remainingTimeMs = subscription ? getRemainingTrialTime(subscription) : 0;
 
-  // Use floor so "1 day 3 hours" shows as 1 day, not 2. ceil was inflating the count.
   const trialDaysLeft = Math.floor(remainingTimeMs / (1000 * 60 * 60 * 24));
   const trialHoursLeft = Math.floor((remainingTimeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  // Resolve plan label from both the legacy `plan` field and the backend `planId` field.
   const resolvedPlan = ((subscription as any)?.planId ?? subscription?.plan ?? '').toLowerCase();
   const resolvedStatus = ((subscription as any)?.status ?? '').toLowerCase();
 
@@ -85,6 +86,17 @@ export function DashboardHome() {
         : 'Community Plan';
 
   const subStatus = resolvedStatus || 'inactive';
+
+  const trialLabel =
+    subscription?.plan === 'trial' && trialActive
+      ? trialDaysLeft > 0
+        ? `${trialDaysLeft}d ${trialHoursLeft}h left`
+        : trialHoursLeft > 0
+          ? `${trialHoursLeft}h left`
+          : 'Less than 1 hour left'
+      : `Status: ${subStatus}`;
+
+  const trustedDevices = devices.filter((d) => d.isTrusted).length;
 
   const handleNewProjectClick = () => {
     if (!hasPremium) {
@@ -114,40 +126,37 @@ export function DashboardHome() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
-        {/* Upgrade Modal */}
         <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
 
-        {/* Welcome Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-              Welcome back, {profile?.name?.split(' ')[0] || 'User'}
-            </h1>
-            <p className="text-sm text-white/50">
-              Here is what's happening with your workspace today.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="h-9 px-4 rounded-lg bg-white/[0.05] border border-white/[0.08] text-white text-xs font-medium hover:bg-white/[0.1] transition-colors flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5" />
-              Install CLI
-            </button>
-            <button
-              onClick={handleNewProjectClick}
-              className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center gap-2 shadow-[0_2px_8px_rgba(255,255,255,0.15)]"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              New Project
-            </button>
-          </div>
-        </header>
+        <PageHeader
+          title={`Welcome back, ${profile?.name?.split(' ')[0] || 'there'}`}
+          description="Here is what's happening with your workspace today."
+          actions={
+            <>
+              <Link
+                to="/docs"
+                className="h-9 px-4 rounded-lg bg-white/[0.04] border border-white/[0.1] text-white text-xs font-medium hover:bg-white/[0.08] transition-colors flex items-center gap-2"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Docs
+              </Link>
+              <button
+                onClick={handleNewProjectClick}
+                className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Project
+              </button>
+            </>
+          }
+        />
 
         {/* Trial Expired Alert Banner */}
         {!hasPremium &&
           (resolvedPlan === 'trial' ||
             resolvedStatus === 'trialing' ||
             resolvedStatus === 'trial') && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="font-semibold uppercase tracking-wider text-[10px] bg-red-500/20 px-2 py-0.5 rounded text-red-300">
                   Expired
@@ -159,88 +168,64 @@ export function DashboardHome() {
               </div>
               <button
                 onClick={() => setIsUpgradeModalOpen(true)}
-                className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0 shadow-sm"
+                className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0"
               >
                 Upgrade to Pro
               </button>
             </div>
           )}
 
+        {/* Stat cards — real data */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Status Card 1: Subscription */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5 rounded-2xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/[0.06] flex flex-col gap-4 relative overflow-hidden group"
-          >
-            <div className="flex items-center justify-between relative z-10">
-              <span className="text-xs font-medium text-white/50">Subscription Status</span>
-              <Zap className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="relative z-10">
-              <div className="text-2xl font-semibold text-white tracking-tight">{userPlan}</div>
-              <div className="text-xs text-white/40 mt-1 flex items-center gap-1.5 capitalize">
-                Status: {subStatus}
-              </div>
-              {subscription?.plan === 'trial' && trialActive && (
-                <div className="text-xs text-white/40 mt-1">
-                  Trial Remaining:{' '}
-                  {trialDaysLeft > 0
-                    ? `${trialDaysLeft}d ${trialHoursLeft}h`
-                    : trialHoursLeft > 0
-                      ? `${trialHoursLeft}h`
-                      : 'Less than 1 hour'}
-                </div>
-              )}
-            </div>
-            <div className="absolute right-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Link
-                to="/dashboard/billing"
-                className="text-[10px] text-white/40 hover:text-white flex items-center gap-1 uppercase tracking-wider font-mono"
-              >
-                Billing <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Status Card 2: Active Projects */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col gap-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-white/50">Active Projects</span>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-            </div>
-            <div>
-              <div className="text-2xl font-semibold text-white tracking-tight">
-                {projects.length}
-              </div>
-              <div className="text-xs text-white/40 mt-1">Across {devices.length} environments</div>
-            </div>
-          </motion.div>
-
-          {/* Status Card 3: Environment Health */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col gap-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-white/50">Environment Health</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-semibold text-white tracking-tight">Optimal</div>
-              <div className="text-xs text-white/40 mt-1">All systems operational</div>
-            </div>
-          </motion.div>
+          <StatCard
+            label="Subscription"
+            value={userPlan}
+            hint={trialLabel}
+            icon={<Zap className="w-4 h-4 text-amber-400" />}
+            to="/dashboard/billing"
+            delay={0}
+          />
+          <StatCard
+            label="Projects"
+            value={String(projects.length)}
+            hint={projects.length === 1 ? '1 project' : `${projects.length} projects`}
+            icon={<FolderGit2 className="w-4 h-4 text-white/50" />}
+            to="/dashboard/projects"
+            delay={0.05}
+          />
+          <StatCard
+            label="Devices"
+            value={String(devices.length)}
+            hint={`${trustedDevices} trusted`}
+            icon={<MonitorSmartphone className="w-4 h-4 text-white/50" />}
+            to="/dashboard/devices"
+            delay={0.1}
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
+        {/* Get started with the CLI — genuinely useful command reference */}
+        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
+          <div className="flex items-center gap-2 mb-1">
+            <TerminalIcon className="w-4 h-4 text-white/60" />
+            <h2 className="text-sm font-semibold text-white">Get started with the CLI</h2>
+          </div>
+          <p className="text-xs text-white/45 mb-5">
+            Install Derivo, authenticate this machine, then prepare any repository in seconds.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Step n={1} label="Install">
+              <CommandLine command="npm install -g derivo" />
+            </Step>
+            <Step n={2} label="Authenticate">
+              <CommandLine command="derivo login" />
+            </Step>
+            <Step n={3} label="Set up a project">
+              <CommandLine command="derivo setup" />
+            </Step>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Projects */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -254,35 +239,37 @@ export function DashboardHome() {
             </div>
             <div className="flex flex-col gap-2">
               {projects.length > 0 ? (
-                projects.slice(0, 3).map((project) => (
+                projects.slice(0, 4).map((project) => (
                   <div
                     key={project.id}
-                    className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.03] transition-colors flex items-center justify-between group"
+                    className="p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-colors flex items-center justify-between group"
                   >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-white/90">{project.name}</span>
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-sm font-medium text-white/90 truncate">
+                        {project.name}
+                      </span>
                       <span className="text-[11px] font-mono text-white/40">
                         {project.framework} • {project.env}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 hidden sm:flex">
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="items-center gap-2 hidden sm:flex">
                         <div
                           className={`w-1.5 h-1.5 rounded-full ${project.status === 'synced' ? 'bg-emerald-500' : project.status === 'error' ? 'bg-red-500' : 'bg-amber-500'}`}
                         />
                         <span className="text-xs text-white/50 capitalize">{project.status}</span>
                       </div>
-                      <button className="text-white/30 group-hover:text-white transition-colors p-1">
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
+                      <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-white transition-colors" />
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-white/40">
-                  <p className="text-sm font-medium">No projects yet</p>
-                  <p className="text-xs text-white/30 mt-1">
-                    Install the Derivo CLI to create your first project.
+                <div className="p-8 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.01] text-center">
+                  <FolderGit2 className="w-8 h-8 text-white/20 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-white/70">No projects yet</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Run <span className="font-mono text-white/60">derivo setup</span> in a repository
+                    to register your first project.
                   </p>
                 </div>
               )}
@@ -300,12 +287,12 @@ export function DashboardHome() {
                 View log
               </Link>
             </div>
-            <div className="p-5 rounded-xl border border-white/[0.05] bg-white/[0.01] flex flex-col gap-6">
+            <div className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.02] flex flex-col gap-6">
               {activity.length > 0 ? (
                 activity.map((act, i) => (
                   <div key={act.id} className="flex gap-4 relative">
                     {i !== activity.length - 1 && (
-                      <div className="absolute left-[9px] top-6 bottom-[-24px] w-px bg-white/[0.05]" />
+                      <div className="absolute left-[9px] top-6 bottom-[-24px] w-px bg-white/[0.08]" />
                     )}
                     <div className="w-5 h-5 rounded-full bg-[#0a0a0a] border border-white/[0.1] flex items-center justify-center shrink-0 mt-0.5 z-10">
                       {getActivityIcon(act.icon)}
@@ -320,10 +307,11 @@ export function DashboardHome() {
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-white/40">
-                  <p className="text-sm font-medium">No recent activity</p>
-                  <p className="text-xs text-white/30 mt-1">
-                    Activity will appear here once you start using Derivo.
+                <div className="py-6 text-center">
+                  <ActivityIcon className="w-7 h-7 text-white/20 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-white/70">No recent activity</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Activity appears once you start using Derivo.
                   </p>
                 </div>
               )}
@@ -332,5 +320,55 @@ export function DashboardHome() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+  to,
+  delay,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: React.ReactNode;
+  to: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+    >
+      <Link
+        to={to}
+        className="block p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] hover:border-white/[0.14] transition-colors group"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-medium text-white/50">{label}</span>
+          {icon}
+        </div>
+        <div className="text-2xl font-semibold text-white tracking-tight truncate">{value}</div>
+        <div className="text-xs text-white/40 mt-1 capitalize">{hint}</div>
+      </Link>
+    </motion.div>
+  );
+}
+
+function Step({ n, label, children }: { n: number; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span className="w-5 h-5 rounded-md bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/50 flex items-center justify-center">
+          {n}
+        </span>
+        <span className="text-xs font-medium text-white/60">{label}</span>
+      </div>
+      {children}
+    </div>
   );
 }

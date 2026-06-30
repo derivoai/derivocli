@@ -63,7 +63,7 @@ export function TypewriterText({
     <Tag ref={ref} className={cn('relative', className)}>
       {displayed}
       {!isDone && started && (
-        <span className="inline-block w-[2px] h-[0.9em] ml-[1px] align-middle bg-white/80 animate-cursor-blink" />
+        <span className="inline-block w-[3px] h-[0.9em] ml-1 align-middle rounded-full bg-white/70 animate-cursor-blink" />
       )}
       {!started && <span className="opacity-0">{text}</span>}
     </Tag>

@@ -4,6 +4,7 @@
  */
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Landing } from './pages/Landing';
+import { Docs } from './pages/Docs';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
@@ -34,7 +35,8 @@ export default function App() {
           <Route path="/features" element={<Landing />} />
           <Route path="/how-it-works" element={<Landing />} />
           <Route path="/pricing" element={<Landing />} />
-          <Route path="/docs" element={<Landing />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/:slug" element={<Docs />} />
           <Route path="/blog" element={<Landing />} />
 
           {/* Public Auth Routes */}
