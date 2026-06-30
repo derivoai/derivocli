@@ -23,6 +23,12 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
       'import.meta.env.APP_URL': JSON.stringify(env.APP_URL || 'http://localhost:3000'),
     },
+    server: {
+      host: '0.0.0.0',
+      allowedHosts: true,
+      hmr: process.env.DISABLE_HMR !== 'true',
+      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
     build: {
       outDir: 'dist-action',
       emptyOutDir: true,
