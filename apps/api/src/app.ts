@@ -22,6 +22,7 @@ import { keysRouter } from './routes/keys.js';
 import { trialsRouter } from './routes/trials.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { loginHistoryRouter } from './routes/login-history.js';
+import { authEmailRouter } from './routes/auth-email.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -108,6 +109,7 @@ export function createApp(): express.Express {
   app.use('/api/trials', trialsRouter);
   app.use('/api/sessions', sessionsRouter);
   app.use('/api/login-history', loginHistoryRouter);
+  app.use('/api/auth/email', authEmailRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

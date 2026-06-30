@@ -19,6 +19,10 @@ export interface AppConfig {
   sessionSecret: string;
   billingProvider: string;
   lemonSqueezyWebhookSecret: string | null;
+  /** Email provider for transactional auth emails (none until configured). */
+  emailProvider: string;
+  /** Base URL Firebase email actions resolve to (custom action handler). */
+  authActionUrl: string;
   /** Audit log retention in days. */
   auditRetentionDays: number;
   /** Whether scheduled background jobs run in this process. */
@@ -63,6 +67,8 @@ export function loadConfig(): AppConfig {
     sessionSecret: process.env.SESSION_SECRET || 'dev-session-secret-change-me',
     billingProvider: (process.env.BILLING_PROVIDER || '').toLowerCase(),
     lemonSqueezyWebhookSecret: process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim() || null,
+    emailProvider: (process.env.EMAIL_PROVIDER || 'none').toLowerCase(),
+    authActionUrl: process.env.AUTH_ACTION_URL?.trim() || 'https://auth.derivo.in/action',
     auditRetentionDays: int(process.env.AUDIT_RETENTION_DAYS, 90),
     jobsEnabled: bool(process.env.JOBS_ENABLED, !isProd ? false : true),
     features: {

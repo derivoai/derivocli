@@ -9,6 +9,7 @@ import { Register } from './pages/auth/Register';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
 import { VerifyEmail } from './pages/auth/VerifyEmail';
+import { Action } from './pages/auth/Action';
 import { Onboarding } from './pages/auth/Onboarding';
 import { CliLogin } from './pages/auth/CliLogin';
 import { DashboardHome } from './pages/dashboard/Home';
@@ -70,6 +71,11 @@ export default function App() {
             }
           />
           <Route path="/cli-login" element={<CliLogin />} />
+
+          {/* Universal Firebase email action handler (verify email, reset
+              password, recover email, verify-before-change-email). Public —
+              opened from email links regardless of session state. */}
+          <Route path="/action" element={<Action />} />
 
           {/* Dedicated Email Verification Guarded Route */}
           <Route

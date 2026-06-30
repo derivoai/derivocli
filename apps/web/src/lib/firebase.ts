@@ -11,20 +11,23 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   confirmPasswordReset,
+  verifyPasswordResetCode,
+  applyActionCode,
+  checkActionCode,
   sendEmailVerification,
   PhoneAuthProvider,
-  signInWithCredential
+  signInWithCredential,
 } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM",
-  authDomain: "auth.derivo.in",
-  projectId: "derivo",
-  storageBucket: "derivo.firebasestorage.app",
-  messagingSenderId: "290795143643",
-  appId: "1:290795143643:web:ca15a0ec196fcd4f50a7fe",
-  measurementId: "G-PWPSX0Q08Q"
+  apiKey: 'AIzaSyCNv8mVHs3LF3nNrU7dy0If3GESnilBtmM',
+  authDomain: 'auth.derivo.in',
+  projectId: 'derivo',
+  storageBucket: 'derivo.firebasestorage.app',
+  messagingSenderId: '290795143643',
+  appId: '1:290795143643:web:ca15a0ec196fcd4f50a7fe',
+  measurementId: 'G-PWPSX0Q08Q',
 };
 
 // Initialize Firebase App
@@ -48,7 +51,10 @@ export {
   firebaseSignOut,
   sendPasswordResetEmail,
   confirmPasswordReset,
+  verifyPasswordResetCode,
+  applyActionCode,
+  checkActionCode,
   sendEmailVerification,
   PhoneAuthProvider,
-  signInWithCredential
+  signInWithCredential,
 };
