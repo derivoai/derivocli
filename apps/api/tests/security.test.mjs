@@ -100,15 +100,23 @@ test('validation: accepts a valid project body', () => {
 });
 
 // ── Rate limiting ────────────────────────────────────
-test('rate limiter: blocks after the max is exceeded', () => {
+test('rate limiter: blocks after the max is exceeded', async () => {
   const limiter = createRateLimiter('test', { windowMs: 60000, max: 2 });
   const req = { headers: {}, ip: '9.9.9.9', socket: {} };
   const res = { setHeader() {} };
   const errors = [];
-  const next = (e) => errors.push(e);
-  limiter(req, res, next); // 1
-  limiter(req, res, next); // 2
-  limiter(req, res, next); // 3 -> blocked
+  // The limiter is async (store-backed); await each call so the store
+  // increments settle before the next request is evaluated.
+  const call = () =>
+    new Promise((resolve) => {
+      limiter(req, res, (e) => {
+        errors.push(e);
+        resolve();
+      });
+    });
+  await call(); // 1
+  await call(); // 2
+  await call(); // 3 -> blocked
   assert.equal(errors.filter((e) => e === undefined).length, 2);
   const blocked = errors.find((e) => e && e.status === 429);
   assert.ok(blocked, 'third request should be rate limited');

@@ -5,13 +5,11 @@
  */
 import { getDb, isAdminInitialized } from '../firebase.js';
 import { audit } from '../security/audit.js';
+import { remember, seen, resetReplayStoreForTesting } from '../infra/replay.js';
 import type { NormalizedBillingEvent, SubscriptionRecord, SubscriptionStatus } from './types.js';
 import type { PlanId } from './plans.js';
 
 const GRACE_PERIOD_DAYS = 3;
-
-// In-memory replay guard used when Firestore is unavailable (dev/tests).
-const processedEvents = new Set<string>();
 
 export interface ApplyResult {
   applied: boolean;
@@ -22,7 +20,9 @@ export interface ApplyResult {
 
 async function isReplay(eventId: string): Promise<boolean> {
   if (!eventId) return false;
-  if (!isAdminInitialized()) return processedEvents.has(eventId);
+  // Firestore is the source of truth for processed events when available; the
+  // store (memory/Redis) provides distributed protection without Firebase.
+  if (!isAdminInitialized()) return seen('billing', eventId);
   const ref = getDb().collection('billingEvents').doc(eventId);
   return (await ref.get()).exists;
 }
@@ -30,7 +30,7 @@ async function isReplay(eventId: string): Promise<boolean> {
 async function markProcessed(event: NormalizedBillingEvent): Promise<void> {
   if (!event.eventId) return;
   if (!isAdminInitialized()) {
-    processedEvents.add(event.eventId);
+    await remember('billing', event.eventId);
     return;
   }
   await getDb()
@@ -128,7 +128,7 @@ export async function applyBillingEvent(event: NormalizedBillingEvent): Promise<
   return { applied: true, reason: 'Applied', status: changes.status };
 }
 
-/** Test helper to reset the in-memory replay guard. */
+/** Test helper to reset the replay guard (distributed store). */
 export function resetProcessedEventsForTesting(): void {
-  processedEvents.clear();
+  resetReplayStoreForTesting();
 }

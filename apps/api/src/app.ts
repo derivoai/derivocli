@@ -9,6 +9,11 @@ import cookieParser from 'cookie-parser';
 import { securityHeaders } from './security/headers.js';
 import { limiters } from './security/rate-limit.js';
 import { errorHandler, notFoundHandler } from './security/errors.js';
+import { requestContext } from './infra/request-context.js';
+import { snapshot } from './infra/metrics.js';
+import { getStore } from './infra/store.js';
+import { isAdminInitialized } from './firebase.js';
+import { loadConfig } from './infra/config.js';
 import { cliRouter } from './routes/cli.js';
 import { billingRouter } from './routes/billing.js';
 import { projectsRouter } from './routes/projects.js';
@@ -26,6 +31,8 @@ export function createApp(): express.Express {
   app.set('trust proxy', 1);
 
   app.use(securityHeaders);
+  // Assign request/correlation ids, record latency + access logs (before routes).
+  app.use(requestContext);
   app.use(
     cors({
       origin: [appUrl, 'http://localhost:3000', 'http://localhost:5173'],
@@ -55,6 +62,41 @@ export function createApp(): express.Express {
 
   app.get('/health', limiters.public, (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Liveness: the process is up and the event loop responds.
+  app.get('/healthz', (_req, res) => {
+    res.json({ status: 'alive', uptimeSec: Math.round(process.uptime()) });
+  });
+
+  // Readiness: dependencies (store + Firebase mode) are usable.
+  app.get('/readyz', async (_req, res) => {
+    const checks: Record<string, string> = {};
+    let ready = true;
+
+    try {
+      const store = await getStore();
+      const probe = `readyz:${Date.now()}`;
+      await store.set(probe, '1', 5);
+      await store.del(probe);
+      checks.store = `ok (${store.backend})`;
+    } catch (err) {
+      ready = false;
+      checks.store = `error: ${err instanceof Error ? err.message : String(err)}`;
+    }
+
+    checks.firebase = isAdminInitialized() ? 'initialized' : 'mock';
+    if (loadConfig().requireFirebase && !isAdminInitialized()) {
+      ready = false;
+      checks.firebase = 'required-but-missing';
+    }
+
+    res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'not-ready', checks });
+  });
+
+  // Operational metrics snapshot (counters + latency). Scrape or ship this.
+  app.get('/metrics', (_req, res) => {
+    res.json(snapshot());
   });
 
   // Billing + entitlements (subscription, usage, limits, features, webhook, admin).
