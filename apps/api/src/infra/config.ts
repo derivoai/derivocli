@@ -25,6 +25,12 @@ export interface AppConfig {
   authActionUrl: string;
   /** Audit log retention in days. */
   auditRetentionDays: number;
+  /** Max accounts allowed per IP before new registrations are blocked. 0 = disabled. */
+  maxAccountsPerIp: number;
+  /** Window in days for counting IP-based account registrations. */
+  maxAccountsPerIpWindowDays: number;
+  /** Whether to inherit prior trial status when a returning email re-registers. */
+  inheritTrialOnReRegister: boolean;
   /** Whether scheduled background jobs run in this process. */
   jobsEnabled: boolean;
   features: {
@@ -70,6 +76,9 @@ export function loadConfig(): AppConfig {
     emailProvider: (process.env.EMAIL_PROVIDER || 'none').toLowerCase(),
     authActionUrl: process.env.AUTH_ACTION_URL?.trim() || 'https://auth.derivo.in/action',
     auditRetentionDays: int(process.env.AUDIT_RETENTION_DAYS, 90),
+    maxAccountsPerIp: int(process.env.MAX_ACCOUNTS_PER_IP, 3),
+    maxAccountsPerIpWindowDays: int(process.env.MAX_ACCOUNTS_PER_IP_WINDOW_DAYS, 30),
+    inheritTrialOnReRegister: bool(process.env.INHERIT_TRIAL_ON_REREGISTER, true),
     jobsEnabled: bool(process.env.JOBS_ENABLED, !isProd ? false : true),
     features: {
       distributedRateLimit: bool(process.env.FEATURE_DISTRIBUTED_RATE_LIMIT, !!redisUrl),

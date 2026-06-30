@@ -6,6 +6,7 @@
 import { getDb, isAdminInitialized } from '../firebase.js';
 import { audit } from '../security/audit.js';
 import { remember, seen, resetReplayStoreForTesting } from '../infra/replay.js';
+import { syncEmailFingerprint } from '../security/account-abuse.js';
 import type { NormalizedBillingEvent, SubscriptionRecord, SubscriptionStatus } from './types.js';
 import type { PlanId } from './plans.js';
 
@@ -124,6 +125,22 @@ export async function applyBillingEvent(event: NormalizedBillingEvent): Promise<
 
   await markProcessed(event);
   await audit('billing.event', event.uid, { type: event.type, provider: event.provider });
+
+  // Keep the email fingerprint in sync so re-registrations always inherit the
+  // most current trial/subscription state.
+  const trialUsed =
+    changes.status === 'active' ||
+    changes.status === 'trialing' ||
+    changes.status === 'cancelled' ||
+    changes.status === 'expired';
+  await syncEmailFingerprint(event.uid, {
+    trialUsed,
+    trialEndsAt: changes.trialEndsAt ?? null,
+    status: changes.status ?? null,
+    planId: changes.planId ?? null,
+  }).catch(() => {
+    /* best-effort */
+  });
 
   return { applied: true, reason: 'Applied', status: changes.status };
 }

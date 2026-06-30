@@ -90,6 +90,23 @@ export function Register() {
         }
 
         try {
+          // Tell the backend about the new account. This runs abuse checks,
+          // persists the email fingerprint, and writes the authoritative
+          // subscription document (trial inheritance if this email was seen before).
+          const token = await user.getIdToken();
+          await fetch(`${getApiBaseUrl()}/api/account/register`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+            }),
+          }).catch((err) => console.warn('Could not register account with backend', err));
+        } catch (regErr) {
+          console.warn('Backend account registration failed', regErr);
+        }
+
+        try {
           // Send verification email through backend (Admin SDK link generation —
           // no Firebase Console action URL required).
           const token = await user.getIdToken();
@@ -124,6 +141,25 @@ export function Register() {
     try {
       const result = await signInWithPopup(auth, provider);
       const isNew = getAdditionalUserInfo(result)?.isNewUser;
+
+      // For brand-new OAuth accounts, tell the backend so the email fingerprint
+      // is recorded and the subscription document is created properly.
+      if (isNew && result.user) {
+        try {
+          const token = await result.user.getIdToken();
+          await fetch(`${getApiBaseUrl()}/api/account/register`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              firstName: result.user.displayName?.split(' ')[0]?.trim() ?? '',
+              lastName: result.user.displayName?.split(' ').slice(1).join(' ')?.trim() ?? '',
+            }),
+          }).catch((err) => console.warn('Could not register OAuth account with backend', err));
+        } catch (regErr) {
+          console.warn('Backend account registration failed for OAuth user', regErr);
+        }
+      }
+
       // New OAuth users complete first/last name + onboarding; existing users
       // go straight to the dashboard.
       navigate(isNew ? '/onboarding' : '/dashboard');
