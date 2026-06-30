@@ -89,10 +89,8 @@ export function DashboardHome() {
   const handleNewProjectClick = () => {
     if (!hasPremium) {
       setIsUpgradeModalOpen(true);
-    } else {
-      // Allow or redirect to creation flow
-      setIsUpgradeModalOpen(true); // Since Stripe isn't integrated yet, treat as prompt
     }
+    // else: project creation is CLI-driven — nothing to do from the web
   };
 
   const getActivityIcon = (iconName: string) => {

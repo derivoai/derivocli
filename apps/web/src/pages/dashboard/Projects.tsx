@@ -78,10 +78,8 @@ export function Projects() {
   const handleNewProjectClick = () => {
     if (!hasPremium) {
       setIsUpgradeModalOpen(true);
-    } else {
-      // Mock action / creation popup
-      setIsUpgradeModalOpen(true); // Treat as prompt for Stripe
     }
+    // else: project creation flow goes here (CLI-driven, no modal needed)
   };
 
   return (
