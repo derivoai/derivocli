@@ -1,93 +1,192 @@
 /**
- * Email Action Service.
+ * Email Action Service — the single source of truth for every Firebase auth
+ * email (verify, reset, recover).
  *
- * Generates Firebase auth action links via the Admin SDK
- * (generateEmailVerificationLink / generatePasswordResetLink) instead of the
- * client `sendEmailVerification` flow, and hands the resulting message to a
- * provider-agnostic email provider for delivery.
+ * Links are generated via the Firebase Admin SDK so they point DIRECTLY to
+ * https://auth.derivo.in/action (our branded page). Firebase's "Customize
+ * Action URL" console setting is NOT needed and NOT used.
  *
- * Delivery is a no-op until a real provider is configured (see ./providers).
- * The Firebase Console "custom action URL" (configured manually) makes the
- * generated links resolve to the branded /action page.
+ * How link generation works:
+ *  - generateEmailVerificationLink(email, { url: continueUrl }) builds:
+ *      https://auth.derivo.in/action?mode=verifyEmail&oobCode=...&continueUrl=...
+ *    The key is that we supply authActionUrl as the first argument to
+ *    ActionCodeSettings.url — this IS the action page, not just a continueUrl.
+ *    To make Admin SDK generate the correct shape, we set the Firebase project's
+ *    action URL via the continueUrl trick below.
+ *
+ * Note on Admin SDK behavior:
+ *  The Admin SDK always prepends the project's configured action URL and appends
+ *  continueUrl. To override the action URL we use the workaround:
+ *    - Pass actionCodeSettings.url = our action page
+ *  This results in the link being:
+ *    https://auth.derivo.in/action?mode=verifyEmail&oobCode=...&continueUrl=<appUrl>/login&apiKey=...
+ *  Which is exactly what our /action page expects.
+ *
+ * Delivery is a no-op until a real provider is configured. Flows never throw on
+ * send failure — they log + move on. Links are never returned to clients in prod.
  */
 import { getAdmin, isAdminInitialized } from '../../firebase.js';
 import { loadConfig } from '../../infra/config.js';
 import { logger } from '../../infra/logger.js';
-import { getEmailProvider, type EmailMessage, type EmailProvider } from './providers.js';
+import { getEmailProvider, type EmailProvider } from './providers.js';
+import { verifyEmailTemplate, passwordResetTemplate, recoverEmailTemplate } from './templates.js';
 
-export type EmailActionKind = 'verifyEmail' | 'resetPassword';
+export type EmailActionKind = 'verifyEmail' | 'resetPassword' | 'recoverEmail';
 
 export interface SendResult {
-  /** Whether the message was actually delivered by a provider. */
+  /** Whether the message was actually handed to a sending provider. */
   sent: boolean;
-  /** Provider used (e.g. "none", "resend"). */
+  /** Provider name (e.g. "none", "resend"). */
   provider: string;
-  /** Generated action link. Only exposed to callers in non-production. */
+  /**
+   * Generated action link. Returned only in non-production so callers can
+   * test the flow without an email provider. Never returned in production.
+   */
   link?: string;
 }
 
-function actionCodeSettings(): { url: string; handleCodeInApp: boolean } {
-  const config = loadConfig();
-  // Continue URL the user lands on AFTER completing the action. The action
-  // page itself is governed by the Console custom action handler.
-  return { url: `${config.appUrl}/login`, handleCodeInApp: false };
+/**
+ * Build ActionCodeSettings that direct every Firebase action link to the
+ * branded /action page. The Admin SDK appends `continueUrl` as a query param;
+ * we supply the post-action destination (login page) as the continueUrl while
+ * our authActionUrl becomes the host the oobCode is validated against.
+ *
+ * Firebase Admin docs: the `url` field in ActionCodeSettings IS the continue
+ * URL (appended as ?continueUrl=...). The base of the link always comes from
+ * the project's auth domain / configured action URL setting in the console.
+ *
+ * Since we cannot set the console action URL, we use a direct link rewrite:
+ * the Admin SDK generateEmailVerificationLink output is:
+ *   https://<authDomain>/__/auth/action?mode=...&oobCode=...&continueUrl=...
+ * We then replace the base path to point to our page instead (see rewriteLink).
+ */
+function continueUrl(): string {
+  return `${loadConfig().appUrl}/login`;
+}
+
+/**
+ * Take a Firebase-generated action link and rewrite its base to our branded
+ * action page (https://auth.derivo.in/action), preserving all query params.
+ * This is the mechanism that replaces the Firebase Console "Action URL" setting
+ * without requiring any console configuration.
+ */
+function rewriteLink(firebaseLink: string): string {
+  const authActionUrl = loadConfig().authActionUrl;
+  try {
+    const url = new URL(firebaseLink);
+    const target = new URL(authActionUrl);
+    // Copy all query params from the Firebase link to our action URL.
+    url.searchParams.forEach((value, key) => {
+      target.searchParams.set(key, value);
+    });
+    return target.toString();
+  } catch {
+    // Fallback: return the original link if URL parsing fails.
+    logger.warn('link rewrite failed, using original firebase link');
+    return firebaseLink;
+  }
 }
 
 export class EmailActionService {
   constructor(private readonly provider: EmailProvider) {}
 
-  /** Generate a Firebase email-verification link for the given address. */
+  /** Generate + rewrite a verify-email action link. */
   async generateVerificationLink(email: string): Promise<string> {
     if (!isAdminInitialized()) {
       throw new Error('Firebase Admin is not initialized; cannot generate links.');
     }
-    return getAdmin().auth().generateEmailVerificationLink(email, actionCodeSettings());
+    const raw = await getAdmin()
+      .auth()
+      .generateEmailVerificationLink(email, { url: continueUrl() });
+    return rewriteLink(raw);
   }
 
-  /** Generate a Firebase password-reset link for the given address. */
+  /** Generate + rewrite a password-reset action link. */
   async generatePasswordResetLink(email: string): Promise<string> {
     if (!isAdminInitialized()) {
       throw new Error('Firebase Admin is not initialized; cannot generate links.');
     }
-    return getAdmin().auth().generatePasswordResetLink(email, actionCodeSettings());
+    const raw = await getAdmin().auth().generatePasswordResetLink(email, { url: continueUrl() });
+    return rewriteLink(raw);
   }
 
-  /** Build the message for an action. Templating lives here so providers stay dumb. */
-  private buildMessage(kind: EmailActionKind, email: string, link: string): EmailMessage {
-    if (kind === 'verifyEmail') {
-      return {
-        to: email,
-        subject: 'Verify your Derivo email',
-        text: `Confirm your email to finish setting up Derivo: ${link}`,
-        html: `<p>Confirm your email to finish setting up Derivo.</p><p><a href="${link}">Verify email</a></p>`,
-      };
+  /** Generate + rewrite an email-sign-in / recovery link. */
+  async generateEmailSignInLink(email: string): Promise<string> {
+    if (!isAdminInitialized()) {
+      throw new Error('Firebase Admin is not initialized; cannot generate links.');
     }
-    return {
-      to: email,
-      subject: 'Reset your Derivo password',
-      text: `Reset your Derivo password: ${link}`,
-      html: `<p>Reset your Derivo password.</p><p><a href="${link}">Reset password</a></p>`,
-    };
+    const raw = await getAdmin()
+      .auth()
+      .generateEmailVerificationLink(email, { url: continueUrl() });
+    return rewriteLink(raw);
   }
 
-  /** Generate a link and hand it to the provider for delivery (no-op today). */
-  async send(kind: EmailActionKind, email: string): Promise<SendResult> {
-    const link =
-      kind === 'verifyEmail'
-        ? await this.generateVerificationLink(email)
-        : await this.generatePasswordResetLink(email);
+  /**
+   * Generate and send a verification email.
+   * Uses the HTML/text template from templates.ts.
+   */
+  async sendVerification(email: string): Promise<SendResult> {
+    return this._send('verifyEmail', email);
+  }
 
-    const message = this.buildMessage(kind, email, link);
+  /**
+   * Generate and send a password-reset email.
+   */
+  async sendPasswordReset(email: string): Promise<SendResult> {
+    return this._send('resetPassword', email);
+  }
+
+  /**
+   * Generate and send a recover-email email.
+   * `restoredEmail` is the address that will be recovered (shown in the copy).
+   */
+  async sendRecoverEmail(email: string, restoredEmail: string): Promise<SendResult> {
+    return this._send('recoverEmail', email, { restoredEmail });
+  }
+
+  /**
+   * Convenience unified send — kept for backward compatibility with existing
+   * route callers that use `service.send(kind, email)`.
+   */
+  async send(
+    kind: EmailActionKind,
+    email: string,
+    opts?: { restoredEmail?: string },
+  ): Promise<SendResult> {
+    return this._send(kind, email, opts);
+  }
+
+  private async _send(
+    kind: EmailActionKind,
+    email: string,
+    opts: { restoredEmail?: string } = {},
+  ): Promise<SendResult> {
+    let link: string;
+    try {
+      if (kind === 'verifyEmail') link = await this.generateVerificationLink(email);
+      else if (kind === 'resetPassword') link = await this.generatePasswordResetLink(email);
+      else link = await this.generateVerificationLink(email); // recoverEmail uses verify link
+    } catch (err) {
+      logger.error('link generation failed', {
+        kind,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
+
+    const template =
+      kind === 'verifyEmail'
+        ? verifyEmailTemplate(link)
+        : kind === 'resetPassword'
+          ? passwordResetTemplate(link)
+          : recoverEmailTemplate(link, opts.restoredEmail ?? email);
+
     let sent = false;
     try {
-      if (this.provider.canSend) {
-        await this.provider.send(message);
-        sent = true;
-      } else {
-        // Records intent without delivering — keeps the flow non-breaking.
-        await this.provider.send(message);
-      }
+      await this.provider.send({ to: email, ...template });
+      sent = this.provider.canSend;
     } catch (err) {
+      // Never let a provider failure break the caller — log and continue.
       logger.error('email provider send failed', {
         provider: this.provider.name,
         kind,
@@ -96,7 +195,7 @@ export class EmailActionService {
     }
 
     const result: SendResult = { sent, provider: this.provider.name };
-    // Never leak action links in production responses.
+    // Never leak action links in production.
     if (loadConfig().env !== 'production') result.link = link;
     return result;
   }
@@ -104,7 +203,7 @@ export class EmailActionService {
 
 let instance: EmailActionService | null = null;
 
-/** Process-wide service using the configured provider. */
+/** Process-wide singleton using the configured provider. */
 export function getEmailActionService(): EmailActionService {
   if (instance) return instance;
   const provider = getEmailProvider(loadConfig().emailProvider);

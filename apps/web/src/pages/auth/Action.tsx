@@ -1,5 +1,16 @@
+/**
+ * Universal Firebase email action page — handles every auth action mode:
+ *   verifyEmail | resetPassword | recoverEmail | verifyAndChangeEmail
+ *
+ * Action codes are processed via the Firebase Client SDK (applyActionCode,
+ * verifyPasswordResetCode, confirmPasswordReset). Resend calls go through the
+ * backend API (/api/auth/email) so that links are generated server-side via
+ * the Admin SDK and point directly to this page — not Firebase's hosted pages.
+ *
+ * Design: ActionLayout (plain dark card, no marketing background).
+ */
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
@@ -8,15 +19,15 @@ import {
   checkActionCode,
   verifyPasswordResetCode,
   confirmPasswordReset,
-  sendEmailVerification,
 } from '../../lib/firebase';
 import { friendlyAuthError, type FriendlyError } from '../../lib/auth-errors';
 import {
-  ActionShell,
-  SuccessIcon,
-  ErrorIcon,
-  LoadingState,
-} from '../../components/auth/ActionShell';
+  ActionLayout,
+  ActionSuccessIcon,
+  ActionErrorIcon,
+  ActionLoadingState,
+} from '../../components/auth/ActionLayout';
+import { getApiBaseUrl } from '../../lib/api';
 
 type Mode = 'verifyEmail' | 'resetPassword' | 'recoverEmail' | 'verifyAndChangeEmail' | 'unknown';
 type Phase = 'loading' | 'form' | 'success' | 'error';
@@ -38,24 +49,81 @@ function parseMode(raw: string | null): Mode {
   }
 }
 
-/** Lightweight password strength score (0–4). */
 function scorePassword(pw: string): number {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
-  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
-  return Math.min(score, 4);
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (pw.length >= 12) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
 }
 
 const STRENGTH_LABELS = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
-const STRENGTH_COLORS = [
+const STRENGTH_BARS = [
   'bg-red-500',
   'bg-red-500',
   'bg-amber-500',
   'bg-emerald-500',
   'bg-emerald-400',
 ];
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: '#0a0a0a',
+  border: '1px solid #2a2a2a',
+  borderRadius: '8px',
+  padding: '10px 14px',
+  fontSize: '14px',
+  color: '#e5e5e5',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.15s',
+  fontFamily: 'inherit',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '12px',
+  fontWeight: 500,
+  color: 'rgba(255,255,255,0.55)',
+  marginBottom: '6px',
+};
+
+const btnPrimary: React.CSSProperties = {
+  width: '100%',
+  padding: '10px',
+  borderRadius: '8px',
+  background: '#ffffff',
+  color: '#000000',
+  fontSize: '14px',
+  fontWeight: 600,
+  border: 'none',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  transition: 'opacity 0.15s',
+  fontFamily: 'inherit',
+};
+
+const btnGhost: React.CSSProperties = {
+  width: '100%',
+  padding: '10px',
+  borderRadius: '8px',
+  background: 'transparent',
+  color: 'rgba(255,255,255,0.6)',
+  fontSize: '13px',
+  fontWeight: 500,
+  border: '1px solid #2a2a2a',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  transition: 'background 0.15s, color 0.15s',
+  fontFamily: 'inherit',
+};
 
 export function Action() {
   const location = useLocation();
@@ -67,33 +135,29 @@ export function Action() {
   const [success, setSuccess] = useState<SuccessContent | null>(null);
   const [errorState, setErrorState] = useState<FriendlyError | null>(null);
 
-  // Reset-password form state
   const [accountEmail, setAccountEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Resend-verification state (shown on verifyEmail errors)
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
-  const fail = useCallback((err: unknown, context: Parameters<typeof friendlyAuthError>[1]) => {
-    setErrorState(friendlyAuthError(err, context));
+  const fail = useCallback((err: unknown, ctx: Parameters<typeof friendlyAuthError>[1]) => {
+    setErrorState(friendlyAuthError(err, ctx));
     setPhase('error');
   }, []);
 
-  // Run the action when the page loads.
   useEffect(() => {
     let cancelled = false;
-
     async function run() {
       if (mode === 'unknown') {
         if (!cancelled) {
           setErrorState({
             title: 'Invalid request',
-            message: 'This link is missing required information or is not supported.',
+            message: 'This link is missing required information.',
           });
           setPhase('error');
         }
@@ -103,13 +167,12 @@ export function Action() {
         if (!cancelled) fail('auth/invalid-action-code', contextFor(mode));
         return;
       }
-
       try {
         if (mode === 'verifyEmail') {
           await applyActionCode(auth, oobCode);
           if (!cancelled) {
             setSuccess({
-              title: 'Successfully verified',
+              title: 'Email verified',
               message: 'Your email has been verified successfully. You can close this window now.',
             });
             setPhase('success');
@@ -117,28 +180,24 @@ export function Action() {
         } else if (mode === 'verifyAndChangeEmail') {
           const info = await checkActionCode(auth, oobCode);
           await applyActionCode(auth, oobCode);
-          const newEmail = info.data.email || 'your new address';
           if (!cancelled) {
             setSuccess({
               title: 'Email updated',
-              message: `Your email has been changed to ${newEmail}. You can close this window now.`,
+              message: `Your email has been changed to ${info.data.email ?? 'your new address'}. You can close this window now.`,
             });
             setPhase('success');
           }
         } else if (mode === 'recoverEmail') {
           const info = await checkActionCode(auth, oobCode);
           await applyActionCode(auth, oobCode);
-          const restored = info.data.email || 'your previous address';
           if (!cancelled) {
             setSuccess({
               title: 'Email recovered',
-              message: `Your email has been restored to ${restored}. You can close this window now.`,
+              message: `Your email has been restored to ${info.data.email ?? 'your previous address'}. You can close this window now.`,
             });
             setPhase('success');
           }
         } else if (mode === 'resetPassword') {
-          // Validate the code first; reveals the target email and surfaces
-          // expired/invalid links before showing the form.
           const email = await verifyPasswordResetCode(auth, oobCode);
           if (!cancelled) {
             setAccountEmail(email);
@@ -149,7 +208,6 @@ export function Action() {
         if (!cancelled) fail(err, contextFor(mode));
       }
     }
-
     run();
     return () => {
       cancelled = true;
@@ -186,198 +244,284 @@ export function Action() {
     }
   };
 
+  /**
+   * Resend a verification email. Calls the backend API so the link is generated
+   * server-side via Firebase Admin SDK and points to this page directly —
+   * no Firebase console action URL required.
+   */
   const handleResend = async () => {
-    setResent(false);
     setResending(true);
+    setResent(false);
     try {
       const user = auth.currentUser;
-      if (user) {
-        await sendEmailVerification(user);
-        setResent(true);
-      } else {
-        // Not signed in on this device — guide them to sign in and resend.
+      const token = user ? await user.getIdToken() : null;
+      if (!token) {
         setErrorState({
           title: 'Verification failed',
           message: 'Please sign in again to request a new verification email.',
         });
+        setPhase('error');
+        return;
       }
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/email/send-verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Backend returned an error');
+      setResent(true);
     } catch {
       setErrorState({
-        title: 'Verification failed',
-        message: 'We could not resend the email right now. Please try again shortly.',
+        title: 'Could not resend',
+        message: 'We could not send a new verification email right now. Please try again shortly.',
       });
     } finally {
       setResending(false);
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (phase === 'loading') {
     return (
-      <ActionShell>
-        <LoadingState message={loadingMessage(mode)} />
-      </ActionShell>
+      <ActionLayout>
+        <ActionLoadingState message={loadingMessage(mode)} />
+      </ActionLayout>
     );
   }
 
+  // ── Success ────────────────────────────────────────────────────────────────
   if (phase === 'success' && success) {
     return (
-      <ActionShell>
+      <ActionLayout>
         <div
           className="flex flex-col items-center text-center gap-4"
           role="status"
           aria-live="polite"
         >
-          <SuccessIcon />
-          <div className="space-y-1.5">
-            <h1 className="text-base font-semibold text-white">{success.title}</h1>
-            <p className="text-sm text-white/55 leading-relaxed max-w-[18rem]">{success.message}</p>
+          <ActionSuccessIcon />
+          <div style={{ marginTop: 4 }}>
+            <h1
+              style={{
+                margin: '0 0 6px',
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#e5e5e5',
+                letterSpacing: '-0.1px',
+              }}
+            >
+              {success.title}
+            </h1>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '13px',
+                color: 'rgba(255,255,255,0.45)',
+                lineHeight: 1.6,
+              }}
+            >
+              {success.message}
+            </p>
           </div>
         </div>
-      </ActionShell>
+      </ActionLayout>
     );
   }
 
+  // ── Password reset form ────────────────────────────────────────────────────
   if (phase === 'form' && mode === 'resetPassword') {
     const strength = scorePassword(password);
     return (
-      <ActionShell>
-        <div className="flex flex-col gap-5">
-          <div className="text-center space-y-1.5">
-            <h1 className="text-base font-semibold text-white">Set a new password</h1>
-            <p className="text-sm text-white/55">
-              {accountEmail ? `for ${accountEmail}` : 'Choose a strong new password.'}
+      <ActionLayout>
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: '#e5e5e5' }}>
+            Set a new password
+          </h1>
+          {accountEmail && (
+            <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+              for {accountEmail}
             </p>
-          </div>
+          )}
+        </div>
 
-          <form className="flex flex-col gap-4" onSubmit={handleResetSubmit}>
-            <div className="space-y-1.5">
-              <label htmlFor="action-password" className="text-xs font-medium text-white/70 ml-1">
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="action-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  autoFocus
-                  className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {password.length > 0 && (
-                <div className="flex items-center gap-2 pt-1.5 pl-1">
-                  <div className="flex-1 h-1 rounded-full bg-white/[0.08] overflow-hidden">
-                    <motion.div
-                      className={`h-full ${STRENGTH_COLORS[strength]}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(strength / 4) * 100}%` }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-white/40 w-14 text-right">
-                    {STRENGTH_LABELS[strength]}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="action-confirm" className="text-xs font-medium text-white/70 ml-1">
-                Confirm Password
-              </label>
+        <form
+          onSubmit={handleResetSubmit}
+          style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+        >
+          <div>
+            <label htmlFor="ap-pw" style={labelStyle}>
+              New password
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="action-confirm"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
+                id="ap-pw"
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={8}
                 autoComplete="new-password"
-                className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+                autoFocus
+                style={{ ...inputStyle, paddingRight: 38 }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.35)',
+                  padding: 0,
+                  display: 'flex',
+                }}
+              >
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
 
-            {formError && (
-              <div
-                className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400"
-                role="alert"
-              >
-                {formError}
+            {password.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    height: 3,
+                    borderRadius: 4,
+                    background: '#2a2a2a',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <motion.div
+                    className={STRENGTH_BARS[strength]}
+                    style={{ height: '100%' }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(strength / 4) * 100}%` }}
+                    transition={{ duration: 0.25 }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.35)',
+                    minWidth: 44,
+                    textAlign: 'right',
+                  }}
+                >
+                  {STRENGTH_LABELS[strength]}
+                </span>
               </div>
             )}
+          </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          <div>
+            <label htmlFor="ap-conf" style={labelStyle}>
+              Confirm password
+            </label>
+            <input
+              id="ap-conf"
+              type={showPw ? 'text' : 'password'}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
+              style={inputStyle}
+            />
+          </div>
+
+          {formError && (
+            <div
+              role="alert"
+              style={{
+                padding: '9px 12px',
+                borderRadius: 8,
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.18)',
+                fontSize: 12,
+                color: '#f87171',
+              }}
             >
-              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {submitting ? 'Updating…' : 'Update Password'}
-            </button>
-          </form>
-        </div>
-      </ActionShell>
+              {formError}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{ ...btnPrimary, opacity: submitting ? 0.6 : 1 }}
+          >
+            {submitting && <Loader2 size={14} className="animate-spin" />}
+            {submitting ? 'Updating…' : 'Update password'}
+          </button>
+        </form>
+      </ActionLayout>
     );
   }
 
-  // Error phase (default fallthrough)
+  // ── Error ──────────────────────────────────────────────────────────────────
   return (
-    <ActionShell>
+    <ActionLayout>
       <div
         className="flex flex-col items-center text-center gap-4"
         role="alert"
         aria-live="assertive"
       >
-        <ErrorIcon />
-        <div className="space-y-1.5">
-          <h1 className="text-base font-semibold text-white">
+        <ActionErrorIcon />
+        <div style={{ marginTop: 4 }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: '#e5e5e5' }}>
             {errorState?.title || 'Something went wrong'}
           </h1>
-          <p className="text-sm text-white/55 leading-relaxed max-w-[18rem]">
+          <p
+            style={{
+              margin: 0,
+              fontSize: '13px',
+              color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.6,
+              maxWidth: 260,
+            }}
+          >
             {errorState?.message || 'Please try again or request a new link.'}
           </p>
         </div>
 
         {mode === 'verifyEmail' && (
-          <div className="w-full pt-1">
+          <div style={{ width: '100%', marginTop: 4 }}>
             {resent ? (
-              <p className="text-xs text-emerald-400">Verification email sent. Check your inbox.</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#34d399', textAlign: 'center' }}>
+                Verification email sent. Check your inbox.
+              </p>
             ) : (
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={resending}
-                className="w-full py-2.5 rounded-xl bg-white/[0.03] text-white border border-white/[0.08] text-sm font-medium hover:bg-white/[0.06] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ ...btnGhost, opacity: resending ? 0.6 : 1 }}
               >
-                {resending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {resending && <Loader2 size={13} className="animate-spin" />}
                 {resending ? 'Sending…' : 'Resend verification email'}
               </button>
             )}
           </div>
         )}
 
-        <Link
-          to="/login"
-          className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-4"
+        <a
+          href="/login"
+          style={{
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.3)',
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+            marginTop: 4,
+          }}
         >
           Back to sign in
-        </Link>
+        </a>
       </div>
-    </ActionShell>
+    </ActionLayout>
   );
 }
 

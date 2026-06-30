@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { MailCheck, ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { auth, sendEmailVerification } from '../../lib/firebase';
+import { auth } from '../../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { getApiBaseUrl } from '../../lib/api';
 
 export function VerifyEmail() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -65,17 +66,24 @@ export function VerifyEmail() {
     setResent(false);
     setLoading(true);
     try {
-      await sendEmailVerification(currentUser);
+      // Call the backend so the link is generated via Firebase Admin SDK and
+      // points directly to auth.derivo.in/action — no console action URL needed.
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/email/send-verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Request failed (${res.status})`);
+      }
       setResent(true);
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/too-many-requests') {
+      if (err.message?.includes('too-many-requests') || err.message?.includes('429')) {
         setError('Too many requests. Please wait a moment and try again.');
       } else {
-        setError(
-          err.message ||
-            'Failed to send verification email. Make sure your Firebase email provider is active.',
-        );
+        setError('Failed to send verification email. Please try again shortly.');
       }
     } finally {
       setLoading(false);

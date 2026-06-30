@@ -13,9 +13,9 @@ import {
   getRedirectResult,
   googleProvider,
   githubProvider,
-  sendEmailVerification,
 } from '../../lib/firebase';
 import { updateProfile, getAdditionalUserInfo } from 'firebase/auth';
+import { getApiBaseUrl } from '../../lib/api';
 
 type Step = 'name' | 'credentials';
 
@@ -90,9 +90,15 @@ export function Register() {
         }
 
         try {
-          await sendEmailVerification(user);
+          // Send verification email through backend (Admin SDK link generation —
+          // no Firebase Console action URL required).
+          const token = await user.getIdToken();
+          await fetch(`${getApiBaseUrl()}/api/auth/email/send-verification`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch((err) => console.warn('Could not send verification email via API', err));
         } catch (verifyErr) {
-          console.warn('Failed to send verification email during register', verifyErr);
+          console.warn('Failed to request verification email', verifyErr);
         }
       }
       navigate('/verify-email');

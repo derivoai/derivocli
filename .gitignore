@@ -10,3 +10,6 @@ coverage/
 *.tgz
 standalone/
 .vscode/
+
+# Standalone Firebase action page build output
+apps/web/dist-action/
