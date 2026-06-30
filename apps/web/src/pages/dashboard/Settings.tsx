@@ -12,7 +12,7 @@ import {
   deleteUser,
   GoogleAuthProvider,
   GithubAuthProvider,
-  signOut
+  signOut,
 } from 'firebase/auth';
 
 export function Settings() {
@@ -20,7 +20,12 @@ export function Settings() {
   const { currentUser, profile, subscription, loading } = useUserProfile();
 
   const [name, setName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  // avatarFile: the locally chosen File (not yet persisted)
+  // avatarPreview: object URL for local preview, or the saved Firebase photoURL
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  // clearAvatar: user wants to remove their current saved photo
+  const [clearAvatar, setClearAvatar] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -30,7 +35,7 @@ export function Settings() {
   useEffect(() => {
     if (profile) {
       setName(profile.name || '');
-      setAvatarUrl(currentUser?.photoURL || '');
+      setAvatarPreview(currentUser?.photoURL || '');
     }
   }, [profile, currentUser]);
 
@@ -64,28 +69,37 @@ export function Settings() {
     setErrorMsg('');
 
     try {
-      // Update Firebase Auth details
+      // Determine the photoURL to persist. We only pass a remote HTTP(S) URL to
+      // Firebase Auth — it rejects base64/data URIs. If the user chose a local
+      // file we keep their existing photoURL (the local file preview is
+      // client-side only; full server-side upload can be added later). If they
+      // explicitly removed their avatar we clear it.
+      const existingPhotoUrl = currentUser.photoURL ?? null;
+      let nextPhotoUrl: string | null = existingPhotoUrl;
+      if (clearAvatar) {
+        nextPhotoUrl = null;
+      } else if (avatarFile) {
+        // Local file was picked — keep existing remote URL for now; preview
+        // is already shown from the object URL.
+        nextPhotoUrl = existingPhotoUrl;
+      }
+
       await updateProfile(currentUser, {
         displayName: name,
-        photoURL: avatarUrl || null
+        photoURL: nextPhotoUrl,
       });
 
       // Update Firestore user document
       try {
         const userRef = doc(db, 'users', currentUser.uid);
-        await setDoc(
-          userRef,
-          {
-            name,
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        );
+        await setDoc(userRef, { name, updatedAt: new Date().toISOString() }, { merge: true });
       } catch (firestoreErr: any) {
-        console.warn('Could not update Firestore profile, likely due to security rules:', firestoreErr);
+        console.warn('Could not update Firestore profile:', firestoreErr);
       }
 
-      // Force session refresh in local state
+      // Reset local-file state; preview now reflects the saved photo.
+      setAvatarFile(null);
+      setClearAvatar(false);
       await currentUser.reload();
       setSuccessMsg('Profile updated successfully.');
     } catch (err: any) {
@@ -98,19 +112,32 @@ export function Settings() {
 
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset the input so the same file can be re-selected after removal.
+    e.target.value = '';
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
       setErrorMsg('Image size must be less than 2MB.');
       return;
     }
+    // Allowed types: image/jpeg, image/png, image/gif, image/webp.
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please choose a JPG, PNG, GIF, or WebP image.');
+      return;
+    }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64String = event.target?.result as string;
-      setAvatarUrl(base64String);
-    };
-    reader.readAsDataURL(file);
+    setErrorMsg('');
+    setClearAvatar(false);
+    setAvatarFile(file);
+    // Use an object URL for an instant, memory-safe local preview.
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setClearAvatar(true);
+    setAvatarPreview('');
   };
 
   const handleLinkProvider = async (providerId: string) => {
@@ -131,7 +158,9 @@ export function Settings() {
 
       await linkWithPopup(currentUser, provider);
       await currentUser.reload();
-      setSuccessMsg(`Successfully linked ${providerId === 'google.com' ? 'Google' : 'GitHub'} account.`);
+      setSuccessMsg(
+        `Successfully linked ${providerId === 'google.com' ? 'Google' : 'GitHub'} account.`,
+      );
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/credential-already-in-use') {
@@ -147,7 +176,9 @@ export function Settings() {
   const handleUnlinkProvider = async (providerId: string) => {
     if (!currentUser) return;
     if (providers.length <= 1) {
-      setErrorMsg('You cannot disconnect your only connected account. Please link another sign-in option first.');
+      setErrorMsg(
+        'You cannot disconnect your only connected account. Please link another sign-in option first.',
+      );
       return;
     }
 
@@ -158,7 +189,9 @@ export function Settings() {
     try {
       await unlink(currentUser, providerId);
       await currentUser.reload();
-      setSuccessMsg(`Successfully disconnected ${providerId === 'google.com' ? 'Google' : 'GitHub'} account.`);
+      setSuccessMsg(
+        `Successfully disconnected ${providerId === 'google.com' ? 'Google' : 'GitHub'} account.`,
+      );
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Failed to disconnect account.');
@@ -170,7 +203,7 @@ export function Settings() {
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
     const confirm = window.confirm(
-      'Are you absolutely sure you want to delete your Derivo account? This will permanently delete your user profile, configurations, and active sessions. This action cannot be undone.'
+      'Are you absolutely sure you want to delete your Derivo account? This will permanently delete your user profile, configurations, and active sessions. This action cannot be undone.',
     );
     if (!confirm) return;
 
@@ -186,7 +219,11 @@ export function Settings() {
       } catch (firestoreErr) {
         console.warn('Could not delete Firestore document with deleteDoc:', firestoreErr);
         try {
-          await setDoc(userRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+          await setDoc(
+            userRef,
+            { deleted: true, deletedAt: new Date().toISOString() },
+            { merge: true },
+          );
         } catch (innerErr) {
           console.warn('Could not update Firestore document status:', innerErr);
         }
@@ -201,7 +238,9 @@ export function Settings() {
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/requires-recent-login') {
-        setErrorMsg('For security reasons, deleting your account requires a recent login. Please sign out, log back in, and try again.');
+        setErrorMsg(
+          'For security reasons, deleting your account requires a recent login. Please sign out, log back in, and try again.',
+        );
       } else {
         setErrorMsg(err.message || 'Failed to delete account. Please contact support.');
       }
@@ -215,7 +254,9 @@ export function Settings() {
       <div className="flex flex-col gap-10 max-w-3xl pb-10">
         <header className="flex flex-col justify-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Settings</h1>
-          <p className="text-sm text-white/50">Manage your profile, connected accounts, and security preferences.</p>
+          <p className="text-sm text-white/50">
+            Manage your profile, connected accounts, and security preferences.
+          </p>
         </header>
 
         {/* Success/Error Alerts */}
@@ -238,9 +279,9 @@ export function Settings() {
           <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-6">
             <div className="flex items-center gap-6">
               <div className="relative group">
-                {avatarUrl ? (
+                {avatarPreview ? (
                   <img
-                    src={avatarUrl}
+                    src={avatarPreview}
                     alt={profile?.name || 'User'}
                     className="w-16 h-16 rounded-full border border-white/10 object-cover"
                   />
@@ -256,7 +297,7 @@ export function Settings() {
                   <input
                     type="file"
                     id="avatar-upload"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
                     className="hidden"
                     onChange={handleAvatarFileChange}
                   />
@@ -266,17 +307,19 @@ export function Settings() {
                   >
                     Choose Picture
                   </label>
-                  {avatarUrl && (
+                  {avatarPreview && (
                     <button
                       type="button"
-                      onClick={() => setAvatarUrl('')}
+                      onClick={handleRemoveAvatar}
                       className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors"
                     >
                       Remove
                     </button>
                   )}
                 </div>
-                <span className="text-[11px] text-white/40">JPG, PNG or GIF. Max size 2MB.</span>
+                <span className="text-[11px] text-white/40">
+                  JPG, PNG, GIF or WebP. Max size 2MB.
+                </span>
               </div>
             </div>
 
@@ -305,17 +348,6 @@ export function Settings() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-white/70 ml-1">Avatar Image URL (Alternative)</label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/avatar.png"
-                  className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
-                />
-              </div>
-
               <div className="flex justify-end mt-2">
                 <button
                   type="submit"
@@ -341,7 +373,9 @@ export function Settings() {
                   {subscription?.plan === 'pro'
                     ? 'Pro Plan'
                     : subscription?.plan === 'trial'
-                      ? (subscription && isTrialActive(subscription) ? 'Pro Trial' : 'Trial Expired')
+                      ? subscription && isTrialActive(subscription)
+                        ? 'Pro Trial'
+                        : 'Trial Expired'
                       : 'Community Plan'}
                 </span>
               </div>
@@ -371,7 +405,6 @@ export function Settings() {
         <section className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold text-white/90">Connected Accounts</h2>
           <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-4">
-            
             {/* Password Sign in connection status */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.06] bg-[#050505]">
               <div className="flex items-center gap-3">
@@ -386,14 +419,16 @@ export function Settings() {
             </div>
 
             {/* GitHub Provider */}
-            <div className={`flex items-center justify-between p-4 rounded-xl border ${hasGithub ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}>
+            <div
+              className={`flex items-center justify-between p-4 rounded-xl border ${hasGithub ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}
+            >
               <div className="flex items-center gap-3">
                 <Github className="w-5 h-5 text-white/80" />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-white/90">GitHub</span>
                   <span className="text-[11px] text-white/40">
-                    {hasGithub 
-                      ? `Connected as ${githubAccount?.displayName || githubAccount?.email || 'GitHub User'}` 
+                    {hasGithub
+                      ? `Connected as ${githubAccount?.displayName || githubAccount?.email || 'GitHub User'}`
                       : 'Connect your GitHub account'}
                   </span>
                 </div>
@@ -419,19 +454,33 @@ export function Settings() {
             </div>
 
             {/* Google Provider */}
-            <div className={`flex items-center justify-between p-4 rounded-xl border ${hasGoogle ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}>
+            <div
+              className={`flex items-center justify-between p-4 rounded-xl border ${hasGoogle ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}
+            >
               <div className="flex items-center gap-3">
                 <svg className="w-5 h-5 opacity-80" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
                 </svg>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-white/90">Google</span>
                   <span className="text-[11px] text-white/40">
-                    {hasGoogle 
-                      ? `Connected as ${googleAccount?.displayName || googleAccount?.email || 'Google User'}` 
+                    {hasGoogle
+                      ? `Connected as ${googleAccount?.displayName || googleAccount?.email || 'Google User'}`
                       : 'Connect your Google account'}
                   </span>
                 </div>
@@ -455,7 +504,6 @@ export function Settings() {
                 </button>
               )}
             </div>
-
           </div>
         </section>
 
@@ -466,7 +514,8 @@ export function Settings() {
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-white/90">Delete Account</span>
               <span className="text-xs text-white/50 leading-relaxed max-w-sm">
-                Permanently delete your account and all of its contents from the Derivo platform. This action is not reversible.
+                Permanently delete your account and all of its contents from the Derivo platform.
+                This action is not reversible.
               </span>
             </div>
             <button
@@ -479,7 +528,6 @@ export function Settings() {
             </button>
           </div>
         </section>
-
       </div>
     </DashboardLayout>
   );
