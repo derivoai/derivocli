@@ -109,6 +109,12 @@ export function validateConfig(config: AppConfig = loadConfig()): {
     if (config.billingProvider === 'lemonsqueezy' && !config.lemonSqueezyWebhookSecret) {
       problems.push('LEMONSQUEEZY_WEBHOOK_SECRET is required when using the lemonsqueezy provider');
     }
+    if (config.emailProvider === 'resend' && !process.env.RESEND_API_KEY?.trim()) {
+      problems.push('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
+    }
+    if (config.emailProvider !== 'none' && !process.env.EMAIL_FROM?.trim()) {
+      problems.push('EMAIL_FROM must be set when an email provider is configured');
+    }
   }
 
   const ok = problems.length === 0;

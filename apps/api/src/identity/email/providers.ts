@@ -1,77 +1,104 @@
 /**
  * Provider-agnostic email abstraction.
  *
- * Providers: Resend (live), Postmark / SendGrid (stubs ready for future use),
- * Noop (default until a provider is configured).
+ * Providers:
+ *   resend    — live, uses the official Resend SDK with retry on transient errors
+ *   postmark  — stub (ready for future use)
+ *   sendgrid  — stub (ready for future use)
+ *   none      — no-op default (logs intent, never delivers)
+ *
+ * Call getEmailProvider(config.emailProvider) to get the active provider.
+ * The factory caches the instance so the SDK client is only constructed once.
  */
+import { Resend } from 'resend';
 import { logger } from '../../infra/logger.js';
+import { withRetry } from '../../infra/resilience.js';
 
 export interface EmailMessage {
+  /** Recipient address. */
   to: string;
   subject: string;
   html: string;
-  text?: string;
+  /** Plain-text fallback (required by email standards). */
+  text: string;
+  /**
+   * Override the sender for this specific message.
+   * Falls back to the globally configured EMAIL_FROM.
+   */
   from?: string;
 }
 
 export interface EmailProvider {
   readonly name: string;
-  /** Whether this provider can actually deliver mail right now. */
+  /**
+   * True if this provider is wired up and can deliver mail right now.
+   * Callers should check this to decide whether to surface warnings.
+   */
   readonly canSend: boolean;
   send(message: EmailMessage): Promise<void>;
 }
 
-// ── Noop ─────────────────────────────────────────────────────────────────────
-export class NoopEmailProvider implements EmailProvider {
-  readonly name = 'none';
-  readonly canSend = false;
-  async send(message: EmailMessage): Promise<void> {
-    logger.warn('email send skipped (no provider configured)', {
-      to: message.to,
-      subject: message.subject,
-    });
+// ── Resend ────────────────────────────────────────────────────────────────────
+
+/** HTTP status codes that are safe to retry (rate-limit / gateway error). */
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+
+function isRetryable(err: unknown): boolean {
+  // Resend SDK throws a standard Error with the HTTP status embedded.
+  const msg = err instanceof Error ? err.message : String(err);
+  for (const s of RETRYABLE_STATUSES) {
+    if (msg.includes(String(s))) return true;
   }
+  return false;
 }
 
-// ── Resend ────────────────────────────────────────────────────────────────────
 export class ResendEmailProvider implements EmailProvider {
   readonly name = 'resend';
   readonly canSend = true;
-  private readonly apiKey: string;
-  private readonly from: string;
+
+  private readonly client: Resend;
+  private readonly defaultFrom: string;
 
   constructor() {
-    const key = process.env.RESEND_API_KEY?.trim();
-    if (!key) throw new Error('RESEND_API_KEY is not set');
-    this.apiKey = key;
-    this.from = process.env.EMAIL_FROM?.trim() || 'Derivo <noreply@derivo.in>';
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    if (!apiKey) {
+      throw new Error(
+        'RESEND_API_KEY is not set. Add it to your .env file (EMAIL_PROVIDER=resend requires it).',
+      );
+    }
+    this.client = new Resend(apiKey);
+    this.defaultFrom = process.env.EMAIL_FROM?.trim() || 'Derivo <noreply@derivo.in>';
   }
 
   async send(message: EmailMessage): Promise<void> {
-    const payload = {
-      from: message.from || this.from,
-      to: [message.to],
-      subject: message.subject,
-      html: message.html,
-      ...(message.text ? { text: message.text } : {}),
-    };
+    await withRetry(
+      async () => {
+        const { error, data } = await this.client.emails.send({
+          from: message.from ?? this.defaultFrom,
+          to: [message.to],
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        });
 
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
+        if (error) {
+          throw new Error(`Resend error: ${error.name} — ${error.message}`);
+        }
+
+        logger.info('email sent via resend', {
+          to: message.to,
+          subject: message.subject,
+          id: data?.id,
+        });
       },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`Resend API error ${res.status}: ${body}`);
-    }
-
-    const data = await res.json().catch(() => ({}));
-    logger.info('email sent via resend', { to: message.to, subject: message.subject, id: data.id });
+      {
+        retries: 2,
+        baseDelayMs: 300,
+        maxDelayMs: 3_000,
+        shouldRetry: isRetryable,
+        label: 'resend.send',
+      },
+    );
   }
 }
 
@@ -93,28 +120,40 @@ export class SendGridEmailProvider implements EmailProvider {
   }
 }
 
-// ── Factory ───────────────────────────────────────────────────────────────────
-let cached: EmailProvider | null = null;
-
-export function getEmailProvider(name: string): EmailProvider {
-  if (cached && cached.name === name) return cached;
-  switch (name) {
-    case 'resend':
-      cached = new ResendEmailProvider();
-      break;
-    case 'postmark':
-      cached = new PostmarkEmailProvider();
-      break;
-    case 'sendgrid':
-      cached = new SendGridEmailProvider();
-      break;
-    default:
-      cached = new NoopEmailProvider();
+// ── Noop ─────────────────────────────────────────────────────────────────────
+export class NoopEmailProvider implements EmailProvider {
+  readonly name = 'none';
+  readonly canSend = false;
+  async send(message: EmailMessage): Promise<void> {
+    logger.warn('email send skipped — no provider configured', {
+      to: message.to,
+      subject: message.subject,
+    });
   }
-  return cached;
 }
 
-/** Tests: drop the cached provider instance. */
+// ── Factory ───────────────────────────────────────────────────────────────────
+let _cached: EmailProvider | null = null;
+
+export function getEmailProvider(name: string): EmailProvider {
+  if (_cached && _cached.name === name) return _cached;
+  switch (name) {
+    case 'resend':
+      _cached = new ResendEmailProvider();
+      break;
+    case 'postmark':
+      _cached = new PostmarkEmailProvider();
+      break;
+    case 'sendgrid':
+      _cached = new SendGridEmailProvider();
+      break;
+    default:
+      _cached = new NoopEmailProvider();
+  }
+  return _cached;
+}
+
+/** Drop the cached provider (tests / config reload). */
 export function resetEmailProviderForTesting(): void {
-  cached = null;
+  _cached = null;
 }

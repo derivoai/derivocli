@@ -41,17 +41,22 @@ test('provider: unknown/none resolves to the no-op provider', () => {
 
 test('provider: no-op send never throws and does not deliver', async () => {
   const p = getEmailProvider('none');
-  await p.send({ to: 'a@b.com', subject: 's', html: '<p>x</p>' });
+  await p.send({ to: 'a@b.com', subject: 's', html: '<p>x</p>', text: 'x' });
   assert.equal(p.canSend, false);
 });
 
 test('provider: named providers are placeholders that cannot send yet', async () => {
-  for (const name of ['resend', 'postmark', 'sendgrid']) {
+  // resend now throws at construction when RESEND_API_KEY is absent.
+  // postmark and sendgrid still throw at send() since they are stubs.
+  resetEmailProviderForTesting();
+  assert.throws(() => getEmailProvider('resend'), /RESEND_API_KEY/i);
+
+  for (const name of ['postmark', 'sendgrid']) {
     resetEmailProviderForTesting();
     const p = getEmailProvider(name);
     assert.equal(p.name, name);
     assert.equal(p.canSend, false);
-    await assert.rejects(p.send({ to: 'a@b.com', subject: 's', html: '<p>x</p>' }), /not implemented/i);
+    await assert.rejects(p.send({ to: 'a@b.com', subject: 's', html: '<p>x</p>', text: 't' }), /not implemented/i);
   }
 });
 

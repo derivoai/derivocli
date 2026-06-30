@@ -163,9 +163,23 @@ export class EmailActionService {
   ): Promise<SendResult> {
     let link: string;
     try {
-      if (kind === 'verifyEmail') link = await this.generateVerificationLink(email);
-      else if (kind === 'resetPassword') link = await this.generatePasswordResetLink(email);
-      else link = await this.generateVerificationLink(email); // recoverEmail uses verify link
+      if (kind === 'verifyEmail') {
+        link = await this.generateVerificationLink(email);
+      } else if (kind === 'resetPassword') {
+        link = await this.generatePasswordResetLink(email);
+      } else {
+        // recoverEmail: Firebase does not have a dedicated Admin SDK method for
+        // recovery links. The oobCode for recovery is delivered by Firebase's own
+        // system when a user changes their email — we cannot generate it server-side.
+        // For completeness the service accepts this kind; callers that DO have a
+        // raw oobCode can construct the link manually using authActionUrl.
+        logger.warn(
+          'recoverEmail send requested — no Admin SDK method available; skipping link generation',
+          { email },
+        );
+        const config = loadConfig();
+        link = `${config.authActionUrl}?mode=recoverEmail`;
+      }
     } catch (err) {
       logger.error('link generation failed', {
         kind,
@@ -186,7 +200,7 @@ export class EmailActionService {
       await this.provider.send({ to: email, ...template });
       sent = this.provider.canSend;
     } catch (err) {
-      // Never let a provider failure break the caller — log and continue.
+      // Never let a provider failure break the caller — log and move on.
       logger.error('email provider send failed', {
         provider: this.provider.name,
         kind,
@@ -195,7 +209,7 @@ export class EmailActionService {
     }
 
     const result: SendResult = { sent, provider: this.provider.name };
-    // Never leak action links in production.
+    // Never leak action links in production responses.
     if (loadConfig().env !== 'production') result.link = link;
     return result;
   }

@@ -1,11 +1,12 @@
 /**
- * Transactional auth-email endpoints. These generate Firebase action links via
- * the Admin SDK (the prepared replacement for client-side sendEmailVerification)
- * and hand them to the configured email provider for delivery.
+ * Transactional auth-email endpoints.
  *
- * Delivery is a no-op until a provider is configured, so these endpoints are
- * safe to call but will not yet send mail. Links are never returned to clients
- * in production.
+ * Every endpoint generates Firebase Admin SDK action links, rewrites them to
+ * auth.derivo.in/action, and hands the HTML template + link to the configured
+ * email provider (Resend by default). Firebase's built-in email delivery is
+ * never used.
+ *
+ * Links are never returned to the client in production.
  */
 import { Router } from 'express';
 import { authOf, requireAuth, type AuthedRequest } from '../security/auth.js';
@@ -17,8 +18,9 @@ import { getEmailActionService } from '../identity/email/index.js';
 export const authEmailRouter = Router();
 
 /**
- * Send (generate) an email-verification link for the authenticated user.
- * UID/email come only from the verified token, never the request body.
+ * POST /api/auth/email/send-verification
+ * Send a verification email for the authenticated user.
+ * UID/email sourced only from the verified token.
  */
 authEmailRouter.post(
   '/send-verification',
@@ -27,20 +29,19 @@ authEmailRouter.post(
   asyncHandler<AuthedRequest>(async (req, res) => {
     const { email } = authOf(req);
     if (!isAdminInitialized()) {
-      // Mock mode: nothing to generate. Report a no-op so callers don't break.
       res.json({ sent: false, provider: 'none', mock: true });
       return;
     }
     if (!email) throw Errors.badRequest('No email associated with this account.');
-
-    const result = await getEmailActionService().send('verifyEmail', email);
+    const result = await getEmailActionService().sendVerification(email);
     res.json(result);
   }),
 );
 
 /**
- * Send (generate) a password-reset link for an email address. Public + rate
- * limited. Always returns a generic success to avoid account enumeration.
+ * POST /api/auth/email/send-password-reset
+ * Send a password-reset email. Public + rate-limited.
+ * Always returns 200 to prevent account enumeration.
  */
 authEmailRouter.post(
   '/send-password-reset',
@@ -50,16 +51,36 @@ authEmailRouter.post(
     if (!email || typeof email !== 'string') {
       throw Errors.badRequest('A valid email address is required.');
     }
-
     if (isAdminInitialized()) {
       try {
-        await getEmailActionService().send('resetPassword', email);
+        await getEmailActionService().sendPasswordReset(email);
       } catch {
         // Swallow — never reveal whether the account exists.
       }
     }
-    // Enumeration-safe: identical response regardless of account existence.
     res.json({ ok: true });
+  }),
+);
+
+/**
+ * POST /api/auth/email/send-recover
+ * Notify a user that their email address can be recovered.
+ * Requires auth (the currently-signed-in user for that account).
+ */
+authEmailRouter.post(
+  '/send-recover',
+  limiters.auth,
+  requireAuth,
+  asyncHandler<AuthedRequest>(async (req, res) => {
+    const { email } = authOf(req);
+    if (!isAdminInitialized()) {
+      res.json({ sent: false, provider: 'none', mock: true });
+      return;
+    }
+    if (!email) throw Errors.badRequest('No email associated with this account.');
+    const { restoredEmail } = (req.body ?? {}) as { restoredEmail?: string };
+    const result = await getEmailActionService().sendRecoverEmail(email, restoredEmail || email);
+    res.json(result);
   }),
 );
 
