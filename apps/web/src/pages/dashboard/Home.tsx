@@ -22,7 +22,13 @@ import { UpgradeModal } from '../../components/dashboard/shared/UpgradeModal';
 
 export function DashboardHome() {
   const { profile, subscription, loading: profileLoading, error: profileError } = useUserProfile();
-  const { projects, devices, activity, loading: dataLoading, error: dataError } = useDashboardOverview();
+  const {
+    projects,
+    devices,
+    activity,
+    loading: dataLoading,
+    error: dataError,
+  } = useDashboardOverview();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const error = profileError || dataError;
@@ -58,17 +64,27 @@ export function DashboardHome() {
   const hasPremium = subscription ? isPremium(subscription) : false;
   const trialActive = subscription ? isTrialActive(subscription) : false;
   const remainingTimeMs = subscription ? getRemainingTrialTime(subscription) : 0;
-  
-  // Calculate remaining days
-  const trialDaysLeft = Math.ceil(remainingTimeMs / (1000 * 60 * 60 * 24));
 
-  const userPlan = subscription?.plan === 'pro'
-    ? 'Pro Plan'
-    : subscription?.plan === 'trial'
-      ? (trialActive ? 'Pro Trial' : 'Trial Expired')
-      : 'Community Plan';
+  // Use floor so "1 day 3 hours" shows as 1 day, not 2. ceil was inflating the count.
+  const trialDaysLeft = Math.floor(remainingTimeMs / (1000 * 60 * 60 * 24));
+  const trialHoursLeft = Math.floor((remainingTimeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  const subStatus = subscription?.status || 'inactive';
+  // Resolve plan label from both the legacy `plan` field and the backend `planId` field.
+  const resolvedPlan = ((subscription as any)?.planId ?? subscription?.plan ?? '').toLowerCase();
+  const resolvedStatus = ((subscription as any)?.status ?? '').toLowerCase();
+
+  const userPlan =
+    resolvedPlan === 'pro' || resolvedPlan === 'enterprise'
+      ? resolvedPlan === 'enterprise'
+        ? 'Enterprise'
+        : 'Pro Plan'
+      : resolvedPlan === 'trial' || resolvedStatus === 'trialing' || resolvedStatus === 'trial'
+        ? trialActive
+          ? 'Pro Trial'
+          : 'Trial Expired'
+        : 'Community Plan';
+
+  const subStatus = resolvedStatus || 'inactive';
 
   const handleNewProjectClick = () => {
     if (!hasPremium) {
@@ -100,12 +116,8 @@ export function DashboardHome() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
-        
         {/* Upgrade Modal */}
-        <UpgradeModal
-          isOpen={isUpgradeModalOpen}
-          onClose={() => setIsUpgradeModalOpen(false)}
-        />
+        <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
 
         {/* Welcome Section */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -133,22 +145,28 @@ export function DashboardHome() {
         </header>
 
         {/* Trial Expired Alert Banner */}
-        {!hasPremium && subscription?.plan === 'trial' && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold uppercase tracking-wider text-[10px] bg-red-500/20 px-2 py-0.5 rounded text-red-300">
-                Expired
-              </span>
-              <span>Your premium trial has expired. Upgrade to Pro to continue creating projects and using premium CLI endpoints.</span>
+        {!hasPremium &&
+          (resolvedPlan === 'trial' ||
+            resolvedStatus === 'trialing' ||
+            resolvedStatus === 'trial') && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_4px_20px_rgba(239,68,68,0.05)]">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold uppercase tracking-wider text-[10px] bg-red-500/20 px-2 py-0.5 rounded text-red-300">
+                  Expired
+                </span>
+                <span>
+                  Your premium trial has expired. Upgrade to Pro to continue creating projects and
+                  using premium CLI endpoints.
+                </span>
+              </div>
+              <button
+                onClick={() => setIsUpgradeModalOpen(true)}
+                className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0 shadow-sm"
+              >
+                Upgrade to Pro
+              </button>
             </div>
-            <button
-              onClick={() => setIsUpgradeModalOpen(true)}
-              className="text-xs font-semibold text-black bg-white hover:bg-white/95 px-3 py-1.5 rounded-lg transition-colors w-fit shrink-0 shadow-sm"
-            >
-              Upgrade to Pro
-            </button>
-          </div>
-        )}
+          )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Status Card 1: Subscription */}
@@ -168,7 +186,12 @@ export function DashboardHome() {
               </div>
               {subscription?.plan === 'trial' && trialActive && (
                 <div className="text-xs text-white/40 mt-1">
-                  Trial Remaining: {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'}
+                  Trial Remaining:{' '}
+                  {trialDaysLeft > 0
+                    ? `${trialDaysLeft}d ${trialHoursLeft}h`
+                    : trialHoursLeft > 0
+                      ? `${trialHoursLeft}h`
+                      : 'Less than 1 hour'}
                 </div>
               )}
             </div>

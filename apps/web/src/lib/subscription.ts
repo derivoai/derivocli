@@ -29,7 +29,12 @@ function resolveStatus(sub: Subscription): string {
 
 function isTrialPlan(plan: string, status: string): boolean {
   return (
-    plan === 'trial' || plan === 'pro_trial' || plan === 'free_trial' || status.includes('trial')
+    plan === 'trial' ||
+    plan === 'pro_trial' ||
+    plan === 'free_trial' ||
+    status === 'trialing' ||
+    status === 'trial' ||
+    status.includes('trial')
   );
 }
 
@@ -127,8 +132,12 @@ export function isTrialActive(subscription: Subscription): boolean {
   const activeStatus =
     status === 'active' || status === 'trialing' || status === 'trial' || status === '';
   if (!activeStatus) return false;
-  const ends = subscription.trialEndsAt;
-  if (!ends) return true; // active trial without an end date
+  // Prefer trialEndsAt; also check currentPeriodEnd for backend-shape docs.
+  const ends =
+    (subscription as any).trialEndsAt ||
+    (subscription as any).trialEndAt ||
+    (subscription as any).trialExpiresAt;
+  if (!ends) return true; // active trial without an end date — treat as active
   return parseFirebaseDate(ends).getTime() > Date.now();
 }
 

@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db, doc, getDoc, setDoc } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import {
-  getSubscription,
-  createDefaultSubscription,
-  Subscription,
-  deriveRole,
-} from '../lib/subscription';
+import { getSubscription, Subscription, deriveRole } from '../lib/subscription';
 
 export interface UserProfile {
   uid: string;
@@ -87,11 +82,35 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         currentProfile = defaultProfile;
       }
 
-      // Fetch subscription
+      // Fetch subscription — read from Firestore directly, never auto-create.
+      // The backend (/api/account/register) is responsible for writing the
+      // authoritative subscription doc. Auto-creating here overwrites the real
+      // trial date with a fresh one, making the displayed remaining time wrong.
       let currentSub = await getSubscription(user.uid);
       if (!currentSub) {
-        // Auto-create missing subscription (empty state safety)
-        currentSub = await createDefaultSubscription(user.uid);
+        // No subscription doc yet (user hasn't completed registration flow or
+        // backend is unavailable). Use a local-only placeholder that doesn't
+        // get written to Firestore, so the backend can write the real doc later.
+        currentSub = {
+          uid: user.uid,
+          plan: 'community',
+          status: 'active',
+          trialStartedAt: '',
+          trialEndsAt: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      // Normalise: backend writes planId+trialing; legacy uses plan+active.
+      // Mirror both fields so every consumer works regardless of doc shape.
+      if (currentSub && ((currentSub as any).planId || (currentSub as any).plan)) {
+        const raw = currentSub as any;
+        currentSub = {
+          ...currentSub,
+          plan: raw.plan ?? raw.planId ?? 'community',
+          planId: raw.planId ?? raw.plan ?? 'community',
+        } as Subscription;
       }
 
       // Dynamically check and compute role based on active subscription
@@ -186,9 +205,10 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   const refreshSubscription = async () => {
     if (!currentUser) return;
     try {
-      let currentSub = await getSubscription(currentUser.uid);
+      const currentSub = await getSubscription(currentUser.uid);
       if (!currentSub) {
-        currentSub = await createDefaultSubscription(currentUser.uid);
+        // No doc — don't overwrite with a fake trial; keep current state.
+        return;
       }
       setSubscription(currentSub);
 
@@ -297,7 +317,17 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         const subRef = doc(db, 'subscriptions', user.uid);
         unsubscribeSubscription = onSnapshot(subRef, async (subSnap) => {
           if (subSnap.exists()) {
-            const subData = subSnap.data() as Subscription;
+            const raw = subSnap.data();
+            // Normalise: the backend writes planId+trialing; the legacy shape
+            // uses plan+active. Merge them so every consumer sees both fields.
+            const subData = {
+              ...raw,
+              // Ensure the legacy `plan` field mirrors `planId` so helpers that
+              // read `plan` still work without a full rewrite.
+              plan: raw.plan ?? raw.planId ?? 'community',
+              // And vice-versa.
+              planId: raw.planId ?? raw.plan ?? 'community',
+            } as Subscription;
             setSubscription(subData);
             localStorage.setItem(`derivo_sub_${user.uid}`, JSON.stringify(subData));
 
