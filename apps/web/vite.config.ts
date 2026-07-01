@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
       // Expose environment variables without VITE_ prefix to import.meta.env
       'import.meta.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
       'import.meta.env.APP_URL': JSON.stringify(env.APP_URL || 'http://localhost:3000'),
+      // Expose backend API URL (VITE_API_URL is automatically available, but also expose as VITE_DERIVO_API_URL)
+      'import.meta.env.VITE_DERIVO_API_URL': JSON.stringify(
+        env.VITE_API_URL || env.DERIVO_API_URL || 'http://localhost:3001',
+      ),
     },
     server: {
       hosts: true,

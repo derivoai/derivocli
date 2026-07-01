@@ -13,3 +13,5 @@ standalone/
 
 # Standalone Firebase action page build output
 apps/web/dist-action/
+
+.vercel
