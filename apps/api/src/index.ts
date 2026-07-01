@@ -1,4 +1,4 @@
-import './load-env';
+import './load-env.js';
 import type { Server } from 'http';
 import { createApp } from './app.js';
 import { initFirebase, isAdminInitialized } from './firebase.js';
