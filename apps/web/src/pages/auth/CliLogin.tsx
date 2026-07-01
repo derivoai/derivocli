@@ -2,85 +2,119 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { auth } from '../../lib/firebase';
-import { Loader2 } from 'lucide-react';
+import { getApiBaseUrl } from '../../lib/api';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export function CliLogin() {
   const [searchParams] = useSearchParams();
   const { profile, loading } = useUserProfile();
-  const [status, setStatus] = useState<'authenticating' | 'redirecting' | 'error'>(
+  const [status, setStatus] = useState<'authenticating' | 'completing' | 'done' | 'error'>(
     'authenticating',
   );
   const [errorMessage, setErrorMessage] = useState('');
 
+  const state = searchParams.get('state');
+  // Legacy support: old CLI versions pass ?port=
   const port = searchParams.get('port');
 
   useEffect(() => {
     if (loading) return;
 
-    if (!port) {
+    if (!state && !port) {
       setStatus('error');
-      setErrorMessage('No CLI port specified.');
+      setErrorMessage('No authentication session specified.');
       return;
     }
 
     if (!profile) {
-      // If the user isn't logged in to the web app, redirect to normal login with return URL
       const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/login?callbackUrl=${currentUrl}`;
       return;
     }
 
-    // User is logged in, extract token and redirect back to CLI
-    const handleRedirect = async () => {
-      setStatus('redirecting');
+    const handleAuth = async () => {
+      setStatus('completing');
       try {
         const currentUser = auth.currentUser;
         if (!currentUser) throw new Error('Firebase user not found');
 
-        // Get the ID token
         const token = await currentUser.getIdToken();
 
-        // Redirect to CLI local server
-        const callbackUrl = `http://localhost:${port}/callback?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(currentUser.uid)}&email=${encodeURIComponent(currentUser.email || '')}`;
+        // New flow: POST state + token to API, no localhost involved
+        if (state) {
+          const apiBase = getApiBaseUrl();
+          const res = await fetch(`${apiBase}/api/cli/auth/complete`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ state }),
+          });
 
-        window.location.href = callbackUrl;
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || `Server error (${res.status})`);
+          }
+
+          setStatus('done');
+          // Auto-close after 3 seconds
+          setTimeout(() => window.close(), 3000);
+          return;
+        }
+
+        // Legacy flow: redirect to localhost (old CLI versions)
+        if (port) {
+          const callbackUrl = `http://localhost:${port}/callback?token=${encodeURIComponent(token)}&uid=${encodeURIComponent(currentUser.uid)}&email=${encodeURIComponent(currentUser.email || '')}`;
+          window.location.href = callbackUrl;
+        }
       } catch (err) {
         setStatus('error');
-        setErrorMessage(err instanceof Error ? err.message : 'Failed to generate auth token');
+        setErrorMessage(err instanceof Error ? err.message : 'Failed to complete authentication');
       }
     };
 
-    handleRedirect();
-  }, [loading, profile, port]);
+    handleAuth();
+  }, [loading, profile, state, port]);
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-xl p-8 text-center space-y-6">
-        {status === 'authenticating' && (
+        {(status === 'authenticating' || status === 'completing') && (
           <>
             <Loader2 className="w-12 h-12 text-green-400 animate-spin mx-auto" />
-            <h2 className="text-xl font-medium">Authenticating CLI...</h2>
-            <p className="text-sm text-gray-400">Please wait while we verify your session.</p>
+            <h2 className="text-xl font-medium">
+              {status === 'authenticating' ? 'Authenticating...' : 'Completing login...'}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {status === 'authenticating'
+                ? 'Verifying your session...'
+                : 'Securely passing your credentials to the CLI...'}
+            </p>
           </>
         )}
 
-        {status === 'redirecting' && (
+        {status === 'done' && (
           <>
-            <Loader2 className="w-12 h-12 text-green-400 animate-spin mx-auto" />
-            <h2 className="text-xl font-medium">Redirecting to CLI...</h2>
+            <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
+            <h2 className="text-xl font-medium text-green-400">Login Successful</h2>
             <p className="text-sm text-gray-400">
-              You will be securely redirected back to your terminal shortly.
+              You're authenticated. Return to your terminal — this window will close automatically.
             </p>
           </>
         )}
 
         {status === 'error' && (
           <>
-            <div className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto text-xl">
-              !
-            </div>
+            <XCircle className="w-12 h-12 text-red-400 mx-auto" />
             <h2 className="text-xl font-medium text-red-400">Authentication Failed</h2>
             <p className="text-sm text-gray-400">{errorMessage}</p>
+            <button
+              onClick={() => window.close()}
+              className="text-sm text-gray-500 underline hover:text-gray-300"
+            >
+              Close this window
+            </button>
           </>
         )}
       </div>
