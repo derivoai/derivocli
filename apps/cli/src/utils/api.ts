@@ -14,7 +14,7 @@ import http from 'http';
 import https from 'https';
 import { getGlobalConfig } from './config.js';
 
-export const DEFAULT_API_URL = 'http://localhost:3001';
+export const DEFAULT_API_URL = 'https://derivoapi-production.up.railway.app';
 
 export function getApiBaseUrl(): string {
   const fromEnv = process.env.DERIVO_API_URL?.trim();

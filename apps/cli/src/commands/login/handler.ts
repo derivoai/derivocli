@@ -38,7 +38,7 @@ export async function loginHandler() {
       }
 
       const port = address.port;
-      const webUrl = process.env.DERIVO_WEB_URL || 'http://localhost:3000';
+      const webUrl = process.env.DERIVO_WEB_URL || 'https://derivo.in';
       const loginUrl = `${webUrl}/cli-login?port=${port}`;
 
       spinner.text = `${icons.globe} Waiting for authentication in browser...`;

@@ -37,7 +37,13 @@ export function createApp(): express.Express {
   app.use(requestContext);
   app.use(
     cors({
-      origin: [appUrl, 'http://localhost:3000', 'http://localhost:5173'],
+      origin: [
+        appUrl,
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://derivo.in',
+        'https://www.derivo.in',
+      ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: [
