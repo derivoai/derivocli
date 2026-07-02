@@ -1,64 +1,114 @@
 import { motion } from 'motion/react';
-import { Lock, HardDrive, MonitorSmartphone, KeyRound } from 'lucide-react';
+import { Shield, Lock, Laptop, KeyRound, CheckCircle2 } from 'lucide-react';
 
-const points = [
+interface SecurityStep {
+  label: string;
+  title: string;
+  desc: string;
+  icon: any;
+}
+
+const securitySteps: SecurityStep[] = [
   {
-    icon: HardDrive,
-    title: 'Local-first by design',
-    desc: 'Your source code never leaves your machine. Derivo reads only structural manifests to understand your stack.',
+    label: '01 / Trusted Device',
+    title: 'Hardware-Bound Signature',
+    desc: 'Session keys are cryptographically bound to your specific hardware profile. Copied credential files are completely invalid on other machines.',
+    icon: Laptop,
   },
   {
+    label: '02 / Encrypted Session',
+    title: 'AES-256-GCM Local Vault',
+    desc: 'Local configuration and secrets are encrypted at rest with military-grade AES-256-GCM vault storage. Never saved in plaintext.',
     icon: Lock,
-    title: 'Encrypted, machine-bound sessions',
-    desc: 'Credentials are encrypted at rest with AES-256-GCM and tied to your device — a copied session file is useless elsewhere.',
   },
   {
-    icon: MonitorSmartphone,
-    title: 'Device trust & session control',
-    desc: 'See every active session and registered device. Trust, review, or sign them out from your dashboard at any time.',
+    label: '03 / Verified Identity',
+    title: 'Secure Handshake Protocol',
+    desc: 'Authenticates machines using a short-lived cryptographic authorization code exchanged during your secure browser-based login.',
+    icon: CheckCircle2,
   },
   {
+    label: '04 / Secure API Keys',
+    title: 'Scoped & Revocable Access',
+    desc: 'Issue isolated access tokens with strict action boundaries for CI/CD and automation. Revoke them instantly with a single click.',
     icon: KeyRound,
-    title: 'Scoped, revocable API keys',
-    desc: 'Issue keys for CI and automation with limited scopes, and revoke them instantly the moment they are no longer needed.',
+  },
+  {
+    label: '05 / Protected Workspace',
+    title: 'Local-First Architecture',
+    desc: 'Your repository source code never leaves your local environment. Derivo parses manifests on-machine and only reports status signals.',
+    icon: Shield,
   },
 ];
 
 export function Security() {
   return (
-    <section className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left">
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-12 border-t border-white/[0.08] pt-16">
-        <div className="md:w-1/3">
-          <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-            Security
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mt-3 leading-[1.1]">
-            Built to be trusted on every machine.
-          </h2>
-          <p className="mt-4 text-sm text-white/60 leading-relaxed font-light">
-            Derivo runs close to your code without taking it. Security is the default, not an
-            add-on.
-          </p>
-        </div>
+    <section className="w-full max-w-6xl mx-auto px-6 mt-32 md:mt-48 relative z-10 text-left">
+      <div className="border-t border-white/[0.08] pt-16 mb-20 max-w-3xl">
+        <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
+          Trust Center
+        </span>
+        <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mt-3">
+          Security is our architecture. Not an afterthought.
+        </h2>
+        <p className="mt-4 text-sm md:text-base text-white/50 max-w-xl font-light">
+          Derivo operates natively on your machine without compromising privacy. We build layers of
+          defense to protect your workflows.
+        </p>
+      </div>
 
-        <div className="md:w-2/3 grid sm:grid-cols-2 gap-4 w-full">
-          {points.map((p, idx) => {
-            const Icon = p.icon;
+      {/* Visual Timeline Pipeline */}
+      <div className="relative max-w-4xl mx-auto mt-24">
+        {/* Vertical Center Track line */}
+        <div className="absolute left-4 md:left-1/2 top-4 bottom-4 w-[2px] bg-white/[0.06] -translate-x-1/2 z-0" />
+
+        {/* Timeline Nodes */}
+        <div className="space-y-16 md:space-y-24 relative z-10">
+          {securitySteps.map((step, idx) => {
+            const Icon = step.icon;
+            const isLeft = idx % 2 === 0;
+
             return (
-              <motion.div
-                key={p.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-300"
+              <div
+                key={step.title}
+                className={`flex flex-col md:flex-row items-start relative ${
+                  isLeft ? 'md:flex-row-reverse' : 'md:flex-row'
+                }`}
               >
-                <span className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/60 mb-4">
-                  <Icon className="w-4 h-4" />
-                </span>
-                <h3 className="text-sm font-semibold text-white">{p.title}</h3>
-                <p className="mt-1.5 text-sm text-white/45 leading-relaxed font-light">{p.desc}</p>
-              </motion.div>
+                {/* Node center indicator dot */}
+                <div className="absolute left-4 md:left-1/2 top-4 -translate-x-1/2 w-6 h-6 rounded-full border-4 border-[#080808] bg-white/10 shrink-0 flex items-center justify-center z-20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                </div>
+
+                {/* Left/Right Text Content Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 24, x: isLeft ? 15 : -15 }}
+                  whileInView={{ opacity: 1, y: 0, x: 0 }}
+                  viewport={{ once: true, margin: '-100px' }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className={`w-full md:w-[45%] pl-12 md:pl-0 ${
+                    isLeft ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'
+                  }`}
+                >
+                  <div className={`flex flex-col ${isLeft ? 'md:items-end' : 'md:items-start'}`}>
+                    {/* Icon container */}
+                    <div className="w-10 h-10 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center justify-center text-white/50 mb-5">
+                      <Icon className="w-4 h-4" />
+                    </div>
+
+                    <span className="text-[10px] font-mono tracking-wider text-white/30 uppercase">
+                      {step.label}
+                    </span>
+                    <h3 className="text-lg font-semibold text-white mt-1">{step.title}</h3>
+                    <p className="mt-3 text-xs md:text-sm text-white/45 leading-relaxed font-light">
+                      {step.desc}
+                    </p>
+                  </div>
+                </motion.div>
+
+                {/* Empty spacer spacer block for desktop symmetry */}
+                <div className="hidden md:block w-[45%]" />
+              </div>
             );
           })}
         </div>

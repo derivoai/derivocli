@@ -13,6 +13,7 @@ import { FAQ } from '../components/landing/FAQ';
 import { CTA } from '../components/landing/CTA';
 import { Footer } from '../components/landing/Footer';
 import { Background } from '../components/landing/Background';
+import { ReactLenis } from 'lenis/react';
 
 export function Landing() {
   const location = useLocation();
@@ -32,37 +33,39 @@ export function Landing() {
   }, [location.pathname]);
 
   return (
-    <div className="relative min-h-screen bg-[#080808] overflow-x-hidden font-sans text-white selection:bg-white/20">
-      <Background />
-      
-      <Navbar />
-      
-      <main className="relative z-10 pt-20 pb-24 flex flex-col items-center">
-        <Hero />
-        <CLIDemo />
-        <TrustedBy />
-        <div id="features" className="w-full flex flex-col items-center">
-          <Features />
-        </div>
-        <div id="commands" className="w-full flex flex-col items-center">
-          <Commands />
-        </div>
-        <div id="how-it-works" className="w-full flex flex-col items-center">
-          <DeveloperWorkflow />
-        </div>
-        <div id="security" className="w-full flex flex-col items-center">
-          <Security />
-        </div>
-        <div id="pricing" className="w-full flex flex-col items-center">
-          <PricingPreview />
-        </div>
-        <div id="faq" className="w-full flex flex-col items-center">
-          <FAQ />
-        </div>
-        <CTA />
-      </main>
+    <ReactLenis root>
+      <div className="relative min-h-screen bg-[#080808] overflow-x-hidden font-sans text-white selection:bg-white/20">
+        <Background />
 
-      <Footer />
-    </div>
+        <Navbar />
+
+        <main className="relative z-10 pt-20 pb-24 flex flex-col items-center">
+          <Hero />
+          <CLIDemo />
+          <TrustedBy />
+          <div id="features" className="w-full flex flex-col items-center">
+            <Features />
+          </div>
+          <div id="commands" className="w-full flex flex-col items-center">
+            <Commands />
+          </div>
+          <div id="how-it-works" className="w-full flex flex-col items-center">
+            <DeveloperWorkflow />
+          </div>
+          <div id="security" className="w-full flex flex-col items-center">
+            <Security />
+          </div>
+          <div id="pricing" className="w-full flex flex-col items-center">
+            <PricingPreview />
+          </div>
+          <div id="faq" className="w-full flex flex-col items-center">
+            <FAQ />
+          </div>
+          <CTA />
+        </main>
+
+        <Footer />
+      </div>
+    </ReactLenis>
   );
 }
