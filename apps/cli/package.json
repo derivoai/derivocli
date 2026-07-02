@@ -1,6 +1,6 @@
 {
-  "name": "derivo",
-  "version": "0.1.0",
+  "name": "derivocli",
+  "version": "0.1.3",
   "type": "module",
   "description": "Derivo — Developer Experience, Automated. An intelligent CLI that analyzes, validates, and sets up projects, with an extensible plugin platform.",
   "keywords": [

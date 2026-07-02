@@ -26,6 +26,7 @@ import { getCliVersion } from '../dist/utils/version.js';
 import {
   notifyUpdateFromCache,
   refreshUpdateCacheInBackground,
+  checkAndPromptUpdate,
 } from '../dist/utils/update-checker.js';
 
 const VERBOSE = process.argv.includes('--verbose') || !!process.env.DERIVO_VERBOSE;
@@ -50,14 +51,19 @@ process.on('unhandledRejection', reportFatal);
 
 // ── Non-blocking update notice ──────────────────────
 try {
-  notifyUpdateFromCache();
   refreshUpdateCacheInBackground();
 } catch {
   // Update checks must never affect command execution.
 }
 
+// ── Interactive update prompt (before commands) ──────
+try {
+  await checkAndPromptUpdate();
+} catch {
+  // Never block on update check failure.
+}
+
 program
-  .name('derivo')
   .description('Developer Experience, Automated.')
   .version(getCliVersion(), '-V, --version', 'Output the CLI version')
   .option('--verbose', 'Show technical details and stack traces on error')
