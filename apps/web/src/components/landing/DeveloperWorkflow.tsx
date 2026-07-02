@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, useInView, useScroll, useSpring } from 'motion/react';
-import { TypewriterText } from './TypewriterText';
+import { SectionHeading } from './SectionHeading';
 
 const workflowSteps = [
   {
@@ -59,29 +59,23 @@ export function DeveloperWorkflow() {
       id="how-it-works"
       className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left"
     >
-      <div className="max-w-2xl mb-24">
-        <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-          The Protocol
-        </span>
-        <TypewriterText
-          text="From clone to container in seconds."
-          as="h2"
-          className="text-4xl md:text-5xl font-bold text-white tracking-tight mt-3 block leading-[1.1]"
-          speed={22}
-          delay={200}
-        />
-        <p className="mt-4 text-base text-white/60 leading-relaxed font-light">
-          Say goodbye to stale wiki guides and day-one onboarding debugging marathons.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="The Protocol"
+        title="From clone to container in seconds."
+        subtitle="Say goodbye to stale wiki guides and day-one onboarding debugging marathons."
+        className="mb-24"
+      />
 
-      <div ref={trackRef} className="relative pl-8 md:pl-12 ml-4 space-y-16">
+      <div
+        ref={trackRef}
+        className="relative pl-8 md:pl-12 ml-4 space-y-16 text-left max-w-3xl mx-auto"
+      >
         {/* Static track */}
         <div className="absolute left-0 top-2 bottom-2 w-px bg-white/[0.08]" />
         {/* Scroll-driven light fill */}
         <motion.div
           style={{ scaleY: fill }}
-          className="absolute left-0 top-2 bottom-2 w-px bg-white/70 origin-top"
+          className="absolute left-0 top-2 bottom-2 w-px bg-gradient-to-b from-indigo-300/80 via-white/70 to-white/70 origin-top shadow-[0_0_12px_rgba(129,140,248,0.5)]"
         />
 
         {workflowSteps.map((step, idx) => (
@@ -92,13 +86,7 @@ export function DeveloperWorkflow() {
   );
 }
 
-function StepItem({
-  step,
-  index,
-}: {
-  step: (typeof workflowSteps)[number];
-  index: number;
-}) {
+function StepItem({ step, index }: { step: (typeof workflowSteps)[number]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   // Active when the step sits near the vertical center of the viewport.
   const active = useInView(ref, { margin: '-48% 0px -48% 0px' });
@@ -119,6 +107,9 @@ function StepItem({
           borderColor: active ? '#ffffff' : 'rgba(255,255,255,0.2)',
           color: active ? '#000000' : 'rgba(255,255,255,0.45)',
           scale: active ? 1.12 : 1,
+          boxShadow: active
+            ? '0 0 20px rgba(255,255,255,0.35), 0 0 44px rgba(129,140,248,0.3)'
+            : '0 0 0 rgba(0,0,0,0)',
         }}
         transition={{ duration: 0.35, ease }}
         className="absolute -left-[41px] md:-left-[57px] top-[1.625rem] w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-mono"
@@ -132,7 +123,7 @@ function StepItem({
           borderColor: active ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0)',
         }}
         transition={{ duration: 0.35, ease }}
-        className="max-w-3xl p-6 rounded-2xl border"
+        className="max-w-3xl p-6 rounded-3xl border"
       >
         <motion.h3
           animate={{ color: active ? '#ffffff' : 'rgba(255,255,255,0.8)' }}
@@ -146,7 +137,7 @@ function StepItem({
         </p>
 
         {step.cmd && (
-          <div className="mt-4 inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/[0.02] border border-white/[0.08] font-mono text-xs text-white/70">
+          <div className="mt-4 inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/[0.02] border border-white/[0.08] font-mono text-xs text-white/70">
             <span className="text-white/30">$</span>
             <span>{step.cmd}</span>
           </div>

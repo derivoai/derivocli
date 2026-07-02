@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { TypewriterText } from './TypewriterText';
+import { SectionHeading } from './SectionHeading';
 
 const problems = [
   {
@@ -42,67 +42,32 @@ const problems = [
 
 export function Features() {
   return (
-    <section
-      id="features"
-      className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left"
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-2xl mb-20"
-      >
-        <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-          Interactive Diagnostics
-        </span>
-        <TypewriterText
-          text="We don't just report errors. We fix them."
-          as="h2"
-          className="text-4xl md:text-5xl font-bold text-white tracking-tight mt-3 block leading-[1.1]"
-          speed={20}
-          delay={300}
-        />
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-4 text-base text-white/60 leading-relaxed font-light"
-        >
-          Derivo constantly monitors your local development space, resolving everyday alignment
-          friction before you can even open your browser.
-        </motion.p>
-      </motion.div>
+    <section id="features" className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10">
+      <SectionHeading
+        eyebrow="Interactive Diagnostics"
+        title="We don't just report errors. We fix them."
+        subtitle="Derivo constantly monitors your local development space, resolving everyday alignment friction before you can even open your browser."
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex flex-col gap-4 text-left max-w-4xl mx-auto">
         {problems.map((prob, idx) => (
           <motion.div
             key={idx}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.6, delay: idx * 0.07, ease: [0.16, 1, 0.3, 1] }}
-            className="group relative p-8 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] hover:border-white/[0.14] transition-colors duration-300 flex flex-col justify-between min-h-[220px]"
+            initial={{ opacity: 0, x: idx % 2 === 0 ? -48 : 48, filter: 'blur(6px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            whileHover={{ scale: 1.015 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.7, delay: idx * 0.05, ease: [0.16, 1, 0.3, 1] }}
+            className="group flex flex-col md:flex-row md:items-center gap-4 md:gap-8 px-7 md:px-9 py-6 md:py-7 rounded-[36px] md:rounded-full bg-white/[0.02] border border-white/[0.07] hover:bg-white/[0.045] hover:border-white/[0.14] hover:shadow-[0_0_40px_-12px_rgba(99,102,241,0.25)] transition-all duration-300"
           >
-            <div>
-              <div className="flex items-center gap-2.5 mb-5">
-                <span className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-mono text-white/40 flex items-center justify-center">
-                  {String(idx + 1).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">
-                  Scenario
-                </span>
-              </div>
-
-              <h3 className="text-base font-medium text-white/80 group-hover:text-white transition-colors leading-snug">
-                {prob.question}
-              </h3>
-              <p className="text-base font-semibold mt-1 text-white">{prob.answer}</p>
+            <span className="w-9 h-9 shrink-0 rounded-full bg-white/[0.04] border border-white/[0.1] text-[11px] font-mono text-white/40 group-hover:text-white/80 group-hover:border-white/[0.2] flex items-center justify-center transition-colors">
+              {String(idx + 1).padStart(2, '0')}
+            </span>
+            <div className="md:w-[38%] shrink-0">
+              <h3 className="text-sm text-white/50 leading-snug">{prob.question}</h3>
+              <p className="text-base font-semibold text-white mt-0.5">{prob.answer}</p>
             </div>
-
-            <p className="text-sm text-white/45 leading-relaxed mt-6 font-light group-hover:text-white/65 transition-colors duration-300">
+            <p className="text-sm text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors">
               {prob.details}
             </p>
           </motion.div>

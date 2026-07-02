@@ -1,27 +1,28 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { SectionHeading } from './SectionHeading';
 
 export function PricingPreview() {
   return (
-    <section
-      id="pricing"
-      className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left"
-    >
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-12 border-t border-white/[0.08] pt-16 mb-16">
-        <div className="md:w-1/3">
-          <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-            Pricing
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mt-3">
-            Simple licensing. Built for growth.
-          </h2>
-          <p className="mt-4 text-sm text-white/60 leading-relaxed font-light">
-            Create a free account to run diagnostics and inspect projects. Upgrade to Pro to set up
-            projects and sync environments across your team.
-          </p>
-        </div>
+    <section id="pricing" className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left">
+      <SectionHeading
+        eyebrow="Pricing"
+        title="Simple licensing. Built for growth."
+        subtitle="Create a free account to run diagnostics and inspect projects. Upgrade to Pro to set up projects and sync environments across your team."
+      />
 
-        <div className="md:w-2/3 grid sm:grid-cols-2 gap-5 w-full">
+      <div className="relative max-w-3xl mx-auto">
+        {/* Glow behind pricing cards */}
+        <div
+          aria-hidden
+          className="absolute -inset-x-16 -inset-y-10 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 55% 55% at 70% 50%, rgba(99,102,241,0.1) 0%, transparent 70%)',
+            filter: 'blur(50px)',
+          }}
+        />
+        <div className="relative grid sm:grid-cols-2 gap-5 w-full">
           {/* Community */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -29,7 +30,7 @@ export function PricingPreview() {
             whileHover={{ y: -4 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="p-8 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-300 flex flex-col justify-between"
+            className="p-8 rounded-[28px] bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-300 flex flex-col justify-between"
           >
             <div>
               <h3 className="text-lg font-semibold text-white">Community</h3>
@@ -55,7 +56,7 @@ export function PricingPreview() {
             </div>
             <Link
               to="/register"
-              className="w-full py-2.5 rounded-lg bg-transparent text-white/80 border border-white/[0.12] text-xs font-medium hover:bg-white/[0.05] hover:text-white transition-colors mt-8 block text-center"
+              className="w-full py-2.5 rounded-full bg-transparent text-white/80 border border-white/[0.12] text-xs font-medium hover:bg-white/[0.05] hover:text-white transition-colors mt-8 block text-center"
             >
               Create free account
             </Link>
@@ -68,9 +69,9 @@ export function PricingPreview() {
             whileHover={{ y: -4 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative p-8 rounded-2xl bg-white/[0.05] border border-white/[0.16] hover:border-white/[0.24] transition-colors duration-300 flex flex-col justify-between"
+            className="relative p-8 rounded-[28px] bg-white/[0.05] backdrop-blur-sm border border-indigo-300/25 hover:border-indigo-300/40 shadow-[0_0_50px_-12px_rgba(99,102,241,0.35)] transition-colors duration-300 flex flex-col justify-between"
           >
-            <span className="absolute top-5 right-5 text-[10px] font-mono uppercase tracking-widest text-white/50 border border-white/[0.14] rounded-full px-2.5 py-1">
+            <span className="absolute top-5 right-5 text-[10px] font-mono uppercase tracking-widest text-indigo-200/80 border border-indigo-300/25 bg-indigo-400/[0.08] rounded-full px-2.5 py-1">
               Popular
             </span>
             <div>
@@ -98,7 +99,7 @@ export function PricingPreview() {
             </div>
             <Link
               to="/register"
-              className="w-full py-2.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors mt-8 block text-center"
+              className="w-full py-2.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-white/90 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all mt-8 block text-center"
             >
               Start 14-day Trial
             </Link>

@@ -51,6 +51,37 @@
   animation: cursor-blink 1.05s ease-in-out infinite;
 }
 
+/* Soft breathing glow used behind the hero and terminal */
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translateX(var(--tw-translate-x, 0)) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(var(--tw-translate-x, 0)) scale(1.06);
+  }
+}
+
+.animate-glow-breathe {
+  animation: glow-breathe 8s ease-in-out infinite;
+}
+
+/* Shine sweep across the terminal progress bar */
+@keyframes progress-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-progress-shine {
+  animation: progress-shine 2.2s ease-in-out infinite;
+}
+
 /* Thin, subtle scrollbar for the terminal demo and scroll regions */
 .thin-scroll {
   scrollbar-width: thin;
@@ -72,7 +103,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-cursor-blink {
+  .animate-cursor-blink,
+  .animate-glow-breathe,
+  .animate-progress-shine {
     animation: none;
   }
   html {

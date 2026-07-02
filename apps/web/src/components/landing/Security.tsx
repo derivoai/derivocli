@@ -1,5 +1,6 @@
-import { motion } from 'motion/react';
 import { Lock, HardDrive, MonitorSmartphone, KeyRound } from 'lucide-react';
+import { motion } from 'motion/react';
+import { SectionHeading } from './SectionHeading';
 
 const points = [
   {
@@ -26,42 +27,44 @@ const points = [
 
 export function Security() {
   return (
-    <section className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10 text-left">
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-12 border-t border-white/[0.08] pt-16">
-        <div className="md:w-1/3">
-          <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-            Security
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mt-3 leading-[1.1]">
-            Built to be trusted on every machine.
-          </h2>
-          <p className="mt-4 text-sm text-white/60 leading-relaxed font-light">
-            Derivo runs close to your code without taking it. Security is the default, not an
-            add-on.
-          </p>
-        </div>
+    <section className="w-full max-w-5xl mx-auto px-6 mt-40 relative z-10">
+      <SectionHeading
+        eyebrow="Security"
+        title="Built to be trusted on every machine."
+        subtitle="Derivo runs close to your code without taking it. Security is the default, not an add-on."
+      />
 
-        <div className="md:w-2/3 grid sm:grid-cols-2 gap-4 w-full">
-          {points.map((p, idx) => {
-            const Icon = p.icon;
-            return (
-              <motion.div
-                key={p.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.14] transition-colors duration-300"
-              >
-                <span className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/60 mb-4">
-                  <Icon className="w-4 h-4" />
-                </span>
-                <h3 className="text-sm font-semibold text-white">{p.title}</h3>
-                <p className="mt-1.5 text-sm text-white/45 leading-relaxed font-light">{p.desc}</p>
-              </motion.div>
-            );
-          })}
-        </div>
+      <div className="grid sm:grid-cols-2 gap-x-12 gap-y-14 max-w-3xl mx-auto text-center">
+        {points.map((p, idx) => {
+          const Icon = p.icon;
+          return (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.7, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="group flex flex-col items-center"
+            >
+              <span className="relative w-14 h-14 rounded-full bg-white/[0.04] border border-white/[0.1] flex items-center justify-center text-white/70 group-hover:text-white group-hover:border-white/[0.2] transition-colors duration-300">
+                <span
+                  aria-hidden
+                  className="absolute -inset-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background:
+                      'radial-gradient(circle, rgba(129,140,248,0.3) 0%, transparent 70%)',
+                    filter: 'blur(10px)',
+                  }}
+                />
+                <Icon className="relative w-5 h-5" />
+              </span>
+              <h3 className="mt-5 text-sm font-semibold text-white">{p.title}</h3>
+              <p className="mt-2 text-sm text-white/45 leading-relaxed font-light max-w-xs">
+                {p.desc}
+              </p>
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );
