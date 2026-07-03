@@ -9,7 +9,12 @@ export function Hero() {
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        transition={{
+          // Keep the signature 1.2s slide-up, but let opacity resolve quickly
+          // so the LCP text paints early instead of waiting out the full fade.
+          y: { duration: 1.2, ease: [0.16, 1, 0.3, 1] },
+          opacity: { duration: 0.4, ease: 'easeOut' },
+        }}
         className="text-center max-w-5xl mx-auto z-10"
       >
         {/* Logo mark */}

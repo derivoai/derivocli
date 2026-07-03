@@ -1,30 +1,12 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useMotionValueEvent } from 'motion/react';
 import { Logo } from './Logo';
 
+// Sticky, always-visible navbar. No scroll listeners or motion values — a plain
+// fixed bar composites for free and never does per-frame work, so it can't
+// contribute to scroll jank.
 export function Navbar() {
-  const { scrollY } = useScroll();
-  const [hidden, setHidden] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useMotionValueEvent(scrollY, 'change', (latest) => {
-    setIsScrolled(latest > 20);
-    const previous = scrollY.getPrevious() ?? 0;
-    if (latest > previous && latest > 150) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
-  });
-
   return (
-    <motion.nav
-      variants={{ visible: { y: 0 }, hidden: { y: '-100%' } }}
-      animate={hidden ? 'hidden' : 'visible'}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
-      className="fixed top-0 left-0 right-0 w-full z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5"
-    >
+    <nav className="fixed top-0 left-0 right-0 w-full z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <Logo className="w-5 h-5 text-white" />
@@ -56,6 +38,6 @@ export function Navbar() {
           </Link>
         </div>
       </div>
-    </motion.nav>
+    </nav>
   );
 }

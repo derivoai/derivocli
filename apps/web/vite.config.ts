@@ -24,6 +24,36 @@ export default defineConfig(({ mode }) => {
         env.VITE_API_URL || env.DERIVO_API_URL || 'http://localhost:3001',
       ),
     },
+    build: {
+      // Modern browsers only — smaller output, no legacy transpilation cost.
+      target: 'es2020',
+      cssCodeSplit: true,
+      // esbuild minify is fast and strips console/debugger in prod.
+      minify: 'esbuild',
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          // Isolate large, cache-stable LEAF libraries into their own chunks so
+          // the landing bundle stays lean and app-only deps (Firebase) never
+          // load on marketing pages. Everything else uses Vite's default
+          // chunking to avoid circular-chunk issues.
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('/firebase/') || id.includes('@firebase/')) return 'firebase';
+            if (id.includes('/motion/') || id.includes('framer-motion')) return 'motion';
+            if (id.includes('react-markdown') || id.includes('remark') || id.includes('micromark'))
+              return 'markdown';
+            if (id.includes('lucide-react')) return 'icons';
+            return undefined;
+          },
+        },
+      },
+    },
+    esbuild: {
+      // Drop console/debugger from production builds to cut main-thread work.
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     server: {
       hosts: true,
       allowedHosts: true,

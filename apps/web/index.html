@@ -8,6 +8,22 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
 
+    <!-- Fonts: preconnect + non-blocking load (avoids render-blocking @import chain) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      />
+    </noscript>
+
     <!-- SEO Core -->
     <title>Derivo | Instant Local Development Environments</title>
     <meta name="description" content="Derivo is a local-first orchestration utility that auto-detects dependencies, boots containerized services, aligns ports, and syncs database schemas in seconds." />

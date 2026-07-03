@@ -15,14 +15,25 @@ export function CLIDemo() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [copied, setCopied] = useState(false);
   const [currentInput, setCurrentInput] = useState('');
-  
+
   const containerRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setIsInView(!!entry?.isIntersecting), {
+      threshold: 0.1,
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ['start end', 'end start'],
   });
 
   const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [15, 0, -15]);
@@ -37,7 +48,7 @@ export function CLIDemo() {
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText("derivo setup");
+    navigator.clipboard.writeText('derivo setup');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -49,7 +60,7 @@ export function CLIDemo() {
   }, [lines, currentInput]);
 
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying || !isInView) {
       clearAllTimeouts();
       return;
     }
@@ -86,96 +97,147 @@ export function CLIDemo() {
       const steps: { delay: number; action: () => void }[] = [
         {
           delay: 500,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Checking Node.js version...' }])
+          action: () =>
+            setLines((prev) => [...prev, { type: 'spinner', text: 'Checking Node.js version...' }]),
         },
         {
           delay: 1700,
-          action: () => setLines(prev => {
-            const next = prev.filter(l => !l.text.includes('Checking Node.js'));
-            return [...next, { type: 'error', text: 'Wrong Node.js version detected: v16.14.0 (v22.0.0+ required)' }];
-          })
+          action: () =>
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Checking Node.js'));
+              return [
+                ...next,
+                {
+                  type: 'error',
+                  text: 'Wrong Node.js version detected: v16.14.0 (v22.0.0+ required)',
+                },
+              ];
+            }),
         },
         {
           delay: 2800,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Installing Node.js v22.3.0 via nvm...' }])
+          action: () =>
+            setLines((prev) => [
+              ...prev,
+              { type: 'spinner', text: 'Installing Node.js v22.3.0 via nvm...' },
+            ]),
         },
         {
           delay: 4800,
           action: () => {
-            setLines(prev => {
-              const next = prev.filter(l => !l.text.includes('Installing Node.js'));
-              return [...next, { type: 'success', text: 'Node.js updated to v22.3.0', meta: 'nvm' }];
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Installing Node.js'));
+              return [
+                ...next,
+                { type: 'success', text: 'Node.js updated to v22.3.0', meta: 'nvm' },
+              ];
             });
             setProgress(25);
-          }
+          },
         },
         {
           delay: 5800,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Verifying Docker engine daemon...' }])
+          action: () =>
+            setLines((prev) => [
+              ...prev,
+              { type: 'spinner', text: 'Verifying Docker engine daemon...' },
+            ]),
         },
         {
           delay: 7000,
-          action: () => setLines(prev => {
-            const next = prev.filter(l => !l.text.includes('Verifying Docker'));
-            return [...next, { type: 'warning', text: 'Docker engine is currently stopped.' }];
-          })
+          action: () =>
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Verifying Docker'));
+              return [...next, { type: 'warning', text: 'Docker engine is currently stopped.' }];
+            }),
         },
         {
           delay: 8000,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Booting Docker background service...' }])
+          action: () =>
+            setLines((prev) => [
+              ...prev,
+              { type: 'spinner', text: 'Booting Docker background service...' },
+            ]),
         },
         {
           delay: 10000,
           action: () => {
-            setLines(prev => {
-              const next = prev.filter(l => !l.text.includes('Booting Docker'));
-              return [...next, { type: 'success', text: 'Docker engine active and ready', meta: 'daemon' }];
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Booting Docker'));
+              return [
+                ...next,
+                { type: 'success', text: 'Docker engine active and ready', meta: 'daemon' },
+              ];
             });
             setProgress(60);
-          }
+          },
         },
         {
           delay: 11000,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Checking Redis service...' }])
+          action: () =>
+            setLines((prev) => [...prev, { type: 'spinner', text: 'Checking Redis service...' }]),
         },
         {
           delay: 12200,
-          action: () => setLines(prev => {
-            const next = prev.filter(l => !l.text.includes('Checking Redis'));
-            return [...next, { type: 'warning', text: 'Redis container not responding on port 6379.' }];
-          })
+          action: () =>
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Checking Redis'));
+              return [
+                ...next,
+                { type: 'warning', text: 'Redis container not responding on port 6379.' },
+              ];
+            }),
         },
         {
           delay: 13500,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Provisioning Redis container via docker-compose...' }])
+          action: () =>
+            setLines((prev) => [
+              ...prev,
+              { type: 'spinner', text: 'Provisioning Redis container via docker-compose...' },
+            ]),
         },
         {
           delay: 16000,
           action: () => {
-            setLines(prev => {
-              const next = prev.filter(l => !l.text.includes('Provisioning Redis'));
-              return [...next, { type: 'success', text: 'Redis active and bounded to port 6379', meta: 'docker' }];
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Provisioning Redis'));
+              return [
+                ...next,
+                { type: 'success', text: 'Redis active and bounded to port 6379', meta: 'docker' },
+              ];
             });
             setProgress(90);
-          }
+          },
         },
         {
           delay: 17000,
-          action: () => setLines(prev => [...prev, { type: 'spinner', text: 'Validating project environment and schemas...' }])
+          action: () =>
+            setLines((prev) => [
+              ...prev,
+              { type: 'spinner', text: 'Validating project environment and schemas...' },
+            ]),
         },
         {
           delay: 18500,
           action: () => {
-            setLines(prev => {
-              const next = prev.filter(l => !l.text.includes('Validating project'));
-              return [...next, { type: 'success', text: 'All local environments successfully verified.', meta: 'derivo.json' }];
+            setLines((prev) => {
+              const next = prev.filter((l) => !l.text.includes('Validating project'));
+              return [
+                ...next,
+                {
+                  type: 'success',
+                  text: 'All local environments successfully verified.',
+                  meta: 'derivo.json',
+                },
+              ];
             });
             setProgress(100);
-          }
+          },
         },
         {
           delay: 19500,
-          action: () => setLines(prev => [...prev, { type: 'info', text: 'Ready. Happy coding!' }])
+          action: () =>
+            setLines((prev) => [...prev, { type: 'info', text: 'Ready. Happy coding!' }]),
         },
         {
           delay: 24000,
@@ -187,11 +249,11 @@ export function CLIDemo() {
             charIdx = 0;
             typed = '';
             typeCommand();
-          }
-        }
+          },
+        },
       ];
 
-      steps.forEach(step => {
+      steps.forEach((step) => {
         const t = setTimeout(step.action, step.delay);
         timeoutRefs.current.push(t);
       });
@@ -202,10 +264,10 @@ export function CLIDemo() {
     timeoutRefs.current.push(initTimeout);
 
     return () => clearAllTimeouts();
-  }, [isPlaying]);
+  }, [isPlaying, isInView]);
 
   return (
-    <motion.section 
+    <motion.section
       ref={containerRef}
       style={{ opacity, scale, y, rotateX, transformPerspective: 1000 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -229,13 +291,17 @@ export function CLIDemo() {
               className="text-[10px] font-mono text-white/30 hover:text-white/80 transition-colors border border-white/10 rounded px-2 py-0.5 bg-white/[0.02] flex items-center gap-1"
               aria-label="Copy setup command"
             >
-              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Clipboard className="w-3 h-3" />}
+              {copied ? (
+                <Check className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <Clipboard className="w-3 h-3" />
+              )}
               {copied ? 'Copied' : 'Copy'}
             </button>
-            <button 
+            <button
               onClick={() => setIsPlaying(!isPlaying)}
               className="text-[10px] font-mono text-white/30 hover:text-white/80 transition-colors border border-white/10 rounded px-2 py-0.5 bg-white/[0.02] flex items-center gap-1"
-              aria-label={isPlaying ? "Pause simulation" : "Play simulation"}
+              aria-label={isPlaying ? 'Pause simulation' : 'Play simulation'}
             >
               {isPlaying ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
               {isPlaying ? 'Pause' : 'Play'}
@@ -244,7 +310,7 @@ export function CLIDemo() {
         </div>
 
         {/* Terminal Screen Body */}
-        <div 
+        <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto thin-scroll p-8 md:p-10 font-mono text-xs md:text-sm text-white/70 flex flex-col gap-3.5 bg-[#070707] select-text scroll-smooth"
         >
@@ -252,7 +318,7 @@ export function CLIDemo() {
             {lines.map((line, idx) => {
               if (line.type === 'input') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -266,7 +332,7 @@ export function CLIDemo() {
 
               if (line.type === 'spinner') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -281,7 +347,7 @@ export function CLIDemo() {
 
               if (line.type === 'error') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -295,7 +361,7 @@ export function CLIDemo() {
 
               if (line.type === 'warning') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -309,7 +375,7 @@ export function CLIDemo() {
 
               if (line.type === 'success') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -320,7 +386,9 @@ export function CLIDemo() {
                       <span>{line.text}</span>
                     </div>
                     {line.meta && (
-                      <span className="text-[10px] text-white/25 uppercase tracking-widest">{line.meta}</span>
+                      <span className="text-[10px] text-white/25 uppercase tracking-widest">
+                        {line.meta}
+                      </span>
                     )}
                   </motion.div>
                 );
@@ -328,7 +396,7 @@ export function CLIDemo() {
 
               if (line.type === 'info') {
                 return (
-                  <motion.div 
+                  <motion.div
                     key={`line-${idx}`}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}

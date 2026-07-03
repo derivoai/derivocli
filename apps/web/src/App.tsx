@@ -2,194 +2,126 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Landing } from './pages/Landing';
-import { Docs } from './pages/Docs';
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
-import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { ResetPassword } from './pages/auth/ResetPassword';
-import { VerifyEmail } from './pages/auth/VerifyEmail';
-import { Action } from './pages/auth/Action';
-import { Onboarding } from './pages/auth/Onboarding';
-import { CliLogin } from './pages/auth/CliLogin';
-import { DashboardHome } from './pages/dashboard/Home';
-import { Projects } from './pages/dashboard/Projects';
-import { Devices } from './pages/dashboard/Devices';
-import { ApiKeys } from './pages/dashboard/ApiKeys';
-import { Activity } from './pages/dashboard/Activity';
-import { Billing } from './pages/dashboard/Billing';
-import { Sessions } from './pages/dashboard/Sessions';
-import { Settings } from './pages/dashboard/Settings';
-import { UserProfileProvider } from './hooks/useUserProfile';
 
-import { ProtectedRoute, VerifyEmailRouteGuard, PublicAuthGuard } from './components/auth/Guards';
+// Landing is the LCP route — keep it eager so it paints immediately without a
+// Suspense fallback flash. Everything else is lazy so its JS (and Firebase) is
+// never shipped in the landing critical path.
+import { Landing } from './pages/Landing';
+
+// ── Lazy routes ──────────────────────────────────────────────────────────────
+const Docs = lazy(() => import('./pages/Docs').then((m) => ({ default: m.Docs })));
+const Login = lazy(() => import('./pages/auth/Login').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/auth/Register').then((m) => ({ default: m.Register })));
+const ForgotPassword = lazy(() =>
+  import('./pages/auth/ForgotPassword').then((m) => ({ default: m.ForgotPassword })),
+);
+const ResetPassword = lazy(() =>
+  import('./pages/auth/ResetPassword').then((m) => ({ default: m.ResetPassword })),
+);
+const VerifyEmail = lazy(() =>
+  import('./pages/auth/VerifyEmail').then((m) => ({ default: m.VerifyEmail })),
+);
+const Action = lazy(() => import('./pages/auth/Action').then((m) => ({ default: m.Action })));
+const Onboarding = lazy(() =>
+  import('./pages/auth/Onboarding').then((m) => ({ default: m.Onboarding })),
+);
+const CliLogin = lazy(() => import('./pages/auth/CliLogin').then((m) => ({ default: m.CliLogin })));
+const DashboardHome = lazy(() =>
+  import('./pages/dashboard/Home').then((m) => ({ default: m.DashboardHome })),
+);
+const Projects = lazy(() =>
+  import('./pages/dashboard/Projects').then((m) => ({ default: m.Projects })),
+);
+const Devices = lazy(() =>
+  import('./pages/dashboard/Devices').then((m) => ({ default: m.Devices })),
+);
+const ApiKeys = lazy(() =>
+  import('./pages/dashboard/ApiKeys').then((m) => ({ default: m.ApiKeys })),
+);
+const Activity = lazy(() =>
+  import('./pages/dashboard/Activity').then((m) => ({ default: m.Activity })),
+);
+const Billing = lazy(() =>
+  import('./pages/dashboard/Billing').then((m) => ({ default: m.Billing })),
+);
+const Sessions = lazy(() =>
+  import('./pages/dashboard/Sessions').then((m) => ({ default: m.Sessions })),
+);
+const Settings = lazy(() =>
+  import('./pages/dashboard/Settings').then((m) => ({ default: m.Settings })),
+);
+
+// Provider + guards are only needed by app routes. Lazy-loaded together so
+// Firebase is pulled in ONLY when an app route is visited.
+const AppProviders = lazy(() => import('./providers/AppProviders'));
+const ProtectedLayout = lazy(() =>
+  import('./providers/GuardLayouts').then((m) => ({ default: m.ProtectedLayout })),
+);
+const PublicAuthLayout = lazy(() =>
+  import('./providers/GuardLayouts').then((m) => ({ default: m.PublicAuthLayout })),
+);
+const VerifyEmailLayout = lazy(() =>
+  import('./providers/GuardLayouts').then((m) => ({ default: m.VerifyEmailLayout })),
+);
+
+// Minimal, brandless fallback — dark canvas to avoid a white flash / CLS.
+function RouteFallback() {
+  return <div className="min-h-screen bg-[#080808]" aria-hidden="true" />;
+}
 
 export default function App() {
   return (
-    <UserProfileProvider>
-      <Router>
+    <Router>
+      <Suspense fallback={<RouteFallback />}>
         <Routes>
-          {/* Root Landing Route */}
+          {/* ── Public marketing routes (no Firebase, no provider) ── */}
           <Route path="/" element={<Landing />} />
           <Route path="/features" element={<Landing />} />
           <Route path="/how-it-works" element={<Landing />} />
           <Route path="/pricing" element={<Landing />} />
+          <Route path="/blog" element={<Landing />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/:slug" element={<Docs />} />
-          <Route path="/blog" element={<Landing />} />
 
-          {/* Public Auth Routes */}
-          <Route
-            path="/login"
-            element={
-              <PublicAuthGuard>
-                <Login />
-              </PublicAuthGuard>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicAuthGuard>
-                <Register />
-              </PublicAuthGuard>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <PublicAuthGuard>
-                <ForgotPassword />
-              </PublicAuthGuard>
-            }
-          />
-          <Route
-            path="/reset-password"
-            element={
-              <PublicAuthGuard>
-                <ResetPassword />
-              </PublicAuthGuard>
-            }
-          />
-          <Route path="/cli-login" element={<CliLogin />} />
+          {/* ── App routes (UserProfileProvider mounted once via layout) ── */}
+          <Route element={<AppProviders />}>
+            {/* Public auth (redirects away if already signed in) */}
+            <Route element={<PublicAuthLayout />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+            </Route>
 
-          {/* Universal Firebase email action handler (verify email, reset
-              password, recover email, verify-before-change-email). Public —
-              opened from email links regardless of session state. */}
-          <Route path="/action" element={<Action />} />
+            {/* Email-link handlers — public regardless of session state */}
+            <Route path="/cli-login" element={<CliLogin />} />
+            <Route path="/action" element={<Action />} />
 
-          {/* Dedicated Email Verification Guarded Route */}
-          <Route
-            path="/verify-email"
-            element={
-              <VerifyEmailRouteGuard>
-                <VerifyEmail />
-              </VerifyEmailRouteGuard>
-            }
-          />
+            {/* Email verification gate */}
+            <Route element={<VerifyEmailLayout />}>
+              <Route path="/verify-email" element={<VerifyEmail />} />
+            </Route>
 
-          {/* Dashboard & Protected Routes */}
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardHome />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/projects"
-            element={
-              <ProtectedRoute>
-                <Projects />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/devices"
-            element={
-              <ProtectedRoute>
-                <Devices />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/keys"
-            element={
-              <ProtectedRoute>
-                <ApiKeys />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/activity"
-            element={
-              <ProtectedRoute>
-                <Activity />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/billing"
-            element={
-              <ProtectedRoute>
-                <Billing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/sessions"
-            element={
-              <ProtectedRoute>
-                <Sessions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Route Aliases */}
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <Projects />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/billing"
-            element={
-              <ProtectedRoute>
-                <Billing />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected dashboard + aliases */}
+            <Route element={<ProtectedLayout />}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/dashboard" element={<DashboardHome />} />
+              <Route path="/dashboard/projects" element={<Projects />} />
+              <Route path="/dashboard/devices" element={<Devices />} />
+              <Route path="/dashboard/keys" element={<ApiKeys />} />
+              <Route path="/dashboard/activity" element={<Activity />} />
+              <Route path="/dashboard/billing" element={<Billing />} />
+              <Route path="/dashboard/sessions" element={<Sessions />} />
+              <Route path="/dashboard/settings" element={<Settings />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/billing" element={<Billing />} />
+            </Route>
+          </Route>
         </Routes>
-      </Router>
-    </UserProfileProvider>
+      </Suspense>
+    </Router>
   );
 }
