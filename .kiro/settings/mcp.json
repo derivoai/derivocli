@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "browsermcp": {
+      "command": "npx",
+      "args": ["@browsermcp/mcp@latest"],
+      "disabled": false,
+      "autoApprove": [
+        "browser_navigate",
+        "browser_screenshot",
+        "browser_wait",
+        "browser_snapshot",
+        "browser_click"
+      ]
+    },
+    "open-design": {
+      "command": "C:\\Users\\Kanha\\AppData\\Local\\Programs\\Open Design\\Open Design.exe",
+      "args": [
+        "C:\\Users\\Kanha\\AppData\\Local\\Programs\\Open Design\\resources\\app\\prebundled\\daemon\\daemon-cli.mjs",
+        "mcp"
+      ],
+      "env": {
+        "OD_DATA_DIR": "C:\\Users\\Kanha\\AppData\\Roaming\\Open Design\\namespaces\\release-stable-win\\data",
+        "OD_SIDECAR_IPC_PATH": "\\\\.\\pipe\\open-design-release-stable-win-daemon",
+        "ELECTRON_RUN_AS_NODE": "1"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "create_project",
+        "start_run",
+        "get_run",
+        "cancel_run",
+        "delete_project",
+        "delete_project",
+        "delete_project",
+        "delete_project",
+        "delete_project",
+        "delete_project",
+        "list_projects",
+        "get_active_context"
+      ]
+    }
+  }
+}

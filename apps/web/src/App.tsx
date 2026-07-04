@@ -12,6 +12,12 @@ import { Landing } from './pages/Landing';
 
 // ── Lazy routes ──────────────────────────────────────────────────────────────
 const Docs = lazy(() => import('./pages/Docs').then((m) => ({ default: m.Docs })));
+const PrivacyPolicy = lazy(() =>
+  import('./pages/legal/PrivacyPolicy').then((m) => ({ default: m.PrivacyPolicy })),
+);
+const TermsOfService = lazy(() =>
+  import('./pages/legal/TermsOfService').then((m) => ({ default: m.TermsOfService })),
+);
 const Login = lazy(() => import('./pages/auth/Login').then((m) => ({ default: m.Login })));
 const Register = lazy(() => import('./pages/auth/Register').then((m) => ({ default: m.Register })));
 const ForgotPassword = lazy(() =>
@@ -84,6 +90,8 @@ export default function App() {
           <Route path="/blog" element={<Landing />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/:slug" element={<Docs />} />
+          <Route path="/privacy-policies" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-services" element={<TermsOfService />} />
 
           {/* ── App routes (UserProfileProvider mounted once via layout) ── */}
           <Route element={<AppProviders />}>

@@ -92,16 +92,10 @@ export function DeveloperWorkflow() {
   );
 }
 
-function StepItem({
-  step,
-  index,
-}: {
-  step: (typeof workflowSteps)[number];
-  index: number;
-}) {
+function StepItem({ step, index }: { step: (typeof workflowSteps)[number]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  // Active when the step sits near the vertical center of the viewport.
-  const active = useInView(ref, { margin: '-48% 0px -48% 0px' });
+  // Active when the step sits near the vertical center of the viewport (relaxed to 30% margin).
+  const active = useInView(ref, { margin: '-30% 0px -30% 0px' });
 
   return (
     <motion.div
@@ -116,8 +110,8 @@ function StepItem({
       <motion.div
         animate={{
           backgroundColor: active ? '#ffffff' : 'rgba(8,8,8,1)',
-          borderColor: active ? '#ffffff' : 'rgba(255,255,255,0.2)',
-          color: active ? '#000000' : 'rgba(255,255,255,0.45)',
+          borderColor: active ? '#ffffff' : 'rgba(255,255,255,0.15)',
+          color: active ? '#000000' : 'rgba(255,255,255,0.4)',
           scale: active ? 1.12 : 1,
         }}
         transition={{ duration: 0.35, ease }}
@@ -128,20 +122,20 @@ function StepItem({
 
       <motion.div
         animate={{
-          backgroundColor: active ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0)',
-          borderColor: active ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0)',
+          backgroundColor: active ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.008)',
+          borderColor: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.03)',
         }}
         transition={{ duration: 0.35, ease }}
-        className="max-w-3xl p-6 rounded-2xl border"
+        className="max-w-3xl p-6 rounded-2xl border shadow-sm"
       >
         <motion.h3
-          animate={{ color: active ? '#ffffff' : 'rgba(255,255,255,0.8)' }}
+          animate={{ color: active ? '#ffffff' : 'rgba(255,255,255,0.75)' }}
           transition={{ duration: 0.35, ease }}
           className="text-xl font-semibold tracking-tight"
         >
           {step.title}
         </motion.h3>
-        <p className="mt-2 text-sm text-white/50 leading-relaxed max-w-xl font-light">
+        <p className="mt-2 text-sm text-white/65 leading-relaxed max-w-xl font-light">
           {step.description}
         </p>
 

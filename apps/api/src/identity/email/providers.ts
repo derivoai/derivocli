@@ -14,6 +14,22 @@ import { Resend } from 'resend';
 import { logger } from '../../infra/logger.js';
 import { withRetry } from '../../infra/resilience.js';
 
+/**
+ * A single attachment. When `contentId` is set the attachment is embedded
+ * inline (referenced from the HTML via `cid:<contentId>`) rather than shown
+ * as a downloadable file.
+ */
+export interface EmailAttachment {
+  /** Base64-encoded file content. */
+  content: string;
+  /** Filename shown to the client (also helps clients pick a renderer). */
+  filename: string;
+  /** MIME type, e.g. "image/png". */
+  contentType?: string;
+  /** Content-ID for inline (CID) embedding. */
+  contentId?: string;
+}
+
 export interface EmailMessage {
   /** Recipient address. */
   to: string;
@@ -26,6 +42,8 @@ export interface EmailMessage {
    * Falls back to the globally configured EMAIL_FROM.
    */
   from?: string;
+  /** Optional attachments (including inline images referenced by CID). */
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailProvider {
@@ -79,6 +97,12 @@ export class ResendEmailProvider implements EmailProvider {
           subject: message.subject,
           html: message.html,
           text: message.text,
+          attachments: message.attachments?.map((a) => ({
+            content: a.content,
+            filename: a.filename,
+            contentType: a.contentType,
+            contentId: a.contentId,
+          })),
         });
 
         if (error) {

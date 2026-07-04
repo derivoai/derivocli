@@ -187,6 +187,26 @@ export function deriveRole(
 }
 
 /**
+ * Canonical, user-facing plan label. This is the SINGLE SOURCE OF TRUTH for how
+ * a plan is NAMED across the dashboard (sidebar badge, Settings, etc.) so no two
+ * surfaces ever disagree. Always derives from the authoritative subscription doc
+ * — never from the cached/rewritten `profile.role` (which caused the badge to
+ * flip between "Community" and "Pro Trial" while navigating).
+ */
+export function getPlanLabel(subscription: Subscription | null | undefined): string {
+  if (!subscription) return 'Community';
+  const role = deriveRole(subscription);
+  if (role === 'enterprise') return 'Enterprise';
+  if (role === 'pro') return 'Pro';
+  if (role === 'pro_trial') return 'Pro Trial';
+  // Free tier — distinguish a lapsed trial from a never-upgraded account.
+  const plan = resolvePlan(subscription);
+  const status = resolveStatus(subscription);
+  if (plan === 'trial' || plan === 'pro_trial' || status.includes('trial')) return 'Trial Expired';
+  return 'Community';
+}
+
+/**
  * Creates a default trial subscription for a user.
  */
 export async function createDefaultSubscription(uid: string): Promise<Subscription> {

@@ -3,24 +3,27 @@ import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayo
 import {
   MonitorSmartphone,
   Search,
-  X,
   Pencil,
   ShieldCheck,
   ShieldOff,
   LogOut,
   Trash2,
   Check,
+  Copy,
 } from 'lucide-react';
 import { devicesApi, type DeviceInfo } from '../../lib/api';
 import { useApiQuery } from '../../hooks/useApi';
 import { ConfirmDialog } from '../../components/dashboard/shared/ConfirmDialog';
 import { StatusBadge, type Tone } from '../../components/dashboard/shared/StatusBadge';
+import { PageHeader } from '../../components/dashboard/shared/PageHeader';
 import {
   EmptyState,
   ErrorState,
   RefreshButton,
   SkeletonList,
 } from '../../components/dashboard/shared/States';
+import { Modal } from '../../components/dashboard/ui/Modal';
+import { Card, IconTile, SearchInput, KV } from '../../components/dashboard/ui/kit';
 import { relativeTime, formatDateTime, isOnline } from '../../lib/relative-time';
 
 type ActionType = 'revoke' | 'delete' | 'logout' | null;
@@ -45,6 +48,7 @@ export function Devices() {
   const [renameValue, setRenameValue] = useState('');
   const [confirm, setConfirm] = useState<{ type: ActionType; device: DeviceInfo } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const devices = data?.devices ?? [];
   const filtered = useMemo(
@@ -78,25 +82,19 @@ export function Devices() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8">
-        <header className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Trusted Devices</h1>
-            <p className="text-sm text-white/50">
-              Devices authorized to access your workspace via the CLI.
-            </p>
-          </div>
-          <RefreshButton onClick={refetch} busy={loading} />
-        </header>
+        <PageHeader
+          eyebrow="Security"
+          title="Trusted Devices"
+          description="Machines authorized to access your workspace via the CLI."
+          actions={<RefreshButton onClick={refetch} busy={loading} />}
+        />
 
-        <div className="relative">
-          <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search devices..."
-            className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search devices..."
+          icon={<Search className="w-4 h-4" />}
+        />
 
         {loading ? (
           <SkeletonList rows={3} />
@@ -104,7 +102,7 @@ export function Devices() {
           <ErrorState message={error} onRetry={refetch} />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={<MonitorSmartphone className="w-10 h-10" />}
+            icon={<MonitorSmartphone className="w-8 h-8" />}
             title={search ? 'No matching devices' : 'No devices registered'}
             description="Run the Derivo CLI on a machine to register it here."
           />
@@ -113,18 +111,21 @@ export function Devices() {
             {filtered.map((d) => {
               const status = deviceStatus(d);
               return (
-                <button
+                <Card
                   key={d.id}
+                  hover
+                  as="button"
                   onClick={() => {
                     setSelected(d);
                     setRenaming(false);
+                    setCopied(false);
                   }}
-                  className="text-left p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-white/[0.12] transition-colors flex items-center justify-between gap-4"
+                  className="text-left p-4 flex items-center justify-between gap-4 w-full"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
-                      <MonitorSmartphone className="w-4 h-4 text-white/60" />
-                    </div>
+                    <IconTile tone="neutral">
+                      <MonitorSmartphone className="w-4 h-4" />
+                    </IconTile>
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium text-white/90 truncate">{d.name}</span>
                       <span className="text-xs text-white/40 truncate">
@@ -133,73 +134,21 @@ export function Devices() {
                     </div>
                   </div>
                   <StatusBadge label={status.label} tone={status.tone} />
-                </button>
+                </Card>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Detail panel */}
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0b0b0b] border border-white/[0.08] w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
-              <div className="flex items-center gap-2 min-w-0">
-                <MonitorSmartphone className="w-4 h-4 text-white/60 shrink-0" />
-                {renaming ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      autoFocus
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      className="h-8 px-2 rounded-md bg-white/[0.04] border border-white/[0.1] text-sm text-white focus:outline-none focus:border-white/30"
-                    />
-                    <button
-                      onClick={submitRename}
-                      disabled={busy}
-                      className="p-1.5 rounded-md bg-emerald-500/15 text-emerald-400"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <h2 className="text-lg font-semibold text-white truncate">{selected.name}</h2>
-                )}
-              </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="p-1 hover:bg-white/5 rounded-lg text-white/50 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-2.5 overflow-y-auto">
-              <div className="mb-2">
-                <StatusBadge
-                  label={deviceStatus(selected).label}
-                  tone={deviceStatus(selected).tone}
-                />
-              </div>
-              <Detail label="Device ID" mono>
-                {selected.id}
-              </Detail>
-              <Detail label="Hostname">{selected.hostname || '—'}</Detail>
-              <Detail label="Operating System">{selected.os || '—'}</Detail>
-              <Detail label="Architecture">{selected.arch || '—'}</Detail>
-              <Detail label="Node.js">{selected.nodeVersion || '—'}</Detail>
-              <Detail label="CLI Version">{selected.cliVersion || '—'}</Detail>
-              <Detail label="Trusted">{selected.isTrusted ? 'Yes' : 'No'}</Detail>
-              <Detail label="Fingerprint" mono>
-                {maskFingerprint(selected.fingerprint)}
-              </Detail>
-              <Detail label="First Registered">{formatDateTime(selected.createdAt)}</Detail>
-              <Detail label="Last Seen">{relativeTime(selected.lastSeenAt)}</Detail>
-              <Detail label="Location">{'Not available'}</Detail>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2 px-6 py-4 border-t border-white/[0.04] bg-white/[0.01]">
+      <Modal
+        open={!!selected}
+        title={selected?.name ?? 'Device'}
+        icon={<MonitorSmartphone className="w-4 h-4 text-white/60" />}
+        onClose={() => setSelected(null)}
+        footer={
+          selected && (
+            <div className="flex flex-wrap justify-end gap-2 w-full">
               <ActionBtn
                 icon={Pencil}
                 label="Rename"
@@ -240,9 +189,65 @@ export function Devices() {
                 onClick={() => setConfirm({ type: 'delete', device: selected })}
               />
             </div>
+          )
+        }
+      >
+        {selected && (
+          <div className="p-6">
+            {renaming && (
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="h-9 px-3 flex-1 rounded-[10px] bg-canvas border border-white/[0.1] text-sm text-white focus:outline-none focus:border-accent/50"
+                />
+                <button
+                  onClick={submitRename}
+                  disabled={busy}
+                  className="p-2 rounded-lg bg-good/15 text-good border border-good/25"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            <div className="mb-3">
+              <StatusBadge
+                label={deviceStatus(selected).label}
+                tone={deviceStatus(selected).tone}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-white/[0.05]">
+              <span className="text-xs text-white/40">Device ID</span>
+              <div className="col-span-2 flex items-center gap-2 min-w-0">
+                <code className="text-xs font-mono text-white/90 truncate">{selected.id}</code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(selected.id);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                  className="h-6 w-6 rounded-md flex items-center justify-center border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
+                  title="Copy ID"
+                >
+                  {copied ? <Check className="w-3 h-3 text-good" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            </div>
+            <KV label="Hostname">{selected.hostname || '—'}</KV>
+            <KV label="Operating System">{selected.os || '—'}</KV>
+            <KV label="Architecture">{selected.arch || '—'}</KV>
+            <KV label="Node.js">{selected.nodeVersion || '—'}</KV>
+            <KV label="CLI Version">{selected.cliVersion || '—'}</KV>
+            <KV label="Trusted">{selected.isTrusted ? 'Yes' : 'No'}</KV>
+            <KV label="Fingerprint" mono>
+              {maskFingerprint(selected.fingerprint)}
+            </KV>
+            <KV label="First Registered">{formatDateTime(selected.createdAt)}</KV>
+            <KV label="Last Seen">{relativeTime(selected.lastSeenAt)}</KV>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={!!confirm}
@@ -268,30 +273,11 @@ export function Devices() {
           if (!confirm) return;
           const { type, device } = confirm;
           if (type === 'delete') runAction(() => devicesApi.remove(device.id));
-          else runAction(() => devicesApi.revoke(device.id)); // revoke + logout both invalidate
+          else runAction(() => devicesApi.revoke(device.id));
         }}
         onCancel={() => setConfirm(null)}
       />
     </DashboardLayout>
-  );
-}
-
-function Detail({
-  label,
-  children,
-  mono,
-}: {
-  label: string;
-  children: React.ReactNode;
-  mono?: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2 items-center">
-      <span className="text-xs text-white/40">{label}</span>
-      <span className={`col-span-2 text-xs text-white/90 ${mono ? 'font-mono break-all' : ''}`}>
-        {children}
-      </span>
-    </div>
   );
 }
 
@@ -311,8 +297,8 @@ function ActionBtn({
       onClick={onClick}
       className={`h-8 px-3 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
         danger
-          ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20'
-          : 'bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border-white/[0.06]'
+          ? 'bg-bad/10 hover:bg-bad/20 text-bad border-bad/20'
+          : 'bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border-white/[0.08]'
       }`}
     >
       <Icon className="w-3.5 h-3.5" />

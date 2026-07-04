@@ -28,8 +28,20 @@
 import { getAdmin, isAdminInitialized } from '../../firebase.js';
 import { loadConfig } from '../../infra/config.js';
 import { logger } from '../../infra/logger.js';
-import { getEmailProvider, type EmailProvider } from './providers.js';
+import { getEmailProvider, type EmailProvider, type EmailAttachment } from './providers.js';
 import { verifyEmailTemplate, passwordResetTemplate, recoverEmailTemplate } from './templates.js';
+import { LOGO_BASE64, LOGO_CONTENT_ID, LOGO_CONTENT_TYPE, LOGO_FILENAME } from './logo.js';
+
+/**
+ * Inline logo attached to every auth email. Referenced from the HTML header
+ * via `cid:${LOGO_CONTENT_ID}` (see templates.ts).
+ */
+const LOGO_ATTACHMENT: EmailAttachment = {
+  content: LOGO_BASE64,
+  filename: LOGO_FILENAME,
+  contentType: LOGO_CONTENT_TYPE,
+  contentId: LOGO_CONTENT_ID,
+};
 
 export type EmailActionKind = 'verifyEmail' | 'resetPassword' | 'recoverEmail';
 
@@ -197,7 +209,7 @@ export class EmailActionService {
 
     let sent = false;
     try {
-      await this.provider.send({ to: email, ...template });
+      await this.provider.send({ to: email, ...template, attachments: [LOGO_ATTACHMENT] });
       sent = this.provider.canSend;
     } catch (err) {
       // Never let a provider failure break the caller — log and move on.

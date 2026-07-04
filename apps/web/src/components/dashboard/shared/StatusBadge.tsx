@@ -1,18 +1,22 @@
+/**
+ * StatusBadge — a soft pill that always pairs tone color with a text label
+ * (never color alone). Tone keys kept stable (green|amber|red|blue|gray).
+ */
 type Tone = 'green' | 'amber' | 'red' | 'blue' | 'gray';
 
 const TONES: Record<Tone, string> = {
-  green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  red: 'bg-red-500/10 text-red-400 border-red-500/20',
-  blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  gray: 'bg-white/[0.04] text-white/50 border-white/[0.08]',
+  green: 'bg-good/10 text-good border-good/20',
+  amber: 'bg-warn/10 text-warn border-warn/20',
+  red: 'bg-bad/10 text-bad border-bad/20',
+  blue: 'bg-info/10 text-info border-info/20',
+  gray: 'bg-white/[0.05] text-white/55 border-white/[0.1]',
 };
 
 const DOTS: Record<Tone, string> = {
-  green: 'bg-emerald-500',
-  amber: 'bg-amber-500',
-  red: 'bg-red-500',
-  blue: 'bg-blue-500',
+  green: 'bg-good',
+  amber: 'bg-warn',
+  red: 'bg-bad',
+  blue: 'bg-info',
   gray: 'bg-white/40',
 };
 
@@ -27,7 +31,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-medium ${TONES[tone]}`}
+      className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full border text-[11px] font-medium capitalize ${TONES[tone]}`}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full ${DOTS[tone]}`} />}
       {label}

@@ -102,22 +102,22 @@ export function Landing() {
           <Suspense fallback={null}>
             <TrustedBy />
 
-            <div id="features" className="w-full flex flex-col items-center">
+            <div id="features" className="w-full flex flex-col items-center scroll-mt-24">
               <Features />
             </div>
-            <div id="commands" className="w-full flex flex-col items-center">
+            <div id="commands" className="w-full flex flex-col items-center scroll-mt-24">
               <Commands />
             </div>
-            <div id="how-it-works" className="w-full flex flex-col items-center">
+            <div id="how-it-works" className="w-full flex flex-col items-center scroll-mt-24">
               <DeveloperWorkflow />
             </div>
-            <div id="security" className="w-full flex flex-col items-center">
+            <div id="security" className="w-full flex flex-col items-center scroll-mt-24">
               <Security />
             </div>
-            <div id="pricing" className="w-full flex flex-col items-center">
+            <div id="pricing" className="w-full flex flex-col items-center scroll-mt-24">
               <PricingPreview />
             </div>
-            <div id="faq" className="w-full flex flex-col items-center">
+            <div id="faq" className="w-full flex flex-col items-center scroll-mt-24">
               <FAQ />
             </div>
             <CTA />

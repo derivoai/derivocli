@@ -273,9 +273,9 @@ export function CLIDemo() {
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-4xl mx-auto px-6 mt-12 md:mt-20 relative z-10"
     >
-      <div className="relative rounded-2xl bg-[#0a0a0a] border border-white/[0.08] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col h-[480px] md:h-[520px]">
+      <div className="relative rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/10 shadow-[0_0_60px_0_rgba(59,130,246,0.18),0_30px_80px_-30px_rgba(0,0,0,0.95)] overflow-hidden flex flex-col h-[480px] md:h-[520px]">
         {/* Terminal Top Window Bar */}
-        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0c0c]">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0e0e10]/80">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-white/[0.12]" />
             <div className="w-3 h-3 rounded-full bg-white/[0.12]" />
@@ -312,7 +312,7 @@ export function CLIDemo() {
         {/* Terminal Screen Body */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto thin-scroll p-8 md:p-10 font-mono text-xs md:text-sm text-white/70 flex flex-col gap-3.5 bg-[#070707] select-text scroll-smooth"
+          className="flex-1 overflow-y-auto scrollbar-none p-8 md:p-10 font-mono text-xs md:text-sm text-white/70 flex flex-col gap-3.5 bg-black/45 select-text scroll-smooth"
         >
           <AnimatePresence mode="popLayout">
             {lines.map((line, idx) => {
@@ -431,7 +431,7 @@ export function CLIDemo() {
         </div>
 
         {/* Progress Bar Container */}
-        <div className="shrink-0 border-t border-white/[0.06] px-8 py-5 bg-[#080808] flex items-center justify-between gap-6">
+        <div className="shrink-0 border-t border-white/10 px-8 py-5 bg-[#0e0e10]/85 backdrop-blur-md flex items-center justify-between gap-6">
           <div className="flex flex-col gap-1.5 flex-1">
             <div className="flex justify-between text-[11px] font-mono text-white/40 uppercase tracking-wider">
               <span>Environment Readiness</span>

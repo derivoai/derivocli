@@ -365,14 +365,14 @@ export function Register() {
       <p className="mt-6 text-center text-[10px] text-white/30 max-w-xs mx-auto leading-relaxed">
         By clicking continue, you agree to our{' '}
         <Link
-          to="/terms"
+          to="/terms-of-services"
           className="hover:text-white transition-colors underline underline-offset-2"
         >
           Terms of Service
         </Link>{' '}
         and{' '}
         <Link
-          to="/privacy"
+          to="/privacy-policies"
           className="hover:text-white transition-colors underline underline-offset-2"
         >
           Privacy Policy

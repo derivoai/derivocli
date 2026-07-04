@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Logo } from '../landing/Logo';
 
 /**
  * Apple-style boot splash: a centered brand mark with a thin, rounded
@@ -30,14 +31,7 @@ export function Splash({ hiding, duration = 2000 }: { hiding: boolean; duration?
       role="status"
     >
       <div className="flex flex-col items-center gap-10">
-        <img
-          src="/icon.png"
-          alt="Derivo"
-          width={64}
-          height={64}
-          decoding="async"
-          className="w-16 h-16 object-contain"
-        />
+        <Logo className="w-16 h-16 text-white" />
 
         {/* Thin determinate track — the iPhone boot bar. */}
         <div className="h-[3px] w-44 overflow-hidden rounded-full bg-white/15">

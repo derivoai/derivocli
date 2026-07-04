@@ -4,17 +4,25 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   actions?: ReactNode;
+  eyebrow?: string;
 }
 
-/** Consistent page header used across all dashboard pages. */
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+/** Clean, spacious page header. API-compatible (title/description/actions/eyebrow). */
+export function PageHeader({ title, description, actions, eyebrow }: PageHeaderProps) {
   return (
-    <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">{title}</h1>
-        {description && <p className="text-sm text-white/55">{description}</p>}
+    <header className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+      <div className="flex flex-col gap-2">
+        {eyebrow && (
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            {eyebrow}
+          </span>
+        )}
+        <h1 className="font-display text-[28px] md:text-[34px] font-semibold tracking-[-0.02em] text-white leading-none">
+          {title}
+        </h1>
+        {description && <p className="text-sm text-white/45 max-w-2xl">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}
+      {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
     </header>
   );
 }

@@ -6,6 +6,17 @@ import { Logo } from './Logo';
 export function Hero() {
   return (
     <section className="relative pt-32 pb-16 px-6 w-full flex flex-col items-center justify-center min-h-[70vh]">
+      {/* Background glow specifically centered for the Hero text to create depth */}
+      <div
+        className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50rem] h-[30rem] rounded-full opacity-70 pointer-events-none select-none z-0"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(99,102,241,0.08) 50%, transparent 80%)',
+          filter: 'blur(90px)',
+        }}
+        aria-hidden="true"
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -54,9 +65,9 @@ function InstallPill() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="group relative"
       >
-        <div className="absolute -inset-1 bg-gradient-to-r from-neutral-800 to-neutral-600 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/30 to-indigo-600/20 rounded-full blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
         <div
-          className="relative flex items-center bg-black/80 backdrop-blur-md border border-white/10 rounded-full px-5 py-2.5 space-x-4 cursor-pointer hover:bg-neutral-900 transition-colors shadow-2xl"
+          className="relative flex items-center bg-[#0c0c0c]/85 backdrop-blur-md border border-white/10 rounded-full px-5 py-2.5 space-x-4 cursor-pointer hover:bg-neutral-900 transition-colors shadow-2xl"
           onClick={handleCopy}
         >
           <span className="text-neutral-500 font-mono text-sm">$</span>

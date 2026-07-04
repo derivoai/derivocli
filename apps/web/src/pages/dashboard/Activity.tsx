@@ -19,28 +19,46 @@ import {
   SkeletonList,
 } from '../../components/dashboard/shared/States';
 import { PageHeader } from '../../components/dashboard/shared/PageHeader';
+import { Section, Btn, SearchInput, Segmented } from '../../components/dashboard/ui/kit';
 import { relativeTime, formatDateTime } from '../../lib/relative-time';
 
-const TYPE_META: Record<string, { label: string; icon: typeof LogIn; tone: string }> = {
-  login: { label: 'Signed in', icon: LogIn, tone: 'text-emerald-400 bg-emerald-500/10' },
-  logout: { label: 'Signed out', icon: LogOut, tone: 'text-white/60 bg-white/[0.06]' },
+const TYPE_META: Record<
+  string,
+  { label: string; icon: typeof LogIn; tone: string; danger?: boolean }
+> = {
+  login: { label: 'Signed in', icon: LogIn, tone: 'text-good bg-good/10 border-good/20' },
+  logout: {
+    label: 'Signed out',
+    icon: LogOut,
+    tone: 'text-white/60 bg-white/[0.06] border-white/[0.1]',
+  },
   logout_all: {
     label: 'Logged out all sessions',
     icon: ShieldAlert,
-    tone: 'text-amber-400 bg-amber-500/10',
+    tone: 'text-warn bg-warn/10 border-warn/20',
   },
-  refresh: { label: 'Session refreshed', icon: RefreshCw, tone: 'text-blue-400 bg-blue-500/10' },
+  refresh: {
+    label: 'Session refreshed',
+    icon: RefreshCw,
+    tone: 'text-info bg-info/10 border-info/20',
+  },
   refresh_failed: {
     label: 'Refresh failed',
     icon: ShieldAlert,
-    tone: 'text-red-400 bg-red-500/10',
+    tone: 'text-bad bg-bad/10 border-bad/25',
+    danger: true,
   },
   device_registered: {
     label: 'Device registered',
     icon: MonitorSmartphone,
-    tone: 'text-blue-400 bg-blue-500/10',
+    tone: 'text-info bg-info/10 border-info/20',
   },
-  token_revoked: { label: 'Token revoked', icon: ShieldAlert, tone: 'text-red-400 bg-red-500/10' },
+  token_revoked: {
+    label: 'Token revoked',
+    icon: ShieldAlert,
+    tone: 'text-bad bg-bad/10 border-bad/25',
+    danger: true,
+  },
 };
 
 const FILTERS = [
@@ -79,42 +97,30 @@ export function Activity() {
     <DashboardLayout>
       <div className="flex flex-col gap-8">
         <PageHeader
+          eyebrow="Audit"
           title="Activity"
           description="Authentication, session, and security events on your account."
           actions={<RefreshButton onClick={refetch} busy={loading} />}
         />
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search events..."
-              className="w-full h-9 pl-9 pr-4 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
-            />
-          </div>
-          <div className="flex gap-1.5">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => {
-                  setFilter(f.id);
-                  setPage(1);
-                }}
-                className={`h-9 px-3 rounded-lg text-xs font-medium border transition-colors ${
-                  filter === f.id
-                    ? 'bg-white/[0.08] text-white border-white/[0.12]'
-                    : 'bg-white/[0.02] text-white/50 border-white/[0.06] hover:text-white/80'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Search events..."
+            icon={<Search className="w-4 h-4" />}
+          />
+          <Segmented
+            options={FILTERS.map((f) => ({ id: f.id, label: f.label }))}
+            value={filter}
+            onChange={(v) => {
+              setFilter(v);
+              setPage(1);
+            }}
+          />
         </div>
 
         {loading ? (
@@ -123,16 +129,18 @@ export function Activity() {
           <ErrorState message={error} onRetry={refetch} />
         ) : pageItems.length === 0 ? (
           <EmptyState
-            icon={<ActivityIcon className="w-10 h-10" />}
+            icon={<ActivityIcon className="w-8 h-8" />}
             title={search || filter !== 'all' ? 'No matching events' : 'No activity yet'}
             description="Events appear as you sign in, register devices, and manage keys."
           />
         ) : (
-          <div className="relative flex flex-col">
-            {pageItems.map((e, i) => (
-              <TimelineRow key={e.id} event={e} last={i === pageItems.length - 1} />
-            ))}
-          </div>
+          <Section>
+            <div className="relative flex flex-col">
+              {pageItems.map((e, i) => (
+                <TimelineRow key={e.id} event={e} last={i === pageItems.length - 1} />
+              ))}
+            </div>
+          </Section>
         )}
 
         {pageCount > 1 && (
@@ -141,20 +149,22 @@ export function Activity() {
               Page {page} of {pageCount} · {filtered.length} events
             </span>
             <div className="flex gap-2">
-              <button
+              <Btn
+                variant="secondary"
+                size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] disabled:opacity-40"
               >
                 Previous
-              </button>
-              <button
+              </Btn>
+              <Btn
+                variant="secondary"
+                size="sm"
                 disabled={page >= pageCount}
                 onClick={() => setPage((p) => p + 1)}
-                className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] disabled:opacity-40"
               >
                 Next
-              </button>
+              </Btn>
             </div>
           </div>
         )}
@@ -167,22 +177,24 @@ function TimelineRow({ event, last }: { event: LoginHistoryEvent; last: boolean 
   const meta = TYPE_META[event.type] ?? {
     label: event.type,
     icon: KeyRound,
-    tone: 'text-white/60 bg-white/[0.06]',
+    tone: 'text-white/60 bg-white/[0.06] border-white/[0.1]',
   };
   const Icon = meta.icon;
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${meta.tone}`}
+          className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${meta.tone}`}
         >
           <Icon className="w-4 h-4" />
         </div>
-        {!last && <div className="w-px flex-1 bg-white/[0.06] my-1" />}
+        {!last && <div className="w-px flex-1 bg-white/[0.08] my-1" />}
       </div>
-      <div className="pb-6 min-w-0">
+      <div className="pb-6 min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-white/90">{meta.label}</span>
+          <span className={`text-sm font-medium ${meta.danger ? 'text-bad' : 'text-white/90'}`}>
+            {meta.label}
+          </span>
           <span className="text-xs text-white/40" title={formatDateTime(event.at)}>
             {relativeTime(event.at)}
           </span>

@@ -39,11 +39,11 @@ export function Background() {
 
       {/* Hero — Top Left: Cyan → Indigo */}
       <div
-        className="absolute -top-[20%] -left-[10%] w-[60rem] h-[60rem] rounded-full opacity-100"
+        className="absolute -top-[20rem] -left-[10rem] w-[60rem] h-[60rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(6,182,212,0.15) 0%, rgba(99,102,241,0.08) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(6,182,212,0.25) 0%, rgba(99,102,241,0.15) 40%, transparent 70%)',
           filter: 'blur(120px)',
         }}
         aria-hidden="true"
@@ -51,23 +51,35 @@ export function Background() {
 
       {/* Hero — Top Right: Purple → Pink */}
       <div
-        className="absolute -top-[10%] -right-[10%] w-[55rem] h-[55rem] rounded-full opacity-100"
+        className="absolute -top-[10rem] -right-[10rem] w-[55rem] h-[55rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(147,51,234,0.13) 0%, rgba(236,72,153,0.06) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(147,51,234,0.18) 0%, rgba(236,72,153,0.08) 40%, transparent 70%)',
           filter: 'blur(120px)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* CLI Demo Backdrop Glow: Vibrant Blue/Indigo */}
+      <div
+        className="absolute top-[20rem] left-[10rem] w-[65rem] h-[65rem] rounded-full opacity-100"
+        style={{
+          ...glowLayerStyle,
+          background:
+            'radial-gradient(circle at center, rgba(37,99,235,0.24) 0%, rgba(6,182,212,0.12) 45%, transparent 70%)',
+          filter: 'blur(140px)',
         }}
         aria-hidden="true"
       />
 
       {/* Mid Section — Left: Violet → Blue */}
       <div
-        className="absolute top-[28%] -left-[12%] w-[55rem] h-[55rem] rounded-full opacity-100"
+        className="absolute top-[75rem] -left-[12rem] w-[55rem] h-[55rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(124,58,237,0.10) 0%, rgba(59,130,246,0.05) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(124,58,237,0.22) 0%, rgba(59,130,246,0.26) 40%, transparent 70%)',
           filter: 'blur(140px)',
         }}
         aria-hidden="true"
@@ -75,11 +87,11 @@ export function Background() {
 
       {/* Mid Section — Right: Emerald → Teal */}
       <div
-        className="absolute top-[42%] -right-[12%] w-[50rem] h-[50rem] rounded-full opacity-100"
+        className="absolute top-[135rem] -right-[12rem] w-[50rem] h-[50rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(16,185,129,0.10) 0%, rgba(20,184,166,0.05) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(16,185,129,0.14) 0%, rgba(20,184,166,0.07) 40%, transparent 70%)',
           filter: 'blur(140px)',
         }}
         aria-hidden="true"
@@ -87,11 +99,11 @@ export function Background() {
 
       {/* Bottom — Left: Fuchsia → Rose */}
       <div
-        className="absolute top-[70%] -left-[8%] w-[50rem] h-[50rem] rounded-full opacity-100"
+        className="absolute bottom-[80rem] -left-[8rem] w-[50rem] h-[50rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(217,70,239,0.10) 0%, rgba(244,63,94,0.05) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(217,70,239,0.14) 0%, rgba(244,63,94,0.07) 40%, transparent 70%)',
           filter: 'blur(140px)',
         }}
         aria-hidden="true"
@@ -99,11 +111,11 @@ export function Background() {
 
       {/* Bottom — Right: Teal → Cyan */}
       <div
-        className="absolute top-[85%] -right-[8%] w-[55rem] h-[55rem] rounded-full opacity-100"
+        className="absolute bottom-[20rem] -right-[8rem] w-[55rem] h-[55rem] rounded-full opacity-100"
         style={{
           ...glowLayerStyle,
           background:
-            'radial-gradient(circle at center, rgba(20,184,166,0.12) 0%, rgba(6,182,212,0.06) 40%, transparent 70%)',
+            'radial-gradient(circle at center, rgba(20,184,166,0.20) 0%, rgba(6,182,212,0.25) 40%, transparent 70%)',
           filter: 'blur(150px)',
         }}
         aria-hidden="true"

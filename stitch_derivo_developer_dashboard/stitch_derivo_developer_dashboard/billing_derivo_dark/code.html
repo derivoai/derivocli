@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Derivo - Billing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "background": "#0a0a0a",
+                      "surface-container": "#111111",
+                      "surface": "#111111",
+                      "surface-dim": "#0a0a0a",
+                      "surface-container-highest": "#1a1a1a",
+                      "surface-container-high": "#171717",
+                      "outline-variant": "#222222",
+                      "outline": "#444444",
+                      "primary": "#ffffff",
+                      "on-primary": "#000000",
+                      "on-surface": "#ffffff",
+                      "on-surface-variant": "#a3a3a3",
+                      "on-primary-fixed": "#1a1c1c",
+                      "surface-container-lowest": "#0a0a0a",
+                      "secondary-fixed-dim": "#a3a3a3",
+                      "on-tertiary-container": "#a3a3a3",
+                      "on-secondary-fixed-variant": "#a3a3a3",
+                      "error-container": "#222222",
+                      "tertiary-fixed-dim": "#a3a3a3",
+                      "inverse-primary": "#a3a3a3",
+                      "on-secondary": "#000000",
+                      "inverse-surface": "#ffffff",
+                      "tertiary-container": "#1a1a1a",
+                      "on-secondary-container": "#ffffff",
+                      "primary-container": "#1a1a1a",
+                      "on-primary-container": "#ffffff",
+                      "on-error-container": "#ffffff",
+                      "surface-tint": "#ffffff",
+                      "secondary-container": "#1a1a1a",
+                      "secondary": "#ffffff",
+                      "secondary-fixed": "#1a1a1a",
+                      "on-secondary-fixed": "#ffffff",
+                      "on-tertiary-fixed-variant": "#a3a3a3",
+                      "primary-fixed-dim": "#a3a3a3",
+                      "error": "#ffffff",
+                      "on-tertiary-fixed": "#000000",
+                      "on-error": "#000000",
+                      "primary-fixed": "#1a1a1a",
+                      "surface-bright": "#1a1a1a",
+                      "tertiary": "#ffffff",
+                      "surface-variant": "#111111",
+                      "on-background": "#ffffff",
+                      "surface-container-low": "#111111",
+                      "on-primary-fixed-variant": "#a3a3a3",
+                      "inverse-on-surface": "#000000",
+                      "tertiary-fixed": "#1a1a1a",
+                      "on-tertiary": "#000000"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container-max": "1440px",
+                      "gutter": "24px",
+                      "stack-gap": "12px",
+                      "margin-mobile": "16px",
+                      "sidebar-width": "260px"
+              },
+              "fontFamily": {
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface antialiased flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex flex-col h-full py-6 bg-surface-container dark:bg-surface-container w-[260px] h-screen fixed left-0 top-0 border-r border-outline-variant dark:border-outline-variant flat no shadows z-50 font-body-md text-body-md">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-xl">layers</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary leading-tight">Derivo</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant">v1.0.4</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-2 px-4 rounded-xl font-medium hover:opacity-90 transition-opacity scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Project
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<ul class="flex flex-col gap-1 px-4">
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                        Overview
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">folder</span>
+                        Projects
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">devices</span>
+                        Devices
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">history</span>
+                        Sessions
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">vpn_key</span>
+                        API Keys
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                        Activity
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 py-2 text-primary font-bold border-l-2 border-primary pl-4 bg-transparent rounded-xl bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">payments</span>
+                        Billing
+                    </a>
+</li>
+</ul>
+</div>
+<div class="px-4 mt-auto pt-6 border-t border-outline-variant">
+<ul class="flex flex-col gap-1">
+<li>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:text-primary transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">logout</span>
+                        Sign-out
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<div class="flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col">
+<!-- TopAppBar (Shared Component) -->
+<header class="flex justify-between items-center h-16 px-gutter docked full-width top-0 sticky z-40 bg-background dark:bg-background border-b border-outline-variant dark:border-outline-variant flat no shadows font-body-md text-body-md">
+<div class="flex items-center gap-4">
+<!-- Mobile menu toggle would go here if needed -->
+<h2 class="font-headline-md text-headline-md font-bold text-primary hidden md:block">Derivo</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-xl hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">assistant</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 text-sm font-medium hover:bg-surface-container-high transition-all p-2 rounded-xl">
+<span class="material-symbols-outlined text-sm">refresh</span>
+                    Refresh
+                </button>
+<div class="h-8 w-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A macro shot of a sleek, minimalist metallic sphere reflecting a high-contrast dark environment. The lighting is precise, studio-quality, casting sharp highlights on the metallic surface, conveying a sense of premium technology and precision engineering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARlLjQxpUY_ojV4NPvrakkhFvW4JEA5FrOob1PGh1ZVc4J9UEcVYkkW2bZafkQIerE3XppaFVrl3pCGeQSELX0ts5izKkFau8HCA7eHDRpaqJiCwo6T6-oSwJAW5DT4uhGOiOEoR5ksSk12GUnQ3DwNFqGmHmZgW6YjE2TimSQ8PriYe9HYE7LjgoTVdnrj2A3hIQKO3XQWQHc70R7BpAZ68fmdtO3rsMU7Th5FOIwlSavrnlym77XOA"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-gutter max-w-container-max mx-auto w-full flex flex-col gap-8">
+<!-- Header Section -->
+<div class="flex flex-col gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Configuration</span>
+<h1 class="font-headline-lg text-headline-lg text-primary">Billing</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Manage your subscription plan, usage, and payment methods.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Current Plan Card -->
+<div class="col-span-1 lg:col-span-2 bg-surface-container border border-outline-variant rounded-2xl p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-1">Premium Plan</h3>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-primary border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                    Active
+                                </span>
+</div>
+<div class="text-right">
+<span class="font-headline-lg text-headline-lg text-primary">$49</span>
+<span class="font-body-md text-body-md text-on-surface-variant">/mo</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Your plan automatically renews on Oct 1st, 2024.</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary hover:opacity-90 transition-opacity font-medium px-4 py-2 rounded-xl text-sm">
+                            Manage Subscription
+                        </button>
+<button class="border border-outline-variant text-primary hover:bg-surface-container-highest transition-colors font-medium px-4 py-2 rounded-xl text-sm">
+                            View Invoices
+                        </button>
+</div>
+</div>
+<!-- Payment Method Card -->
+<div class="col-span-1 bg-surface-container border border-outline-variant rounded-2xl p-6 flex flex-col">
+<h3 class="font-headline-md text-headline-md text-primary mb-4 text-lg">Payment Method</h3>
+<div class="flex items-center gap-4 p-4 border border-outline-variant rounded-xl bg-surface-dim mb-4 flex-1">
+<div class="w-12 h-8 bg-surface-container-highest rounded-xl flex items-center justify-center border border-outline-variant">
+<span class="font-code-sm text-code-sm text-primary font-bold">VISA</span>
+</div>
+<div>
+<p class="font-code-md text-code-md text-primary">•••• 4242</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-xs">Expires 12/25</p>
+</div>
+</div>
+<button class="w-full border border-outline-variant text-primary hover:bg-surface-container-highest transition-colors font-medium px-4 py-2 rounded-xl text-sm">
+                        Update Payment Method
+                    </button>
+</div>
+<!-- Usage Section -->
+<div class="col-span-1 lg:col-span-3 bg-surface-container border border-outline-variant rounded-2xl p-6">
+<h3 class="font-headline-md text-headline-md text-primary mb-6 text-lg">Current Usage</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Environments Usage -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-end mb-1">
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">Environments</span>
+<span class="font-code-sm text-code-sm text-primary">8 / 20</span>
+</div>
+<div class="h-2 w-full bg-surface-dim rounded-full overflow-hidden border border-outline-variant">
+<div class="h-full bg-primary w-[40%] rounded-full"></div>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant text-xs mt-1">40% capacity</span>
+</div>
+<!-- API Calls Usage -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-end mb-1">
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">API Calls</span>
+<span class="font-code-sm text-code-sm text-primary">12.4k / 50k</span>
+</div>
+<div class="h-2 w-full bg-surface-dim rounded-full overflow-hidden border border-outline-variant">
+<div class="h-full bg-primary w-[24.8%] rounded-full"></div>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant text-xs mt-1">24.8% capacity</span>
+</div>
+<!-- Storage Usage -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-end mb-1">
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">Storage</span>
+<span class="font-code-sm text-code-sm text-primary">4.2GB / 10GB</span>
+</div>
+<div class="h-2 w-full bg-surface-dim rounded-full overflow-hidden border border-outline-variant">
+<div class="h-full bg-primary w-[42%] rounded-full"></div>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant text-xs mt-1">42% capacity</span>
+</div>
+</div>
+</div>
+<!-- Upgrade Tiers Table / List -->
+<div class="col-span-1 lg:col-span-3 mt-4">
+<h3 class="font-headline-md text-headline-md text-primary mb-6 text-lg">Available Plans</h3>
+<div class="overflow-x-auto border border-outline-variant rounded-2xl bg-surface-container">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-dim border-b border-outline-variant">
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase w-1/4">Features</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase w-1/4">
+<div class="text-on-surface-variant font-bold mb-1">Free</div>
+<div class="text-xs font-normal opacity-70">$0/mo</div>
+</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-primary uppercase w-1/4 border-l border-r border-outline-variant bg-surface-container-highest relative">
+<div class="absolute top-0 left-0 w-full h-[2px] bg-primary"></div>
+<div class="text-primary font-bold mb-1">Premium (Current)</div>
+<div class="text-xs font-normal opacity-70">$49/mo</div>
+</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase w-1/4">
+<div class="text-on-surface-variant font-bold mb-1">Enterprise</div>
+<div class="text-xs font-normal opacity-70">Custom</div>
+</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-outline-variant">
+<td class="py-3 px-6 text-on-surface-variant">Environments</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">2</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm border-l border-r border-outline-variant bg-surface-container-highest">20</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">Unlimited</td>
+</tr>
+<tr class="border-b border-outline-variant">
+<td class="py-3 px-6 text-on-surface-variant">API Calls / mo</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">1,000</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm border-l border-r border-outline-variant bg-surface-container-highest">50,000</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">Unlimited</td>
+</tr>
+<tr class="border-b border-outline-variant">
+<td class="py-3 px-6 text-on-surface-variant">Storage</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">1GB</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm border-l border-r border-outline-variant bg-surface-container-highest">10GB</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">500GB</td>
+</tr>
+<tr>
+<td class="py-3 px-6 text-on-surface-variant">Support</td>
+<td class="py-3 px-6 text-on-surface-variant font-code-sm text-code-sm">Community</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm border-l border-r border-outline-variant bg-surface-container-highest">Email (24h)</td>
+<td class="py-3 px-6 text-primary font-code-sm text-code-sm">Dedicated Slack</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

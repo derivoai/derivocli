@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Derivo - API Keys</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "background": "#0a0a0a",
+                      "surface-container": "#111111",
+                      "outline-variant": "#222222",
+                      "primary": "#ffffff",
+                      "on-primary": "#000000",
+                      "on-surface-variant": "#a3a3a3",
+                      "surface-container-high": "#1a1a1a",
+                      "outline": "#404040",
+                      "on-background": "#ffffff",
+                      "surface-container-highest": "#222222",
+                      "error-container": "#e5e5e5",
+                      "surface-dim": "#1a1a1a",
+                      "surface-container-low": "#111111",
+                      "error": "#a3a3a3",
+                      "surface-container-lowest": "#0a0a0a",
+                      "on-surface": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container-max": "1440px",
+                      "gutter": "24px",
+                      "stack-gap": "12px",
+                      "margin-mobile": "16px",
+                      "sidebar-width": "260px"
+              },
+              "fontFamily": {
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex w-[260px] h-screen fixed left-0 top-0 border-r border-outline-variant dark:border-outline-variant bg-surface-container dark:bg-surface-container flex flex-col h-full py-6 z-50">
+<div class="px-6 mb-8 flex items-center space-x-3">
+<div class="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">Derivo</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant">v1.0.4</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-primary text-on-primary font-body-md text-body-md font-medium py-2 px-4 rounded-xl border border-transparent hover:bg-surface-container-high hover:text-primary hover:border-outline transition-all duration-200 flex items-center justify-center space-x-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+<span>New Project</span>
+</button>
+</div>
+<ul class="flex-1 space-y-1 px-4">
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Overview</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span>Projects</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">devices</span>
+<span>Devices</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">history</span>
+<span>Sessions</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-primary font-bold border-l-2 border-primary pl-4 bg-transparent scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">vpn_key</span>
+<span>API Keys</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Activity</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span>Billing</span>
+</a>
+</li>
+</ul>
+<div class="px-4 mt-auto">
+<a class="flex items-center space-x-3 py-2 px-3 rounded-xl text-on-surface-variant font-medium pl-4 hover:text-primary hover:border-outline hover:bg-surface-container-high transition-colors duration-200 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign-out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-[260px] min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 px-gutter border-b border-outline-variant dark:border-outline-variant bg-background dark:bg-background docked full-width top-0 sticky z-40">
+<div class="flex-1 flex items-center">
+<!-- Mobile Menu Button -->
+<button class="md:hidden mr-4 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="relative w-64 group focus-within:ring-1 focus-within:ring-primary rounded-xl">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-[#0a0a0a] border border-outline-variant rounded-xl pl-9 pr-3 py-1.5 font-code-sm text-code-sm text-primary focus:outline-none focus:border-primary transition-colors" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-xl hover:bg-surface-container-high">
+<span class="material-symbols-outlined">refresh</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-xl hover:bg-surface-container-high">
+<span class="material-symbols-outlined">assistant</span>
+</button>
+<button class="bg-primary text-on-primary font-body-md text-body-md font-medium py-1.5 px-4 rounded-xl border border-transparent hover:bg-surface-container-high hover:text-primary hover:border-outline transition-all duration-200">
+                    New Project
+                </button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A macro shot of a sleek, dark metallic surface with extremely fine circular brushed textures reflecting a stark, cool white light, conveying a sense of high-tech precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfqO_k9hkpEx7ZGH-Sh3UDCzXq1WP7Zm8liBb_S7qUobeiOR64C-5W6KveL0S5qxyRNB0LbJhfcq2jdSt5p1WWuNxvlljKKz_1Zx9uqAFUhw7uxpCm8dM9QMA_i2qvqVWOMOqqUJBbfjmb-CWgkOuVgl-8JpZEnKFR_AN8_30HXARbDHQ8MTKe-YuZFB4CTnBr6GGyqy-sKFZDoMLvcnuwn-COqypYSnSCFaSlRRwY-Xf0TCk5saGPjw"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-gutter overflow-auto">
+<div class="max-w-container-max mx-auto space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between space-y-4 md:space-y-0">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block mb-2">Developers</span>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">API Keys</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Programmatic access tokens for the Derivo API and CLI.</p>
+</div>
+<div class="flex items-center space-x-3">
+<button class="bg-transparent border border-outline-variant text-primary font-body-md text-body-md py-2 px-4 rounded-xl hover:bg-surface-container-high hover:border-outline transition-colors flex items-center space-x-2">
+<span class="material-symbols-outlined text-sm">refresh</span>
+<span>Refresh</span>
+</button>
+<button class="bg-primary text-on-primary font-body-md text-body-md font-medium py-2 px-4 rounded-xl border border-transparent hover:bg-surface-container-high hover:text-primary hover:border-outline transition-colors flex items-center space-x-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">add</span>
+<span>New Key</span>
+</button>
+</div>
+</div>
+<!-- New Key Reveal (Example State) -->
+<div class="border border-outline bg-[#0a0a0a] rounded-2xl p-6 relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2 mb-2">
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+<h3 class="font-body-lg text-body-lg text-primary font-medium">New API Key Created</h3>
+</div>
+<p class="font-body-md text-body-md text-error-container mb-4 font-medium flex items-center space-x-2">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>Copy and save this key—it won't be shown again.</span>
+</p>
+<div class="flex items-center space-x-2">
+<div class="bg-[#111111] border border-outline-variant rounded-xl px-4 py-3 font-code-md text-code-md text-primary w-96 font-medium">
+                                    dv_live_abc123xyz890qwertyuiopasdfghjkl
+                                </div>
+<button class="bg-surface-container-high border border-outline-variant text-primary p-3 rounded-xl hover:bg-surface-container-highest hover:border-outline transition-colors" title="Copy to clipboard">
+<span class="material-symbols-outlined">content_copy</span>
+</button>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<!-- Search and Filter Bar -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-4">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-[#0a0a0a] border border-outline-variant rounded-xl pl-9 pr-3 py-2 font-code-sm text-code-sm text-primary focus:outline-none focus:border-primary transition-colors" placeholder="Search keys..." type="text"/>
+</div>
+<div class="flex items-center space-x-2 text-on-surface-variant font-body-md text-body-md">
+<span>Showing 3 active keys</span>
+</div>
+</div>
+<!-- API Keys Table -->
+<div class="border border-outline-variant rounded-2xl overflow-hidden bg-[#0a0a0a]">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-lowest">
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium">Name</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium">Token</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium">Scopes</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium">Created</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium">Last Used</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase font-medium text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-code-sm text-code-sm divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-4 text-primary font-medium flex items-center space-x-2">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(255,255,255,0.5)]"></div>
+<span>Production Gateway</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant font-mono">dv_••••••••abcd</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md border border-outline-variant bg-surface-dim text-on-surface-variant text-[10px] uppercase tracking-wide">Read/Write</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant">Oct 24, 2024</td>
+<td class="py-4 px-4 text-on-surface-variant">Just now</td>
+<td class="py-4 px-4 text-right space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-on-surface-variant hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-surface-container-high border border-transparent hover:border-outline-variant text-xs">Rotate</button>
+<button class="text-error hover:text-error-container transition-colors px-2 py-1 rounded-lg hover:bg-surface-container-high border border-transparent hover:border-error-container text-xs">Revoke</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-4 text-primary font-medium flex items-center space-x-2">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(255,255,255,0.5)]"></div>
+<span>CI/CD Pipeline</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant font-mono">dv_••••••••x7y9</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md border border-outline-variant bg-surface-dim text-on-surface-variant text-[10px] uppercase tracking-wide">Write Only</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant">Sep 12, 2024</td>
+<td class="py-4 px-4 text-on-surface-variant">2 hours ago</td>
+<td class="py-4 px-4 text-right space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-on-surface-variant hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-surface-container-high border border-transparent hover:border-outline-variant text-xs">Rotate</button>
+<button class="text-error hover:text-error-container transition-colors px-2 py-1 rounded-lg hover:bg-surface-container-high border border-transparent hover:border-error-container text-xs">Revoke</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group opacity-50">
+<td class="py-4 px-4 text-on-surface-variant font-medium flex items-center space-x-2">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="line-through">Legacy Integration</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant font-mono">dv_••••••••p0q1</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md border border-outline-variant bg-surface-dim text-on-surface-variant text-[10px] uppercase tracking-wide">Read Only</span>
+</td>
+<td class="py-4 px-4 text-on-surface-variant">Jan 05, 2024</td>
+<td class="py-4 px-4 text-on-surface-variant">Never</td>
+<td class="py-4 px-4 text-right space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="text-[10px] uppercase tracking-wide text-error border border-error-container px-2 py-0.5 rounded-md">Revoked</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</body></html>

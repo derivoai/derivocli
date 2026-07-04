@@ -8,15 +8,15 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 w-full z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <Logo className="w-5 h-5 text-white" />
+        <Link to="/" className="flex items-center space-x-2.5">
+          <Logo className="w-7 h-7 text-white" />
           <span className="text-xl font-medium tracking-tight text-white">Derivo</span>
         </Link>
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-neutral-400">
           <a href="#features" className="hover:text-white transition-colors">
             Features
           </a>
-          <a href="#workflow" className="hover:text-white transition-colors">
+          <a href="#how-it-works" className="hover:text-white transition-colors">
             Workflow
           </a>
           <a href="#pricing" className="hover:text-white transition-colors">

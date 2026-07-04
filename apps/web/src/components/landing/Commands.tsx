@@ -206,10 +206,10 @@ export function Commands() {
                 <button
                   key={c.cmd}
                   onClick={() => setActiveCmd(c.cmd)}
-                  className={`relative flex items-center gap-3.5 px-4 py-3 rounded-2xl border transition-all duration-300 text-left min-w-[155px] lg:w-full group cursor-pointer ${
+                  className={`relative flex items-center gap-3.5 px-4 py-3 rounded-2xl border transition-all duration-300 text-left min-w-[155px] lg:w-full group cursor-pointer hover:-translate-y-0.5 ${
                     isActive
-                      ? 'border-white/10 bg-white/[0.02]'
-                      : 'border-transparent bg-transparent hover:bg-white/[0.01]'
+                      ? 'border-white/10 bg-white/[0.02] shadow-sm'
+                      : 'border-transparent bg-transparent hover:bg-white/[0.015] hover:border-white/5'
                   }`}
                 >
                   {/* Sliding active indicator */}
@@ -259,7 +259,7 @@ export function Commands() {
             </span>
 
             <div
-              className="relative rounded-3xl bg-[#09090a]/80 border border-white/10 p-6 md:p-8 backdrop-blur-xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.05)] flex-1 min-h-[350px] flex flex-col justify-between"
+              className="relative rounded-3xl bg-[#0c0c0e]/80 border border-white/10 p-6 md:p-8 backdrop-blur-xl shadow-[0_0_50px_rgba(59,130,246,0.12),0_30px_60px_-15px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.05)] flex-1 min-h-[350px] flex flex-col justify-between"
               style={{ fontFamily: 'Geist Mono, JetBrains Mono, monospace' }}
             >
               {/* Terminal header */}
@@ -278,7 +278,7 @@ export function Commands() {
               {/* Console log area */}
               <div
                 ref={terminalContentRef}
-                className="flex-1 overflow-y-auto text-[13px] leading-relaxed text-white/80"
+                className="flex-1 overflow-y-auto scrollbar-none text-[13px] leading-relaxed text-white/80"
               >
                 <AnimatePresence mode="wait">
                   <motion.div

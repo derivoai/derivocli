@@ -9,7 +9,9 @@ import {
   RefreshCw,
   Check,
   Loader2,
-  AlertCircle,
+  AlertTriangle,
+  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 
 interface Scenario {
@@ -177,191 +179,173 @@ const scenarios: Scenario[] = [
   },
 ];
 
+type Phase = 'analysis' | 'resolution' | 'verification';
+type PhaseLogs = Record<Phase, string[]>;
+const emptyLogs = (): PhaseLogs => ({ analysis: [], resolution: [], verification: [] });
+
+const PHASES: { key: Phase; label: string; accent: string }[] = [
+  { key: 'analysis', label: 'Analysis', accent: 'text-sky-300' },
+  { key: 'resolution', label: 'Resolution', accent: 'text-indigo-300' },
+  { key: 'verification', label: 'Verification', accent: 'text-amber-300' },
+];
+
 export function Features() {
   const [selectedId, setSelectedId] = useState('node-version');
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3 | 4>(0);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<PhaseLogs>(emptyLogs);
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
 
-  // Intersection observer to auto play first scenario
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry && entry.isIntersecting && !hasEnteredViewport) {
-          setHasEnteredViewport(true);
-        }
+        if (entry && entry.isIntersecting && !hasEnteredViewport) setHasEnteredViewport(true);
       },
       { threshold: 0.1 },
     );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, [hasEnteredViewport]);
 
   const activeScenario = scenarios.find((s) => s.id === selectedId) || scenarios[0];
 
-  // Pipeline simulation logic
   useEffect(() => {
     if (!hasEnteredViewport) return;
 
-    let isCancelled = false;
+    let cancelled = false;
     setActiveStep(0);
-    setLogs([]);
+    setLogs(emptyLogs());
 
-    const runPipeline = async () => {
-      // Step 1: Issue Found
-      if (isCancelled) return;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const stream = async (phase: Phase, lines: string[], gap: number) => {
+      for (const line of lines) {
+        if (cancelled) return;
+        setLogs((prev) => ({ ...prev, [phase]: [...prev[phase], line] }));
+        await wait(gap);
+      }
+    };
+
+    const run = async () => {
       setActiveStep(0);
-      await new Promise((r) => setTimeout(r, 600));
+      await wait(650);
+      if (cancelled) return;
 
-      // Step 2: Analysis
-      if (isCancelled) return;
       setActiveStep(1);
+      await stream('analysis', activeScenario.steps.analysis, 320);
+      await wait(350);
+      if (cancelled) return;
 
-      const analysisLogs = activeScenario.steps.analysis;
-      for (let i = 0; i < analysisLogs.length; i++) {
-        if (isCancelled) return;
-        setLogs((prev) => [...prev, analysisLogs[i] || '']);
-        await new Promise((r) => setTimeout(r, 350));
-      }
-      await new Promise((r) => setTimeout(r, 400));
-
-      // Step 3: Resolution
-      if (isCancelled) return;
       setActiveStep(2);
+      await stream('resolution', activeScenario.steps.resolution, 400);
+      await wait(350);
+      if (cancelled) return;
 
-      const resolutionLogs = activeScenario.steps.resolution;
-      for (let i = 0; i < resolutionLogs.length; i++) {
-        if (isCancelled) return;
-        setLogs((prev) => [...prev, resolutionLogs[i] || '']);
-        await new Promise((r) => setTimeout(r, 450));
-      }
-      await new Promise((r) => setTimeout(r, 400));
-
-      // Step 4: Verification
-      if (isCancelled) return;
       setActiveStep(3);
+      await stream('verification', activeScenario.steps.verification, 320);
+      await wait(450);
+      if (cancelled) return;
 
-      const verificationLogs = activeScenario.steps.verification;
-      for (let i = 0; i < verificationLogs.length; i++) {
-        if (isCancelled) return;
-        setLogs((prev) => [...prev, verificationLogs[i] || '']);
-        await new Promise((r) => setTimeout(r, 350));
-      }
-      await new Promise((r) => setTimeout(r, 500));
-
-      // Step 5: Healthy Environment
-      if (isCancelled) return;
       setActiveStep(4);
     };
 
-    runPipeline();
-
+    run();
     return () => {
-      isCancelled = true;
+      cancelled = true;
     };
   }, [selectedId, hasEnteredViewport, activeScenario]);
+
+  const railProgress = activeStep === 0 ? 0 : activeStep / 4;
 
   return (
     <section
       ref={sectionRef}
-      id="features"
       className="w-full max-w-6xl mx-auto px-6 mt-32 md:mt-40 relative z-10 text-left"
     >
-      {/* Title section */}
+      {/* ── Header ─────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-3xl mb-16"
+        className="max-w-3xl mb-14"
       >
-        <span className="text-[11px] font-mono tracking-widest text-white/30 uppercase">
-          Automated Recovery
-        </span>
-        <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mt-3 block leading-[1.1]">
-          We don't just report errors. We fix them.
+        <div className="flex items-center gap-2.5">
+          <span className="h-px w-8 bg-gradient-to-r from-white/40 to-transparent" />
+          <span className="text-[11px] font-mono tracking-[0.2em] text-white/40 uppercase">
+            Automated Recovery
+          </span>
+        </div>
+        <h2 className="text-4xl md:text-[3.25rem] font-bold tracking-tight mt-4 leading-[1.05] text-transparent bg-clip-text bg-gradient-to-b from-white to-white/55">
+          We don&apos;t just report errors.
+          <br className="hidden sm:block" /> We fix them.
         </h2>
-        <p className="mt-4 text-base text-white/50 max-w-xl font-light">
-          Derivo diagnoses local environment friction, resolves dependency alignment, and fixes
-          setup blockers automatically.
+        <p className="mt-5 text-base md:text-lg text-white/45 max-w-xl font-light leading-relaxed">
+          Derivo diagnoses local environment friction, resolves dependency alignment, and clears
+          setup blockers automatically — while you keep building.
         </p>
       </motion.div>
 
-      {/* Two-column Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-        {/* Left Column: Issue Library */}
-        <div className="lg:col-span-5 flex flex-col gap-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-white/30 pl-1">
-            Issue Library
-          </span>
-          <div className="flex flex-col gap-3">
+      {/* ── Body ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+        {/* Left — Issue Library */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35">
+              Issue Library
+            </span>
+            <span className="text-[10px] font-mono text-white/25">{scenarios.length} detected</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
             {scenarios.map((sc) => {
               const Icon = sc.icon;
               const isSelected = selectedId === sc.id;
+              const status = !isSelected ? 'error' : activeStep === 4 ? 'healthy' : 'repairing';
 
               return (
                 <button
                   key={sc.id}
                   onClick={() => setSelectedId(sc.id)}
-                  className={`relative w-full text-left p-4 rounded-2xl border transition-all duration-300 group cursor-pointer ${
+                  className={`group relative w-full text-left rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 cursor-pointer overflow-hidden shadow-sm ${
                     isSelected
-                      ? 'bg-white/[0.03] border-white/20 shadow-[0_0_24px_rgba(255,255,255,0.03)]'
-                      : 'bg-white/[0.01] border-white/[0.06] hover:bg-white/[0.02] hover:border-white/10'
+                      ? 'border-white/15 bg-white/[0.04] shadow-md shadow-black/10'
+                      : 'border-white/[0.06] bg-[#0c0c0e]/30 hover:border-white/12 hover:bg-[#141416]/40'
                   }`}
                 >
-                  {/* Selected Indicator slide-in */}
                   {isSelected && (
-                    <motion.div
-                      layoutId="selectedIssueIndicator"
-                      className="absolute inset-0 rounded-2xl bg-white/[0.01] border border-white/10"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    <motion.span
+                      layoutId="issueAccent"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-full ${
+                        status === 'healthy' ? 'bg-emerald-400' : 'bg-amber-400'
+                      }`}
                     />
                   )}
 
-                  <div className="relative z-10 flex gap-4 items-start">
+                  <div className="relative z-10 flex items-center gap-4 p-4">
                     <div
-                      className={`p-2.5 rounded-xl border transition-colors ${
+                      className={`grid place-items-center w-11 h-11 rounded-xl border shrink-0 transition-colors ${
                         isSelected
-                          ? 'bg-white/5 border-white/10 text-white'
-                          : 'bg-white/[0.02] border-white/[0.08] text-white/40 group-hover:text-white/70'
+                          ? 'border-white/15 bg-white/[0.06] text-white'
+                          : 'border-white/[0.07] bg-white/[0.02] text-white/40 group-hover:text-white/70'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-[18px] h-[18px]" strokeWidth={1.6} />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-3">
                         <span
-                          className={`text-sm font-medium transition-colors ${
-                            isSelected ? 'text-white' : 'text-white/70 group-hover:text-white/90'
+                          className={`text-sm font-medium truncate transition-colors ${
+                            isSelected ? 'text-white' : 'text-white/75 group-hover:text-white/90'
                           }`}
                         >
                           {sc.title}
                         </span>
-
-                        {/* Miniature status dot indicator */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isSelected
-                                ? activeStep === 4
-                                  ? 'bg-emerald-500 animate-pulse'
-                                  : 'bg-amber-500 animate-pulse'
-                                : 'bg-red-500/60'
-                            }`}
-                          />
-                          <span className="text-[9px] font-mono tracking-wider uppercase text-white/30 hidden sm:inline">
-                            {isSelected ? (activeStep === 4 ? 'healthy' : 'repairing') : 'error'}
-                          </span>
-                        </div>
+                        <StatusChip status={status} />
                       </div>
-                      <p className="text-xs text-white/40 font-light mt-1 line-clamp-1 leading-relaxed">
+                      <p className="text-xs text-white/40 font-light mt-1 truncate leading-relaxed">
                         {sc.desc}
                       </p>
                     </div>
@@ -372,255 +356,155 @@ export function Features() {
           </div>
         </div>
 
-        {/* Right Column: Automated Repair Pipeline */}
-        <div className="lg:col-span-7 flex flex-col justify-between">
-          <div className="flex flex-col gap-3 h-full justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-white/30 pl-1">
+        {/* Right — Repair Engine console */}
+        <div className="lg:col-span-7 flex flex-col gap-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/35">
               Internal Repair Engine
             </span>
+            <LiveBadge healthy={activeStep === 4} />
+          </div>
 
-            {/* Visualizer Frame */}
-            <div className="flex-1 rounded-2xl bg-[#09090a]/80 border border-white/10 p-6 md:p-8 backdrop-blur-xl relative overflow-hidden flex flex-col min-h-[460px] justify-between">
-              {/* Vertical connecting line indicator */}
-              <div className="absolute left-[38px] top-12 bottom-12 w-[2px] bg-white/[0.06] z-0" />
+          <div className="relative flex-1 rounded-2xl border border-white/10 bg-[#0e0e11]/80 backdrop-blur-xl overflow-hidden flex flex-col min-h-[480px] shadow-[0_0_60px_rgba(124,58,237,0.08),0_40px_80px_-30px_rgba(0,0,0,0.95)]">
+            {/* top sheen */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
-              {/* Glowing animated line */}
+            {/* console title bar */}
+            <div className="flex items-center gap-3 px-5 h-12 border-b border-white/[0.07] bg-white/[0.015]">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-white/15" />
+                <span className="w-3 h-3 rounded-full bg-white/15" />
+                <span className="w-3 h-3 rounded-full bg-white/15" />
+              </div>
+              <span className="text-[11px] font-mono text-white/40 truncate">
+                derivo repair <span className="text-white/25">·</span> {activeScenario.id}
+              </span>
+              <span className="ml-auto text-[10px] font-mono text-white/30 tabular-nums">
+                {Math.round(railProgress * 100)}%
+              </span>
+            </div>
+
+            {/* body */}
+            <div className="relative flex-1 p-6 md:p-7">
+              {/* progress rail */}
+              <div className="absolute left-[38px] top-8 bottom-8 w-px bg-white/[0.08]" />
               <motion.div
-                className="absolute left-[38px] top-12 w-[2px] bg-gradient-to-b from-red-500 via-cyan-500 to-emerald-500 z-0 origin-top"
+                className="absolute left-[38px] top-8 w-px origin-top bg-gradient-to-b from-rose-400 via-sky-400 to-emerald-400"
+                style={{ bottom: 32 }}
                 initial={{ scaleY: 0 }}
-                animate={{
-                  scaleY:
-                    activeStep === 0
-                      ? 0
-                      : activeStep === 1
-                        ? 0.25
-                        : activeStep === 2
-                          ? 0.5
-                          : activeStep === 3
-                            ? 0.75
-                            : 1,
-                }}
-                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                animate={{ scaleY: railProgress }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               />
 
-              {/* Node Pipeline Steps */}
-              <div className="space-y-7 relative z-10">
-                {/* Node 1: Issue Found */}
-                <PipelineNode
-                  stepIndex={0}
+              <div className="relative space-y-6">
+                {/* Issue found */}
+                <Step
+                  index={0}
                   activeStep={activeStep}
-                  title="Issue Found"
-                  colorClass={
-                    activeStep === 0
-                      ? 'border-red-500 bg-red-950/40 text-red-400'
-                      : 'border-white/20 bg-white/5 text-white/60'
-                  }
-                  icon={<AlertCircle className="w-3.5 h-3.5" />}
+                  title="Issue Detected"
+                  tone="rose"
+                  idleIcon={<AlertTriangle className="w-3.5 h-3.5" />}
                 >
-                  <p className="text-xs text-white/50 font-mono mt-0.5 select-all">
-                    {activeScenario.title}: {activeScenario.desc}
+                  <p className="text-xs font-mono text-white/65 mt-1 leading-relaxed select-text">
+                    <span className="text-rose-300/80">{activeScenario.title}</span> —{' '}
+                    {activeScenario.desc}
                   </p>
-                </PipelineNode>
+                </Step>
 
-                {/* Node 2: Analysis */}
-                <PipelineNode
-                  stepIndex={1}
-                  activeStep={activeStep}
-                  title="Analysis"
-                  colorClass={
-                    activeStep === 1
-                      ? 'border-cyan-500 bg-cyan-950/40 text-cyan-400'
-                      : activeStep > 1
-                        ? 'border-white/20 bg-white/5 text-white/60'
-                        : 'border-white/5 bg-transparent text-white/20'
-                  }
-                  icon={
-                    activeStep === 1 ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" />
-                    )
-                  }
-                >
-                  {activeStep >= 1 && (
-                    <div className="space-y-1 mt-1 font-mono text-[11px] text-white/40">
-                      {logs
-                        .filter((_, idx) => idx < 4)
-                        .map((log, lIdx) => (
-                          <motion.div
-                            key={lIdx}
-                            initial={{ opacity: 0, x: -3 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-1.5"
-                          >
-                            <span className="text-cyan-500/50">❯</span>
-                            <span>{log}</span>
-                          </motion.div>
-                        ))}
-                    </div>
-                  )}
-                </PipelineNode>
-
-                {/* Node 3: Resolution */}
-                <PipelineNode
-                  stepIndex={2}
-                  activeStep={activeStep}
-                  title="Resolution"
-                  colorClass={
-                    activeStep === 2
-                      ? 'border-indigo-500 bg-indigo-950/40 text-indigo-400'
-                      : activeStep > 2
-                        ? 'border-white/20 bg-white/5 text-white/60'
-                        : 'border-white/5 bg-transparent text-white/20'
-                  }
-                  icon={
-                    activeStep === 2 ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" />
-                    )
-                  }
-                >
-                  {activeStep >= 2 && (
-                    <div className="space-y-1 mt-1 font-mono text-[11px] text-white/40">
-                      {logs
-                        .filter((_, idx) => idx >= 4 && idx < 7)
-                        .map((log, lIdx) => (
-                          <motion.div
-                            key={lIdx}
-                            initial={{ opacity: 0, x: -3 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-1.5"
-                          >
-                            <span className="text-indigo-500/50">❯</span>
-                            <span>{log}</span>
-                          </motion.div>
-                        ))}
-                    </div>
-                  )}
-                </PipelineNode>
-
-                {/* Node 4: Verification */}
-                <PipelineNode
-                  stepIndex={3}
-                  activeStep={activeStep}
-                  title="Verification"
-                  colorClass={
-                    activeStep === 3
-                      ? 'border-amber-500 bg-amber-950/40 text-amber-400'
-                      : activeStep > 3
-                        ? 'border-white/20 bg-white/5 text-white/60'
-                        : 'border-white/5 bg-transparent text-white/20'
-                  }
-                  icon={
-                    activeStep === 3 ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" />
-                    )
-                  }
-                >
-                  {activeStep >= 3 && (
-                    <div className="space-y-1 mt-1 font-mono text-[11px] text-white/40">
-                      {logs
-                        .filter((_, idx) => idx >= 7)
-                        .map((log, lIdx) => (
-                          <motion.div
-                            key={lIdx}
-                            initial={{ opacity: 0, x: -3 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-1.5"
-                          >
-                            <span className="text-amber-500/50">❯</span>
-                            <span>{log}</span>
-                          </motion.div>
-                        ))}
-                    </div>
-                  )}
-                </PipelineNode>
-
-                {/* Node 5: Healthy Environment */}
-                <PipelineNode
-                  stepIndex={4}
-                  activeStep={activeStep}
-                  title="Healthy Environment"
-                  colorClass={
-                    activeStep === 4
-                      ? 'border-emerald-500 bg-emerald-950/40 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                      : 'border-white/5 bg-transparent text-white/20'
-                  }
-                  icon={<Check className="w-3.5 h-3.5" />}
-                >
-                  {activeStep === 4 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="grid grid-cols-2 gap-2 mt-2 font-mono text-[11px] text-emerald-400/80"
+                {/* Phases */}
+                {PHASES.map((phase, i) => {
+                  const stepIndex = (i + 1) as 1 | 2 | 3;
+                  return (
+                    <Step
+                      key={phase.key}
+                      index={stepIndex}
+                      activeStep={activeStep}
+                      title={phase.label}
+                      tone="sky"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span>Environment Healthy</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span>Services Running</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span>Configuration Valid</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span>Ready to Develop</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </PipelineNode>
-              </div>
+                      <LogList lines={logs[phase.key]} accent={phase.accent} />
+                    </Step>
+                  );
+                })}
 
-              {/* Bottom Status Panel - slide in on complete */}
-              <div className="h-16 mt-6 relative overflow-hidden flex items-end">
-                <AnimatePresence>
-                  {activeStep === 4 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 30 }}
-                      transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3.5 flex items-center justify-between"
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest leading-none">
-                          System Status
-                        </span>
-                        <span className="text-xs font-semibold text-white/80 mt-1">
-                          Environment Repaired
-                        </span>
-                      </div>
-
-                      {/* Pill statuses list */}
-                      <div className="flex items-center gap-3 text-[10px] font-mono text-emerald-400">
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="hidden sm:inline">Node.js</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="hidden sm:inline">Docker</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="hidden sm:inline">Redis</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="hidden sm:inline">Database</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Healthy */}
+                <Step
+                  index={4}
+                  activeStep={activeStep}
+                  title="Environment Healthy"
+                  tone="emerald"
+                  idleIcon={<ShieldCheck className="w-3.5 h-3.5" />}
+                  last
+                >
+                  <AnimatePresence>
+                    {activeStep === 4 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2 font-mono text-[11px] text-emerald-300/85"
+                      >
+                        {[
+                          'Environment Healthy',
+                          'Services Running',
+                          'Configuration Valid',
+                          'Ready to Develop',
+                        ].map((t) => (
+                          <div key={t} className="flex items-center gap-1.5">
+                            <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>{t}</span>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Step>
               </div>
+            </div>
+
+            {/* footer status */}
+            <div className="border-t border-white/[0.07] bg-white/[0.012] px-5 h-[68px] flex items-center">
+              <AnimatePresence mode="wait">
+                {activeStep === 4 ? (
+                  <motion.div
+                    key="done"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+                    className="w-full flex items-center justify-between"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-mono text-white/30 uppercase tracking-[0.18em]">
+                        System Status
+                      </span>
+                      <span className="text-sm font-semibold text-white/90 mt-0.5">
+                        Environment repaired
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] font-mono text-emerald-300/90">
+                      {['Node.js', 'Docker', 'Redis', 'Database'].map((s) => (
+                        <span key={s} className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                          <span className="hidden sm:inline">{s}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="running"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="w-full flex items-center gap-2.5 text-[11px] font-mono text-white/65"
+                  >
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white/60" />
+                    <span>Repairing environment</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-white/25" />
+                    <span className="text-white/60">{activeScenario.title}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -629,53 +513,129 @@ export function Features() {
   );
 }
 
-// Pipeline Node Subcomponent
-function PipelineNode({
-  stepIndex,
+/* ── Status chip in the issue list ─────────────────────────────── */
+function StatusChip({ status }: { status: 'error' | 'repairing' | 'healthy' }) {
+  const map = {
+    error: { dot: 'bg-rose-500', text: 'text-rose-300/70', label: 'error' },
+    repairing: { dot: 'bg-amber-400 animate-pulse', text: 'text-amber-300/80', label: 'repairing' },
+    healthy: { dot: 'bg-emerald-400', text: 'text-emerald-300/80', label: 'healthy' },
+  }[status];
+
+  return (
+    <span className="flex items-center gap-1.5 shrink-0">
+      <span className={`w-1.5 h-1.5 rounded-full ${map.dot}`} />
+      <span
+        className={`text-[9px] font-mono uppercase tracking-[0.12em] ${map.text} hidden sm:inline`}
+      >
+        {map.label}
+      </span>
+    </span>
+  );
+}
+
+/* ── Live badge above console ──────────────────────────────────── */
+function LiveBadge({ healthy }: { healthy: boolean }) {
+  return (
+    <span
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-mono uppercase tracking-[0.14em] transition-colors ${
+        healthy
+          ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+          : 'border-amber-400/25 bg-amber-400/10 text-amber-300'
+      }`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${healthy ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`}
+      />
+      {healthy ? 'stable' : 'live'}
+    </span>
+  );
+}
+
+/* ── Streaming log lines ───────────────────────────────────────── */
+function LogList({ lines, accent }: { lines: string[]; accent: string }) {
+  if (lines.length === 0) return null;
+  return (
+    <div className="space-y-1 mt-1.5 font-mono text-[11px] text-white/45">
+      {lines.map((line, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: -3 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex items-start gap-2 leading-relaxed"
+        >
+          <span className={`${accent} select-none`}>❯</span>
+          <span>{line}</span>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* ── A single pipeline step ────────────────────────────────────── */
+function Step({
+  index,
   activeStep,
   title,
-  colorClass,
-  icon,
+  tone,
+  idleIcon,
   children,
+  last,
 }: {
-  stepIndex: number;
+  index: number;
   activeStep: number;
   title: string;
-  colorClass: string;
-  icon: any;
+  tone: 'rose' | 'sky' | 'emerald';
+  idleIcon?: React.ReactNode;
   children?: React.ReactNode;
+  last?: boolean;
 }) {
-  const isPast = activeStep > stepIndex;
-  const isActive = activeStep === stepIndex;
+  const isPast = activeStep > index;
+  const isActive = activeStep === index;
+  const isFuture = activeStep < index;
+
+  const toneRing = {
+    rose: 'border-rose-400/60 bg-rose-500/10 text-rose-300 shadow-[0_0_16px_rgba(244,63,94,0.25)]',
+    sky: 'border-sky-400/60 bg-sky-500/10 text-sky-300 shadow-[0_0_16px_rgba(56,189,248,0.25)]',
+    emerald:
+      'border-emerald-400/60 bg-emerald-500/10 text-emerald-300 shadow-[0_0_16px_rgba(52,211,153,0.3)]',
+  }[tone];
+
+  // The final "healthy" node shows a check only once reached.
+  const showSpinner = isActive && !last && tone === 'sky';
 
   return (
     <div
-      className={`flex gap-5 items-start transition-opacity duration-300 ${!isActive && !isPast ? 'opacity-40' : 'opacity-100'}`}
+      className={`flex gap-5 items-start transition-opacity duration-300 ${
+        isFuture ? 'opacity-35' : 'opacity-100'
+      }`}
     >
-      {/* Node circle */}
       <div
-        className={`w-[24px] h-[24px] rounded-full border flex items-center justify-center shrink-0 z-10 transition-all duration-300 ${
-          isPast ? 'border-emerald-500/40 bg-emerald-950/20 text-emerald-400' : colorClass
+        className={`grid place-items-center w-6 h-6 rounded-full border shrink-0 relative z-10 bg-[#0a0a0c] transition-all duration-300 ${
+          isPast
+            ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-300'
+            : isActive
+              ? toneRing
+              : 'border-white/10 text-white/25'
         }`}
       >
-        {isPast ? <Check className="w-3 h-3" /> : icon}
+        {isPast ? (
+          <Check className="w-3 h-3" />
+        ) : showSpinner ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : (
+          (idleIcon ?? <span className="w-1.5 h-1.5 rounded-full bg-current" />)
+        )}
       </div>
 
-      {/* Node content */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pt-0.5">
         <h3
-          className={`text-xs font-semibold tracking-wide transition-colors ${
-            isActive
-              ? 'text-white font-bold'
-              : isPast
-                ? 'text-white/60 font-medium'
-                : 'text-white/30'
+          className={`text-[13px] font-semibold tracking-tight transition-colors ${
+            isActive ? 'text-white' : isPast ? 'text-white/65' : 'text-white/35'
           }`}
         >
           {title}
         </h3>
-
-        <div className="mt-0.5">{children}</div>
+        <div>{children}</div>
       </div>
     </div>
   );

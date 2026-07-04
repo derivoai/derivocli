@@ -39,10 +39,10 @@ export function PricingPreview() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-2xl mx-auto relative rounded-[2rem] bg-white/[0.01] border border-white/10 hover:border-white/20 transition-all duration-500 p-8 md:p-16 text-left shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] group"
+        className="max-w-2xl mx-auto relative rounded-[2rem] bg-white/[0.015] border border-white/10 hover:border-white/25 backdrop-blur-xl transition-all duration-500 p-8 md:p-16 text-left shadow-[0_0_80px_rgba(59,130,246,0.12),0_40px_80px_-30px_rgba(0,0,0,0.95)] group"
       >
         {/* Soft background glow */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent rounded-[2rem] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent rounded-[2rem] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
           <span className="px-3.5 py-1 text-[10px] font-mono uppercase tracking-widest text-white/40 border border-white/10 rounded-full bg-white/[0.02]">

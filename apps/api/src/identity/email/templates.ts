@@ -11,6 +11,8 @@
  *   - No external fonts, no tracking pixels, no external images.
  */
 
+import { LOGO_CONTENT_ID } from './logo.js';
+
 export interface EmailTemplate {
   subject: string;
   html: string;
@@ -66,8 +68,11 @@ function shell(content: string): string {
           <!-- Wordmark -->
           <tr>
             <td align="center" style="padding-bottom:28px;">
+              <img src="cid:${LOGO_CONTENT_ID}" width="28" height="28" alt="Derivo"
+                   style="display:inline-block;vertical-align:middle;width:28px;height:28px;
+                          border:0;outline:none;margin-right:8px;" />
               <span style="font-family:${T.fontStack};font-size:17px;font-weight:700;
-                           color:${T.textPrimary};letter-spacing:-0.3px;">Derivo</span>
+                           color:${T.textPrimary};letter-spacing:-0.3px;vertical-align:middle;">Derivo</span>
             </td>
           </tr>
 

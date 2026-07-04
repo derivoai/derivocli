@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Derivo - Activity</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#ffffff",
+                    "on-primary": "#000000",
+                    "background": "#0a0a0a",
+                    "on-background": "#ffffff",
+                    "surface": "#0a0a0a",
+                    "on-surface": "#ffffff",
+                    "surface-variant": "#1a1a1a",
+                    "on-surface-variant": "#a3a3a3",
+                    "outline": "#333333",
+                    "outline-variant": "#222222",
+                    "surface-container-lowest": "#0a0a0a",
+                    "surface-container-low": "#141414",
+                    "surface-container": "#111111",
+                    "surface-container-high": "#1a1a1a",
+                    "surface-container-highest": "#2a2a2a",
+                    "surface-tint": "#e5e5e5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "gutter": "24px",
+                    "stack-gap": "12px",
+                    "margin-mobile": "16px",
+                    "sidebar-width": "260px"
+            },
+            "fontFamily": {
+                    "code-sm": [
+                            "JetBrains Mono"
+                    ],
+                    "headline-lg": [
+                            "Geist"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Geist"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "code-md": [
+                            "JetBrains Mono"
+                    ],
+                    "label-caps": [
+                            "JetBrains Mono"
+                    ]
+            },
+            "fontSize": {
+                    "code-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "letterSpacing": "0",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "letterSpacing": "0",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "code-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "letterSpacing": "0",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "11px",
+                            {
+                                    "lineHeight": "1",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+          }
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen w-full flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-[260px] h-screen fixed left-0 top-0 bg-surface-container border-r border-outline-variant flex flex-col py-6 z-50">
+<!-- Brand / Header -->
+<div class="px-6 mb-8 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-background text-lg" style="font-variation-settings: 'FILL' 1;">dataset</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary leading-tight">Derivo</h1>
+<span class="font-code-sm text-code-sm text-on-surface-variant">v1.0.4</span>
+</div>
+</div>
+</div>
+<!-- Primary CTA -->
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-background font-body-md font-medium py-2 px-4 rounded-full hover:bg-surface-tint hover:text-background transition-colors duration-200">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Project
+            </button>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 overflow-y-auto px-2 flex flex-col gap-1">
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-body-md text-body-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">folder</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">devices</span>
+<span class="font-body-md text-body-md">Devices</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="font-body-md text-body-md">Sessions</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">vpn_key</span>
+<span class="font-body-md text-body-md">API Keys</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 py-2 text-primary font-bold border-l-2 border-primary pl-4 bg-transparent rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span class="font-body-md text-body-md">Activity</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span class="font-body-md text-body-md">Billing</span>
+</a>
+</nav>
+<!-- Footer Actions -->
+<div class="px-2 mt-auto pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 py-2 text-on-surface-variant font-medium pl-4 hover:border-outline hover:text-primary transition-colors duration-200 rounded-r scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-body-md text-body-md">Sign-out</span>
+</a>
+</div>
+</aside>
+<!-- Main Workspace -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden ml-[260px]">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 px-gutter bg-background border-b border-outline-variant sticky top-0 z-40">
+<!-- Search Bar (Left aligned per JSON) -->
+<div class="flex-1 max-w-md relative focus-within:ring-1 focus-within:ring-primary rounded-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full py-1.5 pl-11 pr-4 text-primary font-body-md focus:outline-none focus:border-primary placeholder:text-on-surface-variant/60" placeholder="Search commands, resources..." type="text"/>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all rounded-full">
+<span class="material-symbols-outlined text-[20px]">assistant</span>
+</button>
+<button class="border border-outline-variant text-primary font-body-md px-4 py-1.5 rounded-full hover:bg-surface-container-high transition-all text-sm font-medium">
+                    Refresh
+                </button>
+<button class="bg-primary text-background font-body-md px-4 py-1.5 rounded-full hover:bg-surface-tint hover:text-background transition-all text-sm font-medium">
+                    New Project
+                </button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant ml-2">
+<img alt="User Profile" class="w-full h-full object-cover opacity-80 mix-blend-luminosity" data-alt="A minimalist, monochromatic user avatar placeholder showing a generic geometric shape or abstract silhouette on a dark gray background. Sharp, clean, flat design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcBMOhwDeMjuffdUvSaRTWZBk0Rd9wr2YDaD5X0E-IRpwTU0f-PRPk8uOmh3OaRACRObrp18E_kFyMno-_zW8SXTs_7KmN3MD6KMrYH4kt8bjxxGA349L3AtTtswttedEkZVowdVkSWUKeaJQ0Faihgs3K4H2OJ9az684UwfXA-EB6YIeZSNeFORV3923t2XXYUSQMrtUJDBqgP45245eBSaYDpVppmGBX5tHLFPcqRlR7_ZE1-kW4Sg"/>
+</div>
+</div>
+</header>
+<!-- Page Content Canvas -->
+<div class="flex-1 overflow-y-auto bg-background p-gutter flex flex-col gap-8">
+<!-- Page Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex flex-col gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Logs</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Activity</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                        Audit trail for authentication, session, and security events.
+                    </p>
+</div>
+<div>
+<button class="flex items-center gap-2 border border-outline-variant text-primary bg-surface-container-low hover:bg-surface-container-high transition-colors font-body-md px-5 py-2 rounded-full">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                        Refresh
+                    </button>
+</div>
+</section>
+<!-- Filters -->
+<section class="border-b border-outline-variant pb-4">
+<div class="flex items-center gap-3">
+<button class="bg-primary text-background font-body-md font-medium px-5 py-1.5 rounded-full">
+                        All
+                    </button>
+<button class="border border-outline-variant text-on-surface-variant hover:text-primary hover:border-outline transition-colors font-body-md font-medium px-5 py-1.5 rounded-full bg-transparent">
+                        Auth
+                    </button>
+<button class="border border-outline-variant text-on-surface-variant hover:text-primary hover:border-outline transition-colors font-body-md font-medium px-5 py-1.5 rounded-full bg-transparent">
+                        Security
+                    </button>
+<button class="border border-outline-variant text-on-surface-variant hover:text-primary hover:border-outline transition-colors font-body-md font-medium px-5 py-1.5 rounded-full bg-transparent">
+                        Devices
+                    </button>
+</div>
+</section>
+<!-- Activity List (Data Table) -->
+<section class="border border-outline-variant rounded-2xl bg-surface-container-lowest overflow-hidden flex-1">
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container border-b border-outline-variant">
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant w-48">Timestamp</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant">Event</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant w-64">Actor</th>
+<th class="py-4 px-6 font-label-caps text-label-caps text-on-surface-variant w-48">IP Address</th>
+</tr>
+</thead>
+<tbody class="font-body-md">
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                                    2023-10-27 14:32:10Z
+                                </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">shield</span>
+</div>
+<span class="text-primary font-medium">Security Policy Updated</span>
+</div>
+</td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    admin@derivo.com
+                                </td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    192.168.1.100
+                                </td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                                    2023-10-27 12:15:00Z
+                                </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">login</span>
+</div>
+<span class="text-primary font-medium">CLI Login</span>
+</div>
+</td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    usr_a7x9b2f
+                                </td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    203.0.113.42
+                                </td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                                    2023-10-26 09:45:11Z
+                                </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">vpn_key</span>
+</div>
+<span class="text-primary font-medium">API Key Created</span>
+</div>
+</td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    admin@derivo.com
+                                </td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    192.168.1.100
+                                </td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                                    2023-10-25 18:20:05Z
+                                </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">devices</span>
+</div>
+<span class="text-primary font-medium">Device Trusted</span>
+</div>
+</td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    macbook-pro-14
+                                </td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    198.51.100.12
+                                </td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant group-hover:text-primary transition-colors">
+                                    2023-10-25 10:11:42Z
+                                </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+</div>
+<span class="text-primary font-medium">Session Terminated</span>
+</div>
+</td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    usr_b8y2c1d
+                                </td>
+<td class="py-4 px-6 font-code-sm text-code-sm text-on-surface-variant">
+                                    203.0.113.19
+                                </td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer -->
+<div class="p-6 border-t border-outline-variant bg-surface-container flex items-center justify-between text-on-surface-variant">
+<span class="font-code-sm text-code-sm">Showing 1-5 of 124 records</span>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded-full hover:bg-surface-container-high hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bottom padding for scroll -->
+<div class="h-8"></div>
+</div>
+</main>
+</body></html>

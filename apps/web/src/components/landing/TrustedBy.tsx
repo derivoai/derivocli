@@ -276,7 +276,7 @@ export function TrustedBy() {
               {/* Terminal Body */}
               <div
                 ref={terminalContentRef}
-                className="flex-1 p-6 overflow-y-auto text-[13px] leading-relaxed text-white/80 scroll-smooth"
+                className="flex-1 p-6 overflow-y-auto scrollbar-none text-[13px] leading-relaxed text-white/80 scroll-smooth"
               >
                 <AnimatePresence mode="wait">
                   <motion.div

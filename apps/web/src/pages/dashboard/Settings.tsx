@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/dashboard/layout/DashboardLayout';
-import { Github, AlertTriangle, User as UserIcon, Check, Loader2 } from 'lucide-react';
+import { Github, AlertTriangle, User as UserIcon, Check } from 'lucide-react';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { isTrialActive, parseFirebaseDate } from '../../lib/subscription';
+import { getPlanLabel, parseFirebaseDate } from '../../lib/subscription';
 import { auth, db, doc, setDoc, deleteDoc } from '../../lib/firebase';
 import {
   updateProfile,
@@ -14,50 +14,49 @@ import {
   GithubAuthProvider,
   signOut,
 } from 'firebase/auth';
+import { PageHeader } from '../../components/dashboard/shared/PageHeader';
+import { ConfirmDialog } from '../../components/dashboard/shared/ConfirmDialog';
+import { Section, Card, Btn, Divider } from '../../components/dashboard/ui/kit';
 
 export function Settings() {
   const navigate = useNavigate();
   const { currentUser, profile, subscription, loading } = useUserProfile();
 
   const [name, setName] = useState('');
-  // avatarFile: the locally chosen File (not yet persisted)
-  // avatarPreview: object URL for local preview, or the saved Firebase photoURL
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
-  // clearAvatar: user wants to remove their current saved photo
+  const [avatarError, setAvatarError] = useState(false);
   const [clearAvatar, setClearAvatar] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Sync state with loaded profile
   useEffect(() => {
     if (profile) {
       setName(profile.name || '');
       setAvatarPreview(currentUser?.photoURL || '');
+      setAvatarError(false);
     }
   }, [profile, currentUser]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-8 h-8 text-white/80 animate-spin" />
-            <span className="text-xs text-white/40 font-mono">Loading settings...</span>
-          </div>
+        <div className="flex flex-col gap-8 max-w-3xl">
+          <div className="h-10 w-48 skeleton" />
+          <div className="h-48 skeleton rounded-[14px]" />
+          <div className="h-32 skeleton rounded-[14px]" />
         </div>
       </DashboardLayout>
     );
   }
 
-  // Connected accounts processing
   const providers = currentUser?.providerData || [];
   const hasPassword = providers.some((p: any) => p.providerId === 'password');
   const hasGoogle = providers.some((p: any) => p.providerId === 'google.com');
   const hasGithub = providers.some((p: any) => p.providerId === 'github.com');
-
   const googleAccount = providers.find((p: any) => p.providerId === 'google.com');
   const githubAccount = providers.find((p: any) => p.providerId === 'github.com');
 
@@ -67,37 +66,24 @@ export function Settings() {
     setUpdating(true);
     setSuccessMsg('');
     setErrorMsg('');
-
     try {
-      // Determine the photoURL to persist. We only pass a remote HTTP(S) URL to
-      // Firebase Auth — it rejects base64/data URIs. If the user chose a local
-      // file we keep their existing photoURL (the local file preview is
-      // client-side only; full server-side upload can be added later). If they
-      // explicitly removed their avatar we clear it.
       const existingPhotoUrl = currentUser.photoURL ?? null;
       let nextPhotoUrl: string | null = existingPhotoUrl;
-      if (clearAvatar) {
-        nextPhotoUrl = null;
-      } else if (avatarFile) {
-        // Local file was picked — keep existing remote URL for now; preview
-        // is already shown from the object URL.
-        nextPhotoUrl = existingPhotoUrl;
-      }
+      if (clearAvatar) nextPhotoUrl = null;
+      else if (avatarFile) nextPhotoUrl = existingPhotoUrl;
 
-      await updateProfile(currentUser, {
-        displayName: name,
-        photoURL: nextPhotoUrl,
-      });
+      await updateProfile(currentUser, { displayName: name, photoURL: nextPhotoUrl });
 
-      // Update Firestore user document
       try {
-        const userRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userRef, { name, updatedAt: new Date().toISOString() }, { merge: true });
+        await setDoc(
+          doc(db, 'users', currentUser.uid),
+          { name, updatedAt: new Date().toISOString() },
+          { merge: true },
+        );
       } catch (firestoreErr: any) {
         console.warn('Could not update Firestore profile:', firestoreErr);
       }
 
-      // Reset local-file state; preview now reflects the saved photo.
       setAvatarFile(null);
       setClearAvatar(false);
       await currentUser.reload();
@@ -112,32 +98,28 @@ export function Settings() {
 
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // Reset the input so the same file can be re-selected after removal.
     e.target.value = '';
     if (!file) return;
-
     if (file.size > 2 * 1024 * 1024) {
       setErrorMsg('Image size must be less than 2MB.');
       return;
     }
-    // Allowed types: image/jpeg, image/png, image/gif, image/webp.
     if (!file.type.startsWith('image/')) {
       setErrorMsg('Please choose a JPG, PNG, GIF, or WebP image.');
       return;
     }
-
     setErrorMsg('');
     setClearAvatar(false);
     setAvatarFile(file);
-    // Use an object URL for an instant, memory-safe local preview.
-    const objectUrl = URL.createObjectURL(file);
-    setAvatarPreview(objectUrl);
+    setAvatarError(false);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleRemoveAvatar = () => {
     setAvatarFile(null);
     setClearAvatar(true);
     setAvatarPreview('');
+    setAvatarError(false);
   };
 
   const handleLinkProvider = async (providerId: string) => {
@@ -145,17 +127,11 @@ export function Settings() {
     setErrorMsg('');
     setSuccessMsg('');
     setActionLoading(providerId);
-
     try {
       let provider;
-      if (providerId === 'google.com') {
-        provider = new GoogleAuthProvider();
-      } else if (providerId === 'github.com') {
-        provider = new GithubAuthProvider();
-      } else {
-        throw new Error('Unsupported provider linking.');
-      }
-
+      if (providerId === 'google.com') provider = new GoogleAuthProvider();
+      else if (providerId === 'github.com') provider = new GithubAuthProvider();
+      else throw new Error('Unsupported provider linking.');
       await linkWithPopup(currentUser, provider);
       await currentUser.reload();
       setSuccessMsg(
@@ -163,11 +139,9 @@ export function Settings() {
       );
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/credential-already-in-use') {
+      if (err.code === 'auth/credential-already-in-use')
         setErrorMsg('This social account is already linked to another Derivo user.');
-      } else {
-        setErrorMsg(err.message || 'Failed to link account.');
-      }
+      else setErrorMsg(err.message || 'Failed to link account.');
     } finally {
       setActionLoading(null);
     }
@@ -181,11 +155,9 @@ export function Settings() {
       );
       return;
     }
-
     setErrorMsg('');
     setSuccessMsg('');
     setActionLoading(`unlink-${providerId}`);
-
     try {
       await unlink(currentUser, providerId);
       await currentUser.reload();
@@ -202,17 +174,10 @@ export function Settings() {
 
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
-    const confirm = window.confirm(
-      'Are you absolutely sure you want to delete your Derivo account? This will permanently delete your user profile, configurations, and active sessions. This action cannot be undone.',
-    );
-    if (!confirm) return;
-
     setErrorMsg('');
     setSuccessMsg('');
     setActionLoading('delete');
-
     try {
-      // 1. Delete Firestore user document (Try deleting doc or marking deleted, fallback gracefully on permission error)
       const userRef = doc(db, 'users', currentUser.uid);
       try {
         await deleteDoc(userRef);
@@ -228,69 +193,67 @@ export function Settings() {
           console.warn('Could not update Firestore document status:', innerErr);
         }
       }
-
-      // 2. Delete Auth User from Firebase (Sensitive operation, might throw requires-recent-login)
       await deleteUser(currentUser);
-
-      // 3. Sign out and redirect
       await signOut(auth);
       navigate('/');
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/requires-recent-login') {
+      if (err.code === 'auth/requires-recent-login')
         setErrorMsg(
           'For security reasons, deleting your account requires a recent login. Please sign out, log back in, and try again.',
         );
-      } else {
-        setErrorMsg(err.message || 'Failed to delete account. Please contact support.');
-      }
+      else setErrorMsg(err.message || 'Failed to delete account. Please contact support.');
+      setConfirmDelete(false);
     } finally {
       setActionLoading(null);
     }
   };
 
+  const providerBox = (connected: boolean) =>
+    `flex items-center justify-between p-4 rounded-xl border ${
+      connected
+        ? 'border-white/[0.07] bg-canvas'
+        : 'border-dashed border-white/[0.12] bg-transparent'
+    }`;
+
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-10 max-w-3xl pb-10">
-        <header className="flex flex-col justify-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Settings</h1>
-          <p className="text-sm text-white/50">
-            Manage your profile, connected accounts, and security preferences.
-          </p>
-        </header>
+      <div className="flex flex-col gap-8 max-w-3xl pb-10">
+        <PageHeader
+          eyebrow="Account"
+          title="Settings"
+          description="Manage your profile, connected accounts, and security preferences."
+        />
 
-        {/* Success/Error Alerts */}
         {successMsg && (
-          <div className="px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center gap-2">
+          <Card className="px-4 py-3 !border-good/20 text-xs text-good flex items-center gap-2">
             <Check className="w-4 h-4 shrink-0" />
             {successMsg}
-          </div>
+          </Card>
         )}
         {errorMsg && (
-          <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
+          <Card className="px-4 py-3 !border-bad/20 text-xs text-bad flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             {errorMsg}
-          </div>
+          </Card>
         )}
 
-        {/* Profile Section */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-white/90">Profile</h2>
-          <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-6">
+        {/* Profile */}
+        <Section title="Profile">
+          <div className="flex flex-col gap-6">
             <div className="flex items-center gap-6">
-              <div className="relative group">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    alt={profile?.name || 'User'}
-                    className="w-16 h-16 rounded-full border border-white/10 object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-xl font-semibold text-white/70 uppercase">
-                    {profile?.name?.charAt(0) || currentUser?.email?.charAt(0) || '?'}
-                  </div>
-                )}
-              </div>
+              {avatarPreview && !avatarError ? (
+                <img
+                  src={avatarPreview}
+                  alt={profile?.name || 'User'}
+                  onError={() => setAvatarError(true)}
+                  className="w-16 h-16 rounded-full border border-white/10 object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-accent/12 border border-accent/25 flex items-center justify-center text-xl font-semibold text-accent-bright uppercase overflow-hidden leading-none">
+                  {(profile?.name?.charAt(0) || currentUser?.email?.charAt(0) || '?').slice(0, 1)}
+                </div>
+              )}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium text-white/90">User Avatar</span>
                 <div className="flex items-center gap-3">
@@ -303,7 +266,7 @@ export function Settings() {
                   />
                   <label
                     htmlFor="avatar-upload"
-                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors shadow-sm"
+                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors"
                   >
                     Choose Picture
                   </label>
@@ -317,116 +280,85 @@ export function Settings() {
                     </button>
                   )}
                 </div>
-                <span className="text-[11px] text-white/40">
+                <span className="text-[11px] text-white/45">
                   JPG, PNG, GIF or WebP. Max size 2MB.
                 </span>
               </div>
             </div>
 
-            <div className="w-full h-px bg-white/[0.06]" />
+            <Divider />
 
             <form className="flex flex-col gap-4" onSubmit={handleUpdateProfile}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-white/70 ml-1">Full Name</label>
+                  <label className="text-xs font-medium text-white/55">Full Name</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+                    className="w-full bg-canvas border border-white/[0.09] rounded-[10px] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent/50 transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-white/70 ml-1">Email Address</label>
+                  <label className="text-xs font-medium text-white/55">Email Address</label>
                   <input
                     type="email"
                     value={currentUser?.email || ''}
-                    className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white/40 focus:outline-none focus:ring-1 focus:ring-white/10 transition-all cursor-not-allowed"
+                    className="w-full bg-canvas border border-white/[0.09] rounded-[10px] px-4 py-2.5 text-sm text-white/55 cursor-not-allowed"
                     disabled
                   />
                 </div>
               </div>
-
-              <div className="flex justify-end mt-2">
-                <button
-                  type="submit"
-                  disabled={updating}
-                  className="px-4 py-2 rounded-lg bg-white text-black text-xs font-medium hover:bg-white/95 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {updating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <div className="flex justify-end">
+                <Btn variant="primary" type="submit" busy={updating}>
                   {updating ? 'Saving...' : 'Save Changes'}
-                </button>
+                </Btn>
               </div>
             </form>
           </div>
-        </section>
+        </Section>
 
-        {/* Subscription Section */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-white/90">Subscription & Plan</h2>
-          <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-white/40">Current Plan</span>
-                <span className="text-sm font-semibold text-white">
-                  {subscription?.plan === 'pro'
-                    ? 'Pro Plan'
-                    : subscription?.plan === 'trial'
-                      ? subscription && isTrialActive(subscription)
-                        ? 'Pro Trial'
-                        : 'Trial Expired'
-                      : 'Community Plan'}
-                </span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-white/40">Subscription Status</span>
-                <span className="text-sm font-semibold text-white capitalize">
-                  {subscription?.status || 'Inactive'}
-                </span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-white/40">Trial Expiration</span>
-                <span className="text-sm font-semibold text-white">
-                  {subscription?.plan === 'trial'
-                    ? parseFirebaseDate(subscription.trialEndsAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })
-                    : 'N/A'}
-                </span>
-              </div>
-            </div>
+        {/* Subscription */}
+        <Section title="Subscription & Plan">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <SummaryStat label="Current Plan">{getPlanLabel(subscription)}</SummaryStat>
+            <SummaryStat label="Subscription Status">
+              <span className="capitalize">{subscription?.status || 'Inactive'}</span>
+            </SummaryStat>
+            <SummaryStat label="Trial Expiration">
+              {subscription?.plan === 'trial'
+                ? parseFirebaseDate(subscription.trialEndsAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                : 'N/A'}
+            </SummaryStat>
           </div>
-        </section>
+        </Section>
 
-        {/* Connected Accounts */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-white/90">Connected Accounts</h2>
-          <div className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.01] flex flex-col gap-4">
-            {/* Password Sign in connection status */}
-            <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.06] bg-[#050505]">
+        {/* Connected accounts */}
+        <Section title="Connected Accounts">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.07] bg-canvas">
               <div className="flex items-center gap-3">
                 <UserIcon className="w-5 h-5 text-white/80" />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-white/90">Email & Password</span>
-                  <span className="text-[11px] text-white/40">
+                  <span className="text-[11px] text-white/45">
                     {hasPassword ? `Connected via ${currentUser?.email}` : 'Not connected'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* GitHub Provider */}
-            <div
-              className={`flex items-center justify-between p-4 rounded-xl border ${hasGithub ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}
-            >
+            <div className={providerBox(hasGithub)}>
               <div className="flex items-center gap-3">
                 <Github className="w-5 h-5 text-white/80" />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-white/90">GitHub</span>
-                  <span className="text-[11px] text-white/40">
+                  <span className="text-[11px] text-white/45">
                     {hasGithub
                       ? `Connected as ${githubAccount?.displayName || githubAccount?.email || 'GitHub User'}`
                       : 'Connect your GitHub account'}
@@ -442,21 +374,19 @@ export function Settings() {
                   {actionLoading === 'unlink-github.com' ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               ) : (
-                <button
+                <Btn
+                  variant="secondary"
+                  size="sm"
                   onClick={() => handleLinkProvider('github.com')}
+                  busy={actionLoading === 'github.com'}
                   disabled={actionLoading !== null}
-                  className="text-xs text-white/90 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] px-3 py-1.5 rounded-lg border border-white/[0.06] transition-colors disabled:opacity-40 flex items-center gap-1.5"
                 >
-                  {actionLoading === 'github.com' && <Loader2 className="w-3 h-3 animate-spin" />}
                   Connect
-                </button>
+                </Btn>
               )}
             </div>
 
-            {/* Google Provider */}
-            <div
-              className={`flex items-center justify-between p-4 rounded-xl border ${hasGoogle ? 'border-white/[0.06] bg-[#050505]' : 'border-dashed border-white/[0.1] bg-transparent'}`}
-            >
+            <div className={providerBox(hasGoogle)}>
               <div className="flex items-center gap-3">
                 <svg className="w-5 h-5 opacity-80" viewBox="0 0 24 24">
                   <path
@@ -478,7 +408,7 @@ export function Settings() {
                 </svg>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-white/90">Google</span>
-                  <span className="text-[11px] text-white/40">
+                  <span className="text-[11px] text-white/45">
                     {hasGoogle
                       ? `Connected as ${googleAccount?.displayName || googleAccount?.email || 'Google User'}`
                       : 'Connect your Google account'}
@@ -494,41 +424,60 @@ export function Settings() {
                   {actionLoading === 'unlink-google.com' ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               ) : (
-                <button
+                <Btn
+                  variant="secondary"
+                  size="sm"
                   onClick={() => handleLinkProvider('google.com')}
+                  busy={actionLoading === 'google.com'}
                   disabled={actionLoading !== null}
-                  className="text-xs text-white/90 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] px-3 py-1.5 rounded-lg border border-white/[0.06] transition-colors disabled:opacity-40 flex items-center gap-1.5"
                 >
-                  {actionLoading === 'google.com' && <Loader2 className="w-3 h-3 animate-spin" />}
                   Connect
-                </button>
+                </Btn>
               )}
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* Danger Zone */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-red-400">Danger Zone</h2>
-          <div className="p-6 rounded-2xl border border-red-500/20 bg-red-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        {/* Danger zone */}
+        <Section title="Danger Zone" className="!border-bad/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-white/90">Delete Account</span>
-              <span className="text-xs text-white/50 leading-relaxed max-w-sm">
+              <span className="text-xs text-white/55 leading-relaxed max-w-sm">
                 Permanently delete your account and all of its contents from the Derivo platform.
                 This action is not reversible.
               </span>
             </div>
-            <button
-              onClick={handleDeleteAccount}
-              disabled={actionLoading !== null}
-              className="px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors shrink-0 disabled:opacity-40 flex items-center gap-1.5"
+            <Btn
+              variant="danger"
+              onClick={() => setConfirmDelete(true)}
+              busy={actionLoading === 'delete'}
+              className="shrink-0"
             >
-              {actionLoading === 'delete' && <Loader2 className="w-3 h-3 animate-spin" />}
               Delete Account
-            </button>
+            </Btn>
           </div>
-        </section>
+        </Section>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete your account?"
+        message="This permanently deletes your user profile, configurations, and active sessions. This action cannot be undone."
+        confirmLabel="Delete Account"
+        busy={actionLoading === 'delete'}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </DashboardLayout>
+  );
+}
+
+function SummaryStat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs text-white/40">{label}</span>
+      <span className="text-sm font-semibold text-white">{children}</span>
+    </div>
   );
 }
