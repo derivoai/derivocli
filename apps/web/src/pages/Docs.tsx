@@ -48,7 +48,7 @@ export function Docs() {
   const content = docsBySlug[active];
 
   return (
-    <div className="relative min-h-screen bg-[#080808] overflow-x-hidden font-sans text-white selection:bg-white/20">
+    <div className="lightui relative min-h-screen bg-background overflow-x-hidden font-sans text-foreground selection:bg-accent/20">
       <Background />
       <Navbar />
 
@@ -57,7 +57,7 @@ export function Docs() {
           {/* Sidebar */}
           <aside className="lg:w-52 shrink-0">
             <nav className="lg:sticky lg:top-28 flex flex-col gap-1">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30 mb-2 px-3">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2 px-3">
                 Documentation
               </span>
               {NAV.map((item) => (
@@ -67,8 +67,8 @@ export function Docs() {
                   className={({ isActive }) =>
                     `px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       isActive || item.slug === active
-                        ? 'bg-white/[0.06] text-white font-medium'
-                        : 'text-white/50 hover:text-white hover:bg-white/[0.03]'
+                        ? 'bg-secondary text-foreground font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                     }`
                   }
                 >
@@ -83,7 +83,7 @@ export function Docs() {
             {content ? (
               <Markdown content={content} />
             ) : (
-              <p className="text-sm text-white/50">Documentation is being prepared.</p>
+              <p className="text-sm text-muted-foreground">Documentation is being prepared.</p>
             )}
           </article>
         </div>

@@ -26,37 +26,41 @@ const TYPE_META: Record<
   string,
   { label: string; icon: typeof LogIn; tone: string; danger?: boolean }
 > = {
-  login: { label: 'Signed in', icon: LogIn, tone: 'text-good bg-good/10 border-good/20' },
+  login: {
+    label: 'Signed in',
+    icon: LogIn,
+    tone: 'text-emerald-700 bg-emerald-100 border-emerald-200',
+  },
   logout: {
     label: 'Signed out',
     icon: LogOut,
-    tone: 'text-white/60 bg-white/[0.06] border-white/[0.1]',
+    tone: 'text-muted-foreground bg-secondary border-border',
   },
   logout_all: {
     label: 'Logged out all sessions',
     icon: ShieldAlert,
-    tone: 'text-warn bg-warn/10 border-warn/20',
+    tone: 'text-amber-700 bg-amber-100 border-amber-200',
   },
   refresh: {
     label: 'Session refreshed',
     icon: RefreshCw,
-    tone: 'text-info bg-info/10 border-info/20',
+    tone: 'text-blue-700 bg-blue-100 border-blue-200',
   },
   refresh_failed: {
     label: 'Refresh failed',
     icon: ShieldAlert,
-    tone: 'text-bad bg-bad/10 border-bad/25',
+    tone: 'text-red-700 bg-red-100 border-red-200',
     danger: true,
   },
   device_registered: {
     label: 'Device registered',
     icon: MonitorSmartphone,
-    tone: 'text-info bg-info/10 border-info/20',
+    tone: 'text-blue-700 bg-blue-100 border-blue-200',
   },
   token_revoked: {
     label: 'Token revoked',
     icon: ShieldAlert,
-    tone: 'text-bad bg-bad/10 border-bad/25',
+    tone: 'text-red-700 bg-red-100 border-red-200',
     danger: true,
   },
 };
@@ -144,7 +148,7 @@ export function Activity() {
         )}
 
         {pageCount > 1 && (
-          <div className="flex items-center justify-between text-xs text-white/50">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
               Page {page} of {pageCount} · {filtered.length} events
             </span>
@@ -177,7 +181,7 @@ function TimelineRow({ event, last }: { event: LoginHistoryEvent; last: boolean 
   const meta = TYPE_META[event.type] ?? {
     label: event.type,
     icon: KeyRound,
-    tone: 'text-white/60 bg-white/[0.06] border-white/[0.1]',
+    tone: 'text-muted-foreground bg-secondary border-border',
   };
   const Icon = meta.icon;
   return (
@@ -188,19 +192,21 @@ function TimelineRow({ event, last }: { event: LoginHistoryEvent; last: boolean 
         >
           <Icon className="w-4 h-4" />
         </div>
-        {!last && <div className="w-px flex-1 bg-white/[0.08] my-1" />}
+        {!last && <div className="w-px flex-1 bg-border my-1" />}
       </div>
       <div className="pb-6 min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-medium ${meta.danger ? 'text-bad' : 'text-white/90'}`}>
+          <span
+            className={`text-sm font-medium ${meta.danger ? 'text-red-600' : 'text-foreground'}`}
+          >
             {meta.label}
           </span>
-          <span className="text-xs text-white/40" title={formatDateTime(event.at)}>
+          <span className="text-xs text-muted-foreground" title={formatDateTime(event.at)}>
             {relativeTime(event.at)}
           </span>
         </div>
         {(event.detail || event.deviceId) && (
-          <p className="text-xs text-white/45 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {event.detail}
             {event.detail && event.deviceId ? ' · ' : ''}
             {event.deviceId ? `device ${event.deviceId}` : ''}

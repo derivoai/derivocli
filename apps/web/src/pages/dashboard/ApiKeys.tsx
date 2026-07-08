@@ -139,13 +139,15 @@ export function ApiKeys() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-white/90">{k.name}</span>
+                      <span className="text-sm font-medium text-foreground">{k.name}</span>
                       <StatusBadge label={k.status} tone={statusTone(k.status)} />
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] text-white/40 border border-white/[0.08]">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
                         {k.environment}
                       </span>
                     </div>
-                    <span className="text-xs font-mono text-white/40 mt-1">{k.preview}</span>
+                    <span className="text-xs font-mono text-muted-foreground mt-1">
+                      {k.preview}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {k.status === 'active' && (
@@ -178,7 +180,7 @@ export function ApiKeys() {
                     </IconBtn>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-[11px] text-white/40 border-t border-white/[0.05] pt-2 flex-wrap">
+                <div className="flex items-center gap-4 text-[11px] text-muted-foreground border-t border-border pt-2 flex-wrap">
                   <span>Created {formatDateTime(k.createdAt)}</span>
                   <span>Last used {relativeTime(k.lastUsedAt)}</span>
                   <span>Expires {k.expiresAt ? formatDateTime(k.expiresAt) : 'never'}</span>
@@ -194,7 +196,7 @@ export function ApiKeys() {
       <Modal
         open={creating}
         title="Create API Key"
-        icon={<KeyRound className="w-4 h-4 text-accent-bright" />}
+        icon={<KeyRound className="w-4 h-4 text-accent" />}
         onClose={() => setCreating(false)}
         footer={
           <>
@@ -224,8 +226,8 @@ export function ApiKeys() {
                   onClick={() => setEnvironment(env)}
                   className={`h-9 px-4 rounded-[10px] text-xs font-medium border transition-colors ${
                     environment === env
-                      ? 'bg-accent/15 text-accent-bright border-accent/30'
-                      : 'bg-white/[0.04] text-white/60 border-white/[0.08]'
+                      ? 'bg-accent/10 text-accent border-accent/20'
+                      : 'bg-background text-muted-foreground border-border'
                   }`}
                 >
                   {env}
@@ -245,8 +247,8 @@ export function ApiKeys() {
                     }
                     className={`h-7 px-2.5 rounded-lg text-[11px] font-mono border transition-colors ${
                       on
-                        ? 'bg-info/15 text-info border-info/25'
-                        : 'bg-white/[0.04] text-white/50 border-white/[0.08]'
+                        ? 'bg-accent/10 text-accent border-accent/20'
+                        : 'bg-background text-muted-foreground border-border'
                     }`}
                   >
                     {scope}
@@ -268,7 +270,7 @@ export function ApiKeys() {
       <Modal
         open={!!created}
         title="API Key Created"
-        icon={<CheckCircle2 className="w-4 h-4 text-good" />}
+        icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />}
         onClose={() => setCreated(null)}
         footer={
           <Btn variant="secondary" onClick={() => setCreated(null)}>
@@ -278,11 +280,11 @@ export function ApiKeys() {
       >
         {created && (
           <div className="p-6 space-y-4">
-            <div className="px-4 py-3 rounded-xl bg-warn/10 border border-warn/20 text-xs text-warn">
+            <div className="px-4 py-3 rounded-xl bg-amber-100 border border-amber-200 text-xs text-amber-700">
               Copy this key now — it will not be shown again.
             </div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs font-mono text-white bg-canvas border border-white/[0.08] rounded-xl px-3 py-2.5 break-all">
+              <code className="flex-1 text-xs font-mono text-foreground bg-secondary/50 border border-border rounded-xl px-3 py-2.5 break-all">
                 {created.key}
               </code>
               <Btn

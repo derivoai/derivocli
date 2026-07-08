@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Suspense fallback flash. Everything else is lazy so its JS (and Firebase) is
 // never shipped in the landing critical path.
 import { Landing } from './pages/Landing';
+import { LightLanding } from './pages/LightLanding';
 
 // ── Lazy routes ──────────────────────────────────────────────────────────────
 const Docs = lazy(() => import('./pages/Docs').then((m) => ({ default: m.Docs })));
@@ -83,7 +84,8 @@ export default function App() {
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* ── Public marketing routes (no Firebase, no provider) ── */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<LightLanding />} />
+          <Route path="/old" element={<Landing />} />
           <Route path="/features" element={<Landing />} />
           <Route path="/how-it-works" element={<Landing />} />
           <Route path="/pricing" element={<Landing />} />

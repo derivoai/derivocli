@@ -40,7 +40,7 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="lightui fixed inset-0 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-label={title}
@@ -57,24 +57,24 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${maxW} rounded-2xl surface-card shadow-[0_50px_140px_-24px_rgba(0,0,0,0.9)] max-h-[90vh] flex flex-col overflow-hidden`}
+            className={`relative w-full ${maxW} rounded-2xl bg-background border border-border shadow-[0_50px_140px_-24px_rgba(0,0,0,0.25)] max-h-[90vh] flex flex-col overflow-hidden`}
           >
-            <div className="flex items-center justify-between px-6 h-14 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-6 h-14 border-b border-border">
               <div className="flex items-center gap-2.5 min-w-0">
                 {icon}
-                <h2 className="text-[15px] font-semibold text-white truncate">{title}</h2>
+                <h2 className="text-[15px] font-semibold text-foreground truncate">{title}</h2>
               </div>
               <button
                 onClick={onClose}
                 aria-label="Close"
-                className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="overflow-y-auto thin-scroll">{children}</div>
             {footer && (
-              <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-white/[0.06]">
+              <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border">
                 {footer}
               </div>
             )}

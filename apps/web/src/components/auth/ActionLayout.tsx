@@ -15,17 +15,17 @@ import { Logo } from '../landing/Logo';
 export function ActionLayout({ children }: { children: ReactNode }) {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 font-sans text-white selection:bg-white/20"
+      className="lightui min-h-screen flex flex-col items-center justify-center px-4 font-sans text-foreground selection:bg-accent/20"
       style={{
-        backgroundColor: '#0a0a0a',
+        backgroundColor: '#ffffff',
         backgroundImage:
-          'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,255,255,0.04) 0%, transparent 70%)',
+          'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.06) 0%, transparent 70%)',
       }}
     >
       {/* Wordmark */}
       <div className="mb-8 flex items-center gap-2.5">
         <Logo className="w-6 h-6" />
-        <span className="text-sm font-semibold tracking-tight text-white/90">Derivo</span>
+        <span className="text-sm font-semibold tracking-tight text-foreground">Derivo</span>
       </div>
 
       {/* Card */}
@@ -38,9 +38,9 @@ export function ActionLayout({ children }: { children: ReactNode }) {
         <div
           className="rounded-xl px-8 py-8"
           style={{
-            backgroundColor: '#111111',
-            border: '1px solid #222222',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e5e5',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
           {children}
@@ -70,7 +70,7 @@ export function ActionSuccessIcon() {
         animate={{ scale: 1 }}
         transition={{ delay: 0.12, type: 'spring', stiffness: 320, damping: 16 }}
       >
-        <Check className="w-5 h-5 text-emerald-400" strokeWidth={2.5} />
+        <Check className="w-5 h-5 text-emerald-600" strokeWidth={2.5} />
       </motion.span>
     </motion.div>
   );
@@ -88,7 +88,7 @@ export function ActionErrorIcon() {
       role="img"
       aria-label="Error"
     >
-      <X className="w-5 h-5 text-red-400" strokeWidth={2.5} />
+      <X className="w-5 h-5 text-red-600" strokeWidth={2.5} />
     </motion.div>
   );
 }
@@ -101,8 +101,8 @@ export function ActionLoadingState({ message }: { message: string }) {
       role="status"
       aria-live="polite"
     >
-      <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.5)' }} />
-      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+      <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(0,0,0,0.45)' }} />
+      <p className="text-sm" style={{ color: 'rgba(0,0,0,0.45)' }}>
         {message}
       </p>
     </div>

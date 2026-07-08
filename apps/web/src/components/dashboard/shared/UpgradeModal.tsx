@@ -37,24 +37,26 @@ export function UpgradeModal({
       open={isOpen}
       title={title}
       onClose={onClose}
-      icon={<Zap className="w-4 h-4 text-accent-bright" />}
+      icon={<Zap className="w-4 h-4 text-accent" />}
     >
-      <div className="p-6 relative aura">
+      <div className="p-6 relative">
         <div className="relative flex flex-col items-center text-center mb-6">
           <IconTile tone="accent" size="lg" className="mb-4">
             <Zap className="w-6 h-6" />
           </IconTile>
-          <p className="text-sm text-white/55 px-2 leading-relaxed max-w-sm">{description}</p>
+          <p className="text-sm text-muted-foreground px-2 leading-relaxed max-w-sm">
+            {description}
+          </p>
         </div>
 
         <div className="relative flex flex-col gap-2.5">
-          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Included
           </span>
-          <div className="grid grid-cols-1 gap-2 rounded-2xl border border-white/[0.07] bg-canvas p-4">
+          <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-secondary/50 p-4">
             {premiumFeatures.map((feature) => (
-              <div key={feature} className="flex items-center gap-2.5 text-sm text-white/75">
-                <Check className="w-4 h-4 text-accent-bright shrink-0" />
+              <div key={feature} className="flex items-center gap-2.5 text-sm text-foreground/80">
+                <Check className="w-4 h-4 text-accent shrink-0" />
                 <span>{feature}</span>
               </div>
             ))}

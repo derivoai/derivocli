@@ -63,7 +63,7 @@ export function Billing() {
         />
 
         {upgradeNote && (
-          <Card className="p-4 !border-warn/20 text-xs text-warn flex items-center gap-2">
+          <Card className="p-4 !border-amber-200 text-xs text-amber-700 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{upgradeNote}</span>
           </Card>
@@ -82,8 +82,10 @@ export function Billing() {
                   <Zap className="w-5 h-5" />
                 </IconTile>
                 <div className="flex flex-col">
-                  <span className="text-xs font-medium text-white/50">Current Subscription</span>
-                  <span className="text-xl font-semibold text-white tracking-tight">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Current Subscription
+                  </span>
+                  <span className="text-xl font-semibold text-foreground tracking-tight">
                     {state.planLabel}
                   </span>
                 </div>
@@ -95,7 +97,7 @@ export function Billing() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-b border-white/[0.06] pb-4 mb-3">
+              <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-b border-border pb-4 mb-3">
                 <FieldRow label="Access">{state.active ? 'Premium' : 'Restricted'}</FieldRow>
                 <FieldRow label="Plan">{state.planId}</FieldRow>
                 {state.isTrial && (
@@ -116,7 +118,9 @@ export function Billing() {
                 />
               )}
 
-              <p className="text-xs text-white/50 leading-relaxed flex-1">{planBlurb(state)}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                {planBlurb(state)}
+              </p>
 
               <div className="mt-6">
                 <Btn
@@ -136,13 +140,15 @@ export function Billing() {
 
             {/* Usage & limits */}
             <Section title="Usage & Limits">
-              <p className="text-xs text-white/45 -mt-1 mb-5">Live counts from the backend.</p>
+              <p className="text-xs text-muted-foreground -mt-1 mb-5">
+                Live counts from the backend.
+              </p>
               {usage.loading ? (
                 <SkeletonList rows={3} />
               ) : usage.error ? (
                 <ErrorState message={usage.error} onRetry={usage.refetch} />
               ) : Object.keys(usage.data?.usage ?? {}).length === 0 ? (
-                <p className="text-xs text-white/40 py-6 text-center">
+                <p className="text-xs text-muted-foreground py-6 text-center">
                   No usage data available yet.
                 </p>
               ) : (
@@ -162,12 +168,12 @@ export function Billing() {
         ) : null}
 
         <Section title="Billing Portal">
-          <p className="text-xs text-white/45 -mt-1">
+          <p className="text-xs text-muted-foreground -mt-1">
             Payments and invoices are managed by the billing provider.
           </p>
-          <div className="flex-1 flex flex-col items-center justify-center py-8 border border-dashed border-white/[0.1] rounded-xl bg-white/[0.01] my-5">
-            <CreditCard className="w-6 h-6 text-white/20 mb-2" />
-            <span className="text-xs text-white/40">No payment method on file.</span>
+          <div className="flex-1 flex flex-col items-center justify-center py-8 border border-dashed border-border rounded-xl bg-secondary/50 my-5">
+            <CreditCard className="w-6 h-6 text-muted-foreground mb-2" />
+            <span className="text-xs text-muted-foreground">No payment method on file.</span>
           </div>
           <Btn variant="secondary" disabled className="w-full h-11">
             Manage Subscription <ArrowUpRight className="w-3.5 h-3.5 opacity-40" />
@@ -189,17 +195,17 @@ function TrialBar({
   const pct = Math.min(100, (remainingDays / 3) * 100);
   return (
     <div className="flex flex-col gap-2 mb-3">
-      <div className="flex justify-between text-xs text-white/60">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>Trial remaining</span>
-        <span className="font-medium text-warn">
+        <span className="font-medium text-amber-600">
           {remainingDays}d {remainingHours % 24}h
         </span>
       </div>
-      <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
         <motion.div
           initial={reduce ? false : { width: 0 }}
           animate={{ width: `${pct}%` }}
-          className="h-full bg-warn"
+          className="h-full bg-amber-500"
         />
       </div>
     </div>
@@ -217,8 +223,8 @@ function planBlurb(state: { planId: string; isTrial: boolean; active: boolean })
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <span className="text-white/40 block">{label}</span>
-      <span className="font-semibold text-white capitalize">{children}</span>
+      <span className="text-muted-foreground block">{label}</span>
+      <span className="font-semibold text-foreground capitalize">{children}</span>
     </div>
   );
 }
@@ -231,26 +237,26 @@ function UsageRow({ label, used, limit }: { label: string; used: number; limit: 
   const over = !unlimited && !notApplicable && pct >= 100;
 
   const barColor = unlimited
-    ? 'bg-good/50'
+    ? 'bg-emerald-500/60'
     : notApplicable
-      ? 'bg-white/10'
+      ? 'bg-secondary'
       : over
-        ? 'bg-bad'
+        ? 'bg-red-500'
         : near
-          ? 'bg-warn'
+          ? 'bg-amber-500'
           : 'bg-accent/60';
   const barWidth = unlimited ? '100%' : notApplicable ? '0%' : `${pct}%`;
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex justify-between text-xs">
-        <span className="text-white/70">{label}</span>
-        <span className="text-white/50 font-mono">
+        <span className="text-foreground">{label}</span>
+        <span className="text-muted-foreground font-mono">
           {used}
           {unlimited ? ' / ∞' : notApplicable ? ' / —' : ` / ${limit}`}
         </span>
       </div>
-      <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
         <div className={`h-full ${barColor}`} style={{ width: barWidth }} />
       </div>
     </div>

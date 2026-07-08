@@ -45,9 +45,9 @@ export function Settings() {
     return (
       <DashboardLayout>
         <div className="flex flex-col gap-8 max-w-3xl">
-          <div className="h-10 w-48 skeleton" />
-          <div className="h-48 skeleton rounded-[14px]" />
-          <div className="h-32 skeleton rounded-[14px]" />
+          <div className="h-10 w-48 bg-secondary animate-pulse rounded-lg" />
+          <div className="h-48 bg-secondary animate-pulse rounded-[14px]" />
+          <div className="h-32 bg-secondary animate-pulse rounded-[14px]" />
         </div>
       </DashboardLayout>
     );
@@ -211,9 +211,7 @@ export function Settings() {
 
   const providerBox = (connected: boolean) =>
     `flex items-center justify-between p-4 rounded-xl border ${
-      connected
-        ? 'border-white/[0.07] bg-canvas'
-        : 'border-dashed border-white/[0.12] bg-transparent'
+      connected ? 'border-border bg-secondary/50' : 'border-dashed border-border bg-transparent'
     }`;
 
   return (
@@ -226,13 +224,13 @@ export function Settings() {
         />
 
         {successMsg && (
-          <Card className="px-4 py-3 !border-good/20 text-xs text-good flex items-center gap-2">
+          <Card className="px-4 py-3 !border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
             <Check className="w-4 h-4 shrink-0" />
             {successMsg}
           </Card>
         )}
         {errorMsg && (
-          <Card className="px-4 py-3 !border-bad/20 text-xs text-bad flex items-center gap-2">
+          <Card className="px-4 py-3 !border-red-200 text-xs text-red-700 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             {errorMsg}
           </Card>
@@ -247,15 +245,15 @@ export function Settings() {
                   src={avatarPreview}
                   alt={profile?.name || 'User'}
                   onError={() => setAvatarError(true)}
-                  className="w-16 h-16 rounded-full border border-white/10 object-cover"
+                  className="w-16 h-16 rounded-full border border-border object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-accent/12 border border-accent/25 flex items-center justify-center text-xl font-semibold text-accent-bright uppercase overflow-hidden leading-none">
+                <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-xl font-semibold text-accent uppercase overflow-hidden leading-none">
                   {(profile?.name?.charAt(0) || currentUser?.email?.charAt(0) || '?').slice(0, 1)}
                 </div>
               )}
               <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-white/90">User Avatar</span>
+                <span className="text-sm font-medium text-foreground">User Avatar</span>
                 <div className="flex items-center gap-3">
                   <input
                     type="file"
@@ -266,7 +264,7 @@ export function Settings() {
                   />
                   <label
                     htmlFor="avatar-upload"
-                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-white/90 transition-colors"
+                    className="cursor-pointer px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
                   >
                     Choose Picture
                   </label>
@@ -274,13 +272,13 @@ export function Settings() {
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-secondary border border-border hover:bg-secondary text-xs font-medium text-foreground transition-colors"
                     >
                       Remove
                     </button>
                   )}
                 </div>
-                <span className="text-[11px] text-white/45">
+                <span className="text-[11px] text-muted-foreground">
                   JPG, PNG, GIF or WebP. Max size 2MB.
                 </span>
               </div>
@@ -291,21 +289,21 @@ export function Settings() {
             <form className="flex flex-col gap-4" onSubmit={handleUpdateProfile}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-white/55">Full Name</label>
+                  <label className="text-xs font-medium text-muted-foreground">Full Name</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-canvas border border-white/[0.09] rounded-[10px] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent/50 transition-colors"
+                    className="w-full bg-background border border-border rounded-[10px] px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-white/55">Email Address</label>
+                  <label className="text-xs font-medium text-muted-foreground">Email Address</label>
                   <input
                     type="email"
                     value={currentUser?.email || ''}
-                    className="w-full bg-canvas border border-white/[0.09] rounded-[10px] px-4 py-2.5 text-sm text-white/55 cursor-not-allowed"
+                    className="w-full bg-secondary/50 border border-border rounded-[10px] px-4 py-2.5 text-sm text-muted-foreground cursor-not-allowed"
                     disabled
                   />
                 </div>
@@ -341,12 +339,12 @@ export function Settings() {
         {/* Connected accounts */}
         <Section title="Connected Accounts">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.07] bg-canvas">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
               <div className="flex items-center gap-3">
-                <UserIcon className="w-5 h-5 text-white/80" />
+                <UserIcon className="w-5 h-5 text-muted-foreground" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white/90">Email & Password</span>
-                  <span className="text-[11px] text-white/45">
+                  <span className="text-sm font-medium text-foreground">Email & Password</span>
+                  <span className="text-[11px] text-muted-foreground">
                     {hasPassword ? `Connected via ${currentUser?.email}` : 'Not connected'}
                   </span>
                 </div>
@@ -355,10 +353,10 @@ export function Settings() {
 
             <div className={providerBox(hasGithub)}>
               <div className="flex items-center gap-3">
-                <Github className="w-5 h-5 text-white/80" />
+                <Github className="w-5 h-5 text-muted-foreground" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white/90">GitHub</span>
-                  <span className="text-[11px] text-white/45">
+                  <span className="text-sm font-medium text-foreground">GitHub</span>
+                  <span className="text-[11px] text-muted-foreground">
                     {hasGithub
                       ? `Connected as ${githubAccount?.displayName || githubAccount?.email || 'GitHub User'}`
                       : 'Connect your GitHub account'}
@@ -369,7 +367,7 @@ export function Settings() {
                 <button
                   onClick={() => handleUnlinkProvider('github.com')}
                   disabled={actionLoading !== null}
-                  className="text-xs text-white/50 hover:text-white transition-colors disabled:opacity-40"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
                 >
                   {actionLoading === 'unlink-github.com' ? 'Disconnecting...' : 'Disconnect'}
                 </button>
@@ -407,8 +405,8 @@ export function Settings() {
                   />
                 </svg>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white/90">Google</span>
-                  <span className="text-[11px] text-white/45">
+                  <span className="text-sm font-medium text-foreground">Google</span>
+                  <span className="text-[11px] text-muted-foreground">
                     {hasGoogle
                       ? `Connected as ${googleAccount?.displayName || googleAccount?.email || 'Google User'}`
                       : 'Connect your Google account'}
@@ -419,7 +417,7 @@ export function Settings() {
                 <button
                   onClick={() => handleUnlinkProvider('google.com')}
                   disabled={actionLoading !== null}
-                  className="text-xs text-white/50 hover:text-white transition-colors disabled:opacity-40"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
                 >
                   {actionLoading === 'unlink-google.com' ? 'Disconnecting...' : 'Disconnect'}
                 </button>
@@ -439,11 +437,11 @@ export function Settings() {
         </Section>
 
         {/* Danger zone */}
-        <Section title="Danger Zone" className="!border-bad/20">
+        <Section title="Danger Zone" className="!border-red-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-white/90">Delete Account</span>
-              <span className="text-xs text-white/55 leading-relaxed max-w-sm">
+              <span className="text-sm font-medium text-foreground">Delete Account</span>
+              <span className="text-xs text-muted-foreground leading-relaxed max-w-sm">
                 Permanently delete your account and all of its contents from the Derivo platform.
                 This action is not reversible.
               </span>
@@ -476,8 +474,8 @@ export function Settings() {
 function SummaryStat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs text-white/40">{label}</span>
-      <span className="text-sm font-semibold text-white">{children}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold text-foreground">{children}</span>
     </div>
   );
 }

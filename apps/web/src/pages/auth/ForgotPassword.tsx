@@ -37,18 +37,18 @@ export function ForgotPassword() {
     <AuthLayout title="Reset password" subtitle="Enter your email and we'll send you a reset link">
       {sent ? (
         <div className="flex flex-col items-center justify-center py-6 gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-            <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+          <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center">
+            <CheckCircle2 className="w-7 h-7 text-emerald-600" />
           </div>
-          <p className="text-sm text-center text-white/60 max-w-xs leading-relaxed">
-            If an account exists for <span className="text-white font-medium">{email}</span>, a
+          <p className="text-sm text-center text-muted-foreground max-w-xs leading-relaxed">
+            If an account exists for <span className="text-foreground font-medium">{email}</span>, a
             reset link has been sent. Check your inbox and spam folder.
           </p>
         </div>
       ) : (
         <form className="flex flex-col gap-4 mt-4" onSubmit={handleSubmit}>
           <div className="space-y-1">
-            <label htmlFor="forgot-email" className="text-xs font-medium text-white/70 ml-1">
+            <label htmlFor="forgot-email" className="text-xs font-medium text-foreground ml-1">
               Email
             </label>
             <input
@@ -59,12 +59,12 @@ export function ForgotPassword() {
               placeholder="name@example.com"
               required
               autoFocus
-              className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
 
           {error && (
-            <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
+            <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -73,7 +73,7 @@ export function ForgotPassword() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? 'Sending…' : 'Send reset link'}
@@ -84,7 +84,7 @@ export function ForgotPassword() {
       <div className="mt-8 flex justify-center">
         <Link
           to="/login"
-          className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors group"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           Back to login

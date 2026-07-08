@@ -82,12 +82,12 @@ export function Sessions() {
                   </IconTile>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white/90 truncate">
+                      <span className="text-sm font-medium text-foreground truncate">
                         {s.deviceName || s.deviceId || 'Unknown device'}
                       </span>
                       {s.current && <StatusBadge label="This session" tone="green" />}
                     </div>
-                    <span className="text-xs text-white/40">
+                    <span className="text-xs text-muted-foreground">
                       Last active {relativeTime(s.lastSeenAt)} · created{' '}
                       {formatDateTime(s.createdAt)}
                     </span>
@@ -96,7 +96,7 @@ export function Sessions() {
                 {!s.current && (
                   <button
                     onClick={() => setConfirm({ type: 'one', session: s })}
-                    className="h-8 px-3 rounded-lg bg-white/[0.04] hover:bg-bad/15 hover:text-bad text-white/60 text-xs font-medium border border-white/[0.08] transition-colors flex items-center gap-1.5 shrink-0"
+                    className="h-8 px-3 rounded-lg bg-secondary hover:bg-red-100 hover:text-red-700 text-muted-foreground text-xs font-medium border border-border transition-colors flex items-center gap-1.5 shrink-0"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Log out

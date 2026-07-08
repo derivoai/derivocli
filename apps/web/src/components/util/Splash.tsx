@@ -24,19 +24,19 @@ export function Splash({ hiding, duration = 2000 }: { hiding: boolean; duration?
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-opacity duration-500 ease-out ${
+      className={`lightui fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-500 ease-out ${
         hiding ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       aria-hidden={hiding}
       role="status"
     >
       <div className="flex flex-col items-center gap-10">
-        <Logo className="w-16 h-16 text-white" />
+        <Logo className="w-16 h-16 text-foreground" />
 
         {/* Thin determinate track — the iPhone boot bar. */}
-        <div className="h-[3px] w-44 overflow-hidden rounded-full bg-white/15">
+        <div className="h-[3px] w-44 overflow-hidden rounded-full bg-secondary">
           <div
-            className="h-full rounded-full bg-white"
+            className="h-full rounded-full bg-accent"
             style={{
               width: `${fill}%`,
               transition: `width ${hiding ? 300 : duration}ms cubic-bezier(0.4, 0, 0.2, 1)`,

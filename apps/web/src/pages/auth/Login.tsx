@@ -106,7 +106,7 @@ export function Login() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium disabled:opacity-50"
+          className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium disabled:opacity-50"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
@@ -132,7 +132,7 @@ export function Login() {
           type="button"
           onClick={handleGithubLogin}
           disabled={loading}
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium disabled:opacity-50"
+          className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium disabled:opacity-50"
         >
           <Github className="w-4 h-4" />
           Continue with GitHub
@@ -141,16 +141,16 @@ export function Login() {
 
       <div className="relative mb-8">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-white/[0.06]" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[#0b0b0b] px-3 text-white/40">Or continue with email</span>
+          <span className="bg-background px-3 text-muted-foreground">Or continue with email</span>
         </div>
       </div>
 
       <form className="flex flex-col gap-4" onSubmit={handleEmailLogin}>
         <div className="space-y-1">
-          <label htmlFor="login-email" className="text-xs font-medium text-white/70 ml-1">
+          <label htmlFor="login-email" className="text-xs font-medium text-foreground ml-1">
             Email
           </label>
           <input
@@ -160,18 +160,18 @@ export function Login() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
           />
         </div>
 
         <div className="space-y-1">
           <div className="flex items-center justify-between ml-1">
-            <label htmlFor="login-password" className="text-xs font-medium text-white/70">
+            <label htmlFor="login-password" className="text-xs font-medium text-foreground">
               Password
             </label>
             <Link
               to="/forgot-password"
-              className="text-[11px] text-white/40 hover:text-white transition-colors"
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
             >
               Forgot password?
             </Link>
@@ -183,12 +183,12 @@ export function Login() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
           />
         </div>
 
         {error && (
-          <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+          <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">
             {error}
           </div>
         )}
@@ -196,18 +196,18 @@ export function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading && (
-            <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
           )}
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 
-      <div className="mt-8 text-center text-xs text-white/40">
+      <div className="mt-8 text-center text-xs text-muted-foreground">
         Don't have an account?{' '}
-        <Link to="/register" className="text-white hover:underline underline-offset-4">
+        <Link to="/register" className="text-accent hover:underline underline-offset-4">
           Sign up
         </Link>
       </div>

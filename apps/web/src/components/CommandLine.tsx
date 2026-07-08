@@ -30,20 +30,16 @@ export function CommandLine({ command, variant = 'block', className = '' }: Comm
 
   return (
     <div
-      className={`group inline-flex items-center gap-3 ${shape} bg-white/[0.03] border border-white/[0.1] font-mono text-sm transition-colors hover:border-white/20 ${className}`}
+      className={`group inline-flex items-center gap-3 ${shape} bg-secondary/50 border border-border font-mono text-sm transition-colors hover:border-accent ${className}`}
     >
-      <span className="text-white/30 select-none">$</span>
-      <span className="text-white/80 truncate flex-1">{command}</span>
+      <span className="text-muted-foreground select-none">$</span>
+      <span className="text-foreground/80 truncate flex-1">{command}</span>
       <button
         onClick={copy}
         aria-label={copied ? 'Copied' : 'Copy command'}
-        className="shrink-0 h-8 w-8 rounded-md flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.08] transition-colors"
+        className="shrink-0 h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
       >
-        {copied ? (
-          <Check className="w-4 h-4 text-emerald-400" />
-        ) : (
-          <Copy className="w-4 h-4" />
-        )}
+        {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
       </button>
     </div>
   );

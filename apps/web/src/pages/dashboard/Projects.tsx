@@ -83,10 +83,10 @@ export function Projects() {
         />
 
         {!hasPremium && (
-          <Card className="p-4 !border-warn/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Card className="p-4 !border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
-              <AlertTriangle className="w-4 h-4 text-warn shrink-0" />
-              <span className="text-white/70">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="text-muted-foreground">
                 Project creation requires an active premium subscription.
               </span>
             </div>
@@ -132,18 +132,18 @@ export function Projects() {
               >
                 <div className="flex items-start justify-between mb-8">
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-base font-semibold text-white/90">{project.name}</h3>
-                    <div className="flex items-center gap-2 text-xs font-mono text-white/40">
+                    <h3 className="text-base font-semibold text-foreground">{project.name}</h3>
+                    <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                       <span>{project.framework}</span>
                       <span>·</span>
                       <span>{project.env}</span>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-white/20" />
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/[0.05]">
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
                   <StatusBadge label={project.status} tone={statusTone(project.status)} />
-                  <span className="text-[10px] text-white/30">{project.lastSync}</span>
+                  <span className="text-[10px] text-muted-foreground">{project.lastSync}</span>
                 </div>
               </Card>
             ))}
@@ -175,10 +175,10 @@ export function Projects() {
         {selectedProject && (
           <div className="p-6">
             <KV label="Project Name">{selectedProject.name}</KV>
-            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-white/[0.05]">
-              <span className="text-xs text-white/40">Project ID</span>
+            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-border">
+              <span className="text-xs text-muted-foreground">Project ID</span>
               <div className="col-span-2 flex items-center gap-2">
-                <code className="text-xs font-mono text-white/90 bg-canvas border border-white/[0.08] px-2 py-1 rounded-lg truncate">
+                <code className="text-xs font-mono text-foreground bg-secondary/50 border border-border px-2 py-1 rounded-lg truncate">
                   {selectedProject.id}
                 </code>
                 <button
@@ -187,11 +187,11 @@ export function Projects() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
                   }}
-                  className="h-7 w-7 rounded-lg flex items-center justify-center border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
+                  className="h-7 w-7 rounded-lg flex items-center justify-center border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
                   title="Copy ID"
                 >
                   {copied ? (
-                    <Check className="w-3.5 h-3.5 text-good" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
@@ -200,8 +200,8 @@ export function Projects() {
             </div>
             <KV label="Framework">{selectedProject.framework}</KV>
             <KV label="Environment">{selectedProject.env}</KV>
-            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-white/[0.05]">
-              <span className="text-xs text-white/40">Status</span>
+            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-border">
+              <span className="text-xs text-muted-foreground">Status</span>
               <span className="col-span-2">
                 <StatusBadge
                   label={selectedProject.status}

@@ -5,19 +5,19 @@
 type Tone = 'green' | 'amber' | 'red' | 'blue' | 'gray';
 
 const TONES: Record<Tone, string> = {
-  green: 'bg-good/10 text-good border-good/20',
-  amber: 'bg-warn/10 text-warn border-warn/20',
-  red: 'bg-bad/10 text-bad border-bad/20',
-  blue: 'bg-info/10 text-info border-info/20',
-  gray: 'bg-white/[0.05] text-white/55 border-white/[0.1]',
+  green: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  amber: 'bg-amber-100 text-amber-700 border-amber-200',
+  red: 'bg-red-100 text-red-700 border-red-200',
+  blue: 'bg-blue-100 text-blue-700 border-blue-200',
+  gray: 'bg-secondary text-muted-foreground border-border',
 };
 
 const DOTS: Record<Tone, string> = {
-  green: 'bg-good',
-  amber: 'bg-warn',
-  red: 'bg-bad',
-  blue: 'bg-info',
-  gray: 'bg-white/40',
+  green: 'bg-emerald-600',
+  amber: 'bg-amber-600',
+  red: 'bg-red-600',
+  blue: 'bg-blue-600',
+  gray: 'bg-muted-foreground',
 };
 
 export function StatusBadge({

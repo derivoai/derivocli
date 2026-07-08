@@ -48,7 +48,7 @@ function ChipGroup({
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="text-xs font-medium text-white/70 ml-0.5">{label}</span>
+      <span className="text-xs font-medium text-foreground ml-0.5">{label}</span>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
           const active = value === opt;
@@ -59,8 +59,8 @@ function ChipGroup({
               onClick={() => onChange(active ? '' : opt)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 active
-                  ? 'bg-white text-black border-white'
-                  : 'bg-white/[0.03] text-white/70 border-white/[0.08] hover:bg-white/[0.07] hover:text-white'
+                  ? 'bg-accent text-accent-foreground border-accent'
+                  : 'bg-background text-foreground border-border hover:bg-secondary'
               }`}
             >
               {opt}
@@ -185,7 +185,7 @@ export function Onboarding() {
     return (
       <AuthLayout title="Setting things up" subtitle="One moment…">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 text-white/70 animate-spin" />
+          <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
         </div>
       </AuthLayout>
     );
@@ -197,7 +197,7 @@ export function Onboarding() {
         <form className="flex flex-col gap-4" onSubmit={handleNameContinue}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label htmlFor="ob-first" className="text-xs font-medium text-white/70 ml-1">
+              <label htmlFor="ob-first" className="text-xs font-medium text-foreground ml-1">
                 First Name
               </label>
               <input
@@ -208,11 +208,11 @@ export function Onboarding() {
                 placeholder="Jane"
                 required
                 autoFocus
-                className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="ob-last" className="text-xs font-medium text-white/70 ml-1">
+              <label htmlFor="ob-last" className="text-xs font-medium text-foreground ml-1">
                 Last Name
               </label>
               <input
@@ -221,13 +221,13 @@ export function Onboarding() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Doe"
-                className="w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
           </div>
 
           {error && (
-            <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+            <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">
               {error}
             </div>
           )}
@@ -235,10 +235,10 @@ export function Onboarding() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] mt-2 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all mt-2 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && (
-              <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             )}
             Continue
             {!saving && <ArrowRight className="w-4 h-4" />}
@@ -274,7 +274,7 @@ export function Onboarding() {
         />
 
         {error && (
-          <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+          <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">
             {error}
           </div>
         )}
@@ -284,7 +284,7 @@ export function Onboarding() {
             type="button"
             onClick={() => finishOnboarding(false)}
             disabled={saving}
-            className="py-3 px-5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium text-white/70 hover:text-white disabled:opacity-50"
+            className="py-3 px-5 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium text-foreground disabled:opacity-50"
           >
             Skip
           </button>
@@ -292,10 +292,10 @@ export function Onboarding() {
             type="button"
             onClick={() => finishOnboarding(true)}
             disabled={saving}
-            className="flex-1 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
-              <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
               <Check className="w-4 h-4" />
             )}

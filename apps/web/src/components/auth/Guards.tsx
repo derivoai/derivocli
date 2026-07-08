@@ -5,10 +5,10 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 
 function LoadingSpinner({ message = 'Verifying session...' }: { message?: string }) {
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+    <div className="lightui min-h-screen bg-background flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
-        <span className="text-xs text-white/40 font-mono">{message}</span>
+        <div className="w-8 h-8 rounded-full border-2 border-border border-t-accent animate-spin" />
+        <span className="text-xs text-muted-foreground font-mono">{message}</span>
       </div>
     </div>
   );

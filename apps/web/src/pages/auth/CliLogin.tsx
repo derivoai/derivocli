@@ -78,15 +78,15 @@ export function CliLogin() {
   }, [loading, profile, state, port]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-xl p-8 text-center space-y-6">
+    <div className="lightui min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-background border border-border rounded-xl p-8 text-center space-y-6">
         {(status === 'authenticating' || status === 'completing') && (
           <>
-            <Loader2 className="w-12 h-12 text-green-400 animate-spin mx-auto" />
+            <Loader2 className="w-12 h-12 text-accent animate-spin mx-auto" />
             <h2 className="text-xl font-medium">
               {status === 'authenticating' ? 'Authenticating...' : 'Completing login...'}
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {status === 'authenticating'
                 ? 'Verifying your session...'
                 : 'Securely passing your credentials to the CLI...'}
@@ -96,9 +96,9 @@ export function CliLogin() {
 
         {status === 'done' && (
           <>
-            <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
-            <h2 className="text-xl font-medium text-green-400">Login Successful</h2>
-            <p className="text-sm text-gray-400">
+            <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto" />
+            <h2 className="text-xl font-medium text-emerald-600">Login Successful</h2>
+            <p className="text-sm text-muted-foreground">
               You're authenticated. Return to your terminal — this window will close automatically.
             </p>
           </>
@@ -106,12 +106,12 @@ export function CliLogin() {
 
         {status === 'error' && (
           <>
-            <XCircle className="w-12 h-12 text-red-400 mx-auto" />
-            <h2 className="text-xl font-medium text-red-400">Authentication Failed</h2>
-            <p className="text-sm text-gray-400">{errorMessage}</p>
+            <XCircle className="w-12 h-12 text-red-600 mx-auto" />
+            <h2 className="text-xl font-medium text-red-600">Authentication Failed</h2>
+            <p className="text-sm text-muted-foreground">{errorMessage}</p>
             <button
               onClick={() => window.close()}
-              className="text-sm text-gray-500 underline hover:text-gray-300"
+              className="text-sm text-muted-foreground underline hover:text-foreground"
             >
               Close this window
             </button>

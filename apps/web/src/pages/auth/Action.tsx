@@ -69,12 +69,12 @@ const STRENGTH_BARS = [
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: '#0a0a0a',
-  border: '1px solid #2a2a2a',
+  background: '#ffffff',
+  border: '1px solid #e5e5e5',
   borderRadius: '8px',
   padding: '10px 14px',
   fontSize: '14px',
-  color: '#e5e5e5',
+  color: '#0a0a0a',
   outline: 'none',
   boxSizing: 'border-box',
   transition: 'border-color 0.15s',
@@ -85,7 +85,7 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '12px',
   fontWeight: 500,
-  color: 'rgba(255,255,255,0.55)',
+  color: 'rgba(0,0,0,0.55)',
   marginBottom: '6px',
 };
 
@@ -93,8 +93,8 @@ const btnPrimary: React.CSSProperties = {
   width: '100%',
   padding: '10px',
   borderRadius: '8px',
-  background: '#ffffff',
-  color: '#000000',
+  background: '#0a0a0a',
+  color: '#ffffff',
   fontSize: '14px',
   fontWeight: 600,
   border: 'none',
@@ -112,10 +112,10 @@ const btnGhost: React.CSSProperties = {
   padding: '10px',
   borderRadius: '8px',
   background: 'transparent',
-  color: 'rgba(255,255,255,0.6)',
+  color: 'rgba(0,0,0,0.6)',
   fontSize: '13px',
   fontWeight: 500,
-  border: '1px solid #2a2a2a',
+  border: '1px solid #e5e5e5',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
@@ -304,7 +304,7 @@ export function Action() {
                 margin: '0 0 6px',
                 fontSize: '16px',
                 fontWeight: 600,
-                color: '#e5e5e5',
+                color: '#0a0a0a',
                 letterSpacing: '-0.1px',
               }}
             >
@@ -314,7 +314,7 @@ export function Action() {
               style={{
                 margin: 0,
                 fontSize: '13px',
-                color: 'rgba(255,255,255,0.45)',
+                color: 'rgba(0,0,0,0.5)',
                 lineHeight: 1.6,
               }}
             >
@@ -332,11 +332,11 @@ export function Action() {
     return (
       <ActionLayout>
         <div style={{ marginBottom: 20 }}>
-          <h1 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: '#e5e5e5' }}>
+          <h1 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: '#0a0a0a' }}>
             Set a new password
           </h1>
           {accountEmail && (
-            <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            <p style={{ margin: 0, fontSize: '12px', color: 'rgba(0,0,0,0.5)' }}>
               for {accountEmail}
             </p>
           )}
@@ -375,7 +375,7 @@ export function Action() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: 'rgba(255,255,255,0.35)',
+                  color: 'rgba(0,0,0,0.4)',
                   padding: 0,
                   display: 'flex',
                 }}
@@ -391,7 +391,7 @@ export function Action() {
                     flex: 1,
                     height: 3,
                     borderRadius: 4,
-                    background: '#2a2a2a',
+                    background: '#e5e5e5',
                     overflow: 'hidden',
                   }}
                 >
@@ -406,7 +406,7 @@ export function Action() {
                 <span
                   style={{
                     fontSize: 10,
-                    color: 'rgba(255,255,255,0.35)',
+                    color: 'rgba(0,0,0,0.45)',
                     minWidth: 44,
                     textAlign: 'right',
                   }}
@@ -442,7 +442,7 @@ export function Action() {
                 background: 'rgba(239,68,68,0.08)',
                 border: '1px solid rgba(239,68,68,0.18)',
                 fontSize: 12,
-                color: '#f87171',
+                color: '#dc2626',
               }}
             >
               {formError}
@@ -472,14 +472,14 @@ export function Action() {
       >
         <ActionErrorIcon />
         <div style={{ marginTop: 4 }}>
-          <h1 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: '#e5e5e5' }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 600, color: '#0a0a0a' }}>
             {errorState?.title || 'Something went wrong'}
           </h1>
           <p
             style={{
               margin: 0,
               fontSize: '13px',
-              color: 'rgba(255,255,255,0.45)',
+              color: 'rgba(0,0,0,0.5)',
               lineHeight: 1.6,
               maxWidth: 260,
             }}
@@ -491,7 +491,7 @@ export function Action() {
         {mode === 'verifyEmail' && (
           <div style={{ width: '100%', marginTop: 4 }}>
             {resent ? (
-              <p style={{ margin: 0, fontSize: 12, color: '#34d399', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: 12, color: '#059669', textAlign: 'center' }}>
                 Verification email sent. Check your inbox.
               </p>
             ) : (
@@ -512,7 +512,7 @@ export function Action() {
           href="/login"
           style={{
             fontSize: 12,
-            color: 'rgba(255,255,255,0.3)',
+            color: 'rgba(0,0,0,0.4)',
             textDecoration: 'underline',
             textUnderlineOffset: 3,
             marginTop: 4,

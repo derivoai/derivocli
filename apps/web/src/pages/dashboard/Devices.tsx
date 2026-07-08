@@ -127,8 +127,8 @@ export function Devices() {
                       <MonitorSmartphone className="w-4 h-4" />
                     </IconTile>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium text-white/90 truncate">{d.name}</span>
-                      <span className="text-xs text-white/40 truncate">
+                      <span className="text-sm font-medium text-foreground truncate">{d.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">
                         {d.os ?? 'Unknown OS'} · {d.cliVersion ?? 'CLI'}
                       </span>
                     </div>
@@ -144,7 +144,7 @@ export function Devices() {
       <Modal
         open={!!selected}
         title={selected?.name ?? 'Device'}
-        icon={<MonitorSmartphone className="w-4 h-4 text-white/60" />}
+        icon={<MonitorSmartphone className="w-4 h-4 text-muted-foreground" />}
         onClose={() => setSelected(null)}
         footer={
           selected && (
@@ -200,12 +200,12 @@ export function Devices() {
                   autoFocus
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
-                  className="h-9 px-3 flex-1 rounded-[10px] bg-canvas border border-white/[0.1] text-sm text-white focus:outline-none focus:border-accent/50"
+                  className="h-9 px-3 flex-1 rounded-[10px] bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent"
                 />
                 <button
                   onClick={submitRename}
                   disabled={busy}
-                  className="p-2 rounded-lg bg-good/15 text-good border border-good/25"
+                  className="p-2 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-200"
                 >
                   <Check className="w-4 h-4" />
                 </button>
@@ -217,20 +217,24 @@ export function Devices() {
                 tone={deviceStatus(selected).tone}
               />
             </div>
-            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-white/[0.05]">
-              <span className="text-xs text-white/40">Device ID</span>
+            <div className="grid grid-cols-3 gap-3 items-center py-2.5 border-b border-border">
+              <span className="text-xs text-muted-foreground">Device ID</span>
               <div className="col-span-2 flex items-center gap-2 min-w-0">
-                <code className="text-xs font-mono text-white/90 truncate">{selected.id}</code>
+                <code className="text-xs font-mono text-foreground truncate">{selected.id}</code>
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(selected.id);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
                   }}
-                  className="h-6 w-6 rounded-md flex items-center justify-center border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
+                  className="h-6 w-6 rounded-md flex items-center justify-center border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
                   title="Copy ID"
                 >
-                  {copied ? <Check className="w-3 h-3 text-good" /> : <Copy className="w-3 h-3" />}
+                  {copied ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                 </button>
               </div>
             </div>
@@ -297,8 +301,8 @@ function ActionBtn({
       onClick={onClick}
       className={`h-8 px-3 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
         danger
-          ? 'bg-bad/10 hover:bg-bad/20 text-bad border-bad/20'
-          : 'bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border-white/[0.08]'
+          ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-200'
+          : 'bg-background hover:bg-secondary text-foreground border-border'
       }`}
     >
       <Icon className="w-3.5 h-3.5" />

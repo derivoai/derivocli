@@ -49,9 +49,9 @@ export function DashboardHome() {
     return (
       <DashboardLayout>
         <div className="flex flex-col gap-8">
-          <div className="h-10 w-64 skeleton" />
+          <div className="h-10 w-64 bg-secondary animate-pulse rounded-lg" />
           <SkeletonCards count={3} />
-          <div className="h-44 skeleton rounded-[14px]" />
+          <div className="h-44 bg-secondary animate-pulse rounded-[14px]" />
         </div>
       </DashboardLayout>
     );
@@ -92,7 +92,7 @@ export function DashboardHome() {
   };
 
   const getActivityIcon = (iconName: string) => {
-    const props = { className: 'w-3.5 h-3.5 text-white/70' };
+    const props = { className: 'w-3.5 h-3.5 text-muted-foreground' };
     switch (iconName) {
       case 'check':
         return <Check {...props} />;
@@ -103,7 +103,7 @@ export function DashboardHome() {
       case 'user':
         return <User {...props} />;
       case 'zap':
-        return <Zap className="w-3.5 h-3.5 text-warn" />;
+        return <Zap className="w-3.5 h-3.5 text-amber-600" />;
       default:
         return <ActivityIcon {...props} />;
     }
@@ -122,7 +122,7 @@ export function DashboardHome() {
             <>
               <Link
                 to="/docs"
-                className="inline-flex items-center gap-2 h-9 px-4 text-[13px] font-medium rounded-[10px] bg-white/[0.04] text-white hover:bg-white/[0.08] border border-white/[0.1] transition-colors"
+                className="inline-flex items-center gap-2 h-9 px-4 text-[13px] font-medium rounded-[10px] bg-background text-foreground hover:bg-secondary border border-border transition-colors"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Docs
@@ -139,10 +139,10 @@ export function DashboardHome() {
         />
 
         {!hasPremium && isTrialTier && (
-          <Card className="p-4 !border-bad/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Card className="p-4 !border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
               <StatusBadge label="Expired" tone="red" />
-              <span className="text-white/70">
+              <span className="text-muted-foreground">
                 Your premium trial has expired. Upgrade to keep creating projects.
               </span>
             </div>
@@ -187,7 +187,7 @@ export function DashboardHome() {
 
         {/* CLI quickstart */}
         <Section title="Get started with the CLI">
-          <p className="text-sm text-white/45 -mt-1 mb-5">
+          <p className="text-sm text-muted-foreground -mt-1 mb-5">
             Install Derivo, authenticate this machine, then prepare any repository in seconds.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -212,25 +212,25 @@ export function DashboardHome() {
               actions={
                 <Link
                   to="/dashboard/projects"
-                  className="text-xs text-white/40 hover:text-white transition-colors font-medium"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
                 >
                   View all
                 </Link>
               }
             >
               {projects.length > 0 ? (
-                <div className="divide-y divide-white/[0.05]">
+                <div className="divide-y divide-border">
                   {projects.slice(0, 4).map((project) => (
                     <Link
                       key={project.id}
                       to="/dashboard/projects"
-                      className="group flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors"
+                      className="group flex items-center justify-between px-6 py-4 hover:bg-secondary transition-colors"
                     >
                       <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-sm font-medium text-white/90 truncate">
+                        <span className="text-sm font-medium text-foreground truncate">
                           {project.name}
                         </span>
-                        <span className="text-[11px] font-mono text-white/40">
+                        <span className="text-[11px] font-mono text-muted-foreground">
                           {project.framework} · {project.env}
                         </span>
                       </div>
@@ -238,18 +238,18 @@ export function DashboardHome() {
                         <div className="hidden sm:block">
                           <StatusBadge label={project.status} tone={statusTone(project.status)} />
                         </div>
-                        <ArrowRight className="w-4 h-4 text-white/25 group-hover:text-accent-bright transition-colors" />
+                        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
                 <div className="px-6 py-10 text-center">
-                  <FolderGit2 className="w-8 h-8 text-white/20 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-white/70">No projects yet</p>
-                  <p className="text-xs text-white/40 mt-1">
-                    Run <span className="font-mono text-white/60">derivo setup</span> to register
-                    your first project.
+                  <FolderGit2 className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-foreground">No projects yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Run <span className="font-mono text-muted-foreground">derivo setup</span> to
+                    register your first project.
                   </p>
                 </div>
               )}
@@ -262,7 +262,7 @@ export function DashboardHome() {
             actions={
               <Link
                 to="/dashboard/activity"
-                className="text-xs text-white/40 hover:text-white transition-colors font-medium"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
               >
                 View log
               </Link>
@@ -273,17 +273,17 @@ export function DashboardHome() {
                 {activity.map((act, i) => (
                   <div key={act.id} className="flex gap-3.5 relative">
                     {i !== activity.length - 1 && (
-                      <div className="absolute left-[13px] top-7 bottom-[-20px] w-px bg-white/[0.08]" />
+                      <div className="absolute left-[13px] top-7 bottom-[-20px] w-px bg-border" />
                     )}
-                    <div className="w-7 h-7 rounded-lg bg-canvas border border-white/[0.1] flex items-center justify-center shrink-0 z-10">
+                    <div className="w-7 h-7 rounded-lg bg-background border border-border flex items-center justify-center shrink-0 z-10">
                       {getActivityIcon(act.icon)}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-medium text-white/80">{act.event}</span>
-                      <span className="text-[11px] text-white/40 mt-0.5 leading-relaxed">
+                      <span className="text-xs font-medium text-foreground">{act.event}</span>
+                      <span className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                         {act.description}
                       </span>
-                      <span className="text-[10px] font-mono text-white/30 mt-1">
+                      <span className="text-[10px] font-mono text-muted-foreground mt-1">
                         {act.timestamp}
                       </span>
                     </div>
@@ -292,9 +292,9 @@ export function DashboardHome() {
               </div>
             ) : (
               <div className="py-6 text-center">
-                <ActivityIcon className="w-7 h-7 text-white/20 mx-auto mb-2" />
-                <p className="text-sm font-medium text-white/70">No recent activity</p>
-                <p className="text-xs text-white/40 mt-1">
+                <ActivityIcon className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm font-medium text-foreground">No recent activity</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   Activity appears once you start using Derivo.
                 </p>
               </div>
@@ -330,10 +330,10 @@ function StatCard({
             {icon}
           </IconTile>
         </div>
-        <div className="font-display text-[26px] font-semibold text-white tracking-[-0.01em] truncate">
+        <div className="text-[26px] font-semibold text-foreground tracking-[-0.01em] truncate">
           {value}
         </div>
-        <div className="text-xs text-white/40 mt-1 capitalize">{hint}</div>
+        <div className="text-xs text-muted-foreground mt-1 capitalize">{hint}</div>
       </Card>
     </Link>
   );
@@ -343,10 +343,10 @@ function Step({ n, label, children }: { n: number; label: string; children: Reac
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <span className="w-5 h-5 rounded-md bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/50 flex items-center justify-center">
+        <span className="w-5 h-5 rounded-md bg-secondary border border-border text-[10px] font-mono text-muted-foreground flex items-center justify-center">
           {n}
         </span>
-        <span className="text-xs font-medium text-white/60">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
       {children}
     </div>

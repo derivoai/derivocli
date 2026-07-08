@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
  */
 export function ActionShell({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen bg-[#050505] overflow-hidden flex flex-col items-center justify-center font-sans text-white selection:bg-white/20 px-6">
+    <div className="lightui relative min-h-screen bg-background overflow-hidden flex flex-col items-center justify-center font-sans text-foreground selection:bg-accent/20 px-6">
       <Background />
 
       <Link
@@ -20,7 +20,7 @@ export function ActionShell({ children }: { children: ReactNode }) {
         className="absolute top-8 left-8 md:top-10 md:left-10 z-20 group"
         aria-label="Derivo home"
       >
-        <Logo className="w-7 h-7 text-white/70 group-hover:text-white transition-colors" />
+        <Logo className="w-7 h-7 text-muted-foreground group-hover:text-foreground transition-colors" />
       </Link>
 
       <motion.main
@@ -29,7 +29,7 @@ export function ActionShell({ children }: { children: ReactNode }) {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm relative z-10"
       >
-        <div className="rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] backdrop-blur-2xl border border-white/[0.08] p-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div className="rounded-2xl bg-background border border-border p-8 shadow-xl shadow-foreground/5">
           {children}
         </div>
       </motion.main>
@@ -44,7 +44,7 @@ export function SuccessIcon() {
       initial={{ scale: 0.6, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-      className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center"
+      className="w-12 h-12 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center"
       role="img"
       aria-label="Success"
     >
@@ -53,7 +53,7 @@ export function SuccessIcon() {
         animate={{ scale: 1, rotate: 0 }}
         transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 16 }}
       >
-        <Check className="w-6 h-6 text-emerald-400" strokeWidth={2.5} />
+        <Check className="w-6 h-6 text-emerald-600" strokeWidth={2.5} />
       </motion.span>
     </motion.div>
   );
@@ -66,11 +66,11 @@ export function ErrorIcon() {
       initial={{ scale: 0.6, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 220, damping: 18 }}
-      className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center"
+      className="w-12 h-12 rounded-full bg-red-100 border border-red-200 flex items-center justify-center"
       role="img"
       aria-label="Error"
     >
-      <X className="w-6 h-6 text-red-400" strokeWidth={2.5} />
+      <X className="w-6 h-6 text-red-600" strokeWidth={2.5} />
     </motion.div>
   );
 }
@@ -83,8 +83,8 @@ export function LoadingState({ message }: { message: string }) {
       role="status"
       aria-live="polite"
     >
-      <Loader2 className="w-6 h-6 text-white/70 animate-spin" />
-      <p className="text-sm text-white/60">{message}</p>
+      <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
 }

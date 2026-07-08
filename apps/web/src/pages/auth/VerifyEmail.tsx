@@ -97,18 +97,18 @@ export function VerifyEmail() {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-          className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+          className="w-16 h-16 rounded-2xl bg-secondary border border-border flex items-center justify-center mb-6"
         >
-          <MailCheck className="w-8 h-8 text-white/80" />
+          <MailCheck className="w-8 h-8 text-foreground" />
         </motion.div>
 
-        <p className="text-sm text-center text-white/60 mb-8 max-w-xs leading-relaxed">
+        <p className="text-sm text-center text-muted-foreground mb-8 max-w-xs leading-relaxed">
           Click the link in the email to verify your account. This page will automatically redirect
           you to your dashboard once verified.
         </p>
 
         {/* Auto-checking indicator */}
-        <div className="flex items-center gap-2 text-xs text-white/30 mb-6">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
           <Loader2
             className={`w-3.5 h-3.5 ${checkingVerification ? 'animate-spin' : 'opacity-30'}`}
           />
@@ -116,14 +116,14 @@ export function VerifyEmail() {
         </div>
 
         {error && (
-          <div className="w-full mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
+          <div className="w-full mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {resent ? (
-          <div className="flex items-center gap-2 text-sm text-emerald-400 mb-2">
+          <div className="flex items-center gap-2 text-sm text-emerald-600 mb-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             Verification email resent!
           </div>
@@ -132,7 +132,7 @@ export function VerifyEmail() {
             type="button"
             onClick={handleResend}
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-white/[0.03] text-white border border-white/[0.08] text-sm font-medium hover:bg-white/[0.06] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-background text-foreground border border-border text-sm font-medium hover:bg-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? 'Sending...' : 'Resend verification email'}
@@ -143,7 +143,7 @@ export function VerifyEmail() {
       <div className="mt-6 flex justify-center">
         <Link
           to="/login"
-          className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors group"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           Back to login

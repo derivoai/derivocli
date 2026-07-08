@@ -175,17 +175,17 @@ export function Register() {
   };
 
   const inputClass =
-    'w-full bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all';
+    'w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all';
 
   return (
     <AuthLayout title="Create an account" subtitle="Join Derivo and start building faster">
       {/* Step indicator */}
       <div className="flex items-center justify-center gap-2 mb-8">
         <span
-          className={`h-1.5 rounded-full transition-all ${step === 'name' ? 'w-8 bg-white' : 'w-4 bg-white/20'}`}
+          className={`h-1.5 rounded-full transition-all ${step === 'name' ? 'w-8 bg-accent' : 'w-4 bg-border'}`}
         />
         <span
-          className={`h-1.5 rounded-full transition-all ${step === 'credentials' ? 'w-8 bg-white' : 'w-4 bg-white/20'}`}
+          className={`h-1.5 rounded-full transition-all ${step === 'credentials' ? 'w-8 bg-accent' : 'w-4 bg-border'}`}
         />
       </div>
 
@@ -196,7 +196,7 @@ export function Register() {
               type="button"
               onClick={() => handleOAuth(googleProvider, 'Google')}
               disabled={loading}
-              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -222,7 +222,7 @@ export function Register() {
               type="button"
               onClick={() => handleOAuth(githubProvider, 'GitHub')}
               disabled={loading}
-              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium disabled:opacity-50"
+              className="flex items-center justify-center gap-3 w-full py-3 px-4 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium disabled:opacity-50"
             >
               <Github className="w-4 h-4" />
               Continue with GitHub
@@ -231,17 +231,22 @@ export function Register() {
 
           <div className="relative mb-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/[0.06]" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-[#0b0b0b] px-3 text-white/40">Or register with email</span>
+              <span className="bg-background px-3 text-muted-foreground">
+                Or register with email
+              </span>
             </div>
           </div>
 
           <form className="flex flex-col gap-4" onSubmit={handleContinueFromName}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label htmlFor="register-first" className="text-xs font-medium text-white/70 ml-1">
+                <label
+                  htmlFor="register-first"
+                  className="text-xs font-medium text-foreground ml-1"
+                >
                   First Name
                 </label>
                 <input
@@ -256,7 +261,7 @@ export function Register() {
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="register-last" className="text-xs font-medium text-white/70 ml-1">
+                <label htmlFor="register-last" className="text-xs font-medium text-foreground ml-1">
                   Last Name
                 </label>
                 <input
@@ -271,14 +276,14 @@ export function Register() {
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">
                 {error}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] mt-2 flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all mt-2 flex items-center justify-center gap-2"
             >
               Continue
               <ArrowRight className="w-4 h-4" />
@@ -290,7 +295,7 @@ export function Register() {
       {step === 'credentials' && (
         <form className="flex flex-col gap-4" onSubmit={handleRegister}>
           <div className="space-y-1">
-            <label htmlFor="register-email" className="text-xs font-medium text-white/70 ml-1">
+            <label htmlFor="register-email" className="text-xs font-medium text-foreground ml-1">
               Email
             </label>
             <input
@@ -306,7 +311,7 @@ export function Register() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="register-password" className="text-xs font-medium text-white/70 ml-1">
+            <label htmlFor="register-password" className="text-xs font-medium text-foreground ml-1">
               Password
             </label>
             <input
@@ -319,11 +324,11 @@ export function Register() {
               minLength={8}
               className={inputClass}
             />
-            <p className="text-[11px] text-white/30 ml-1 pt-1">At least 8 characters.</p>
+            <p className="text-[11px] text-muted-foreground ml-1 pt-1">At least 8 characters.</p>
           </div>
 
           {error && (
-            <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+            <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600">
               {error}
             </div>
           )}
@@ -336,7 +341,7 @@ export function Register() {
                 setStep('name');
               }}
               disabled={loading}
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all text-sm font-medium disabled:opacity-50"
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-background border border-border hover:bg-secondary transition-all text-sm font-medium disabled:opacity-50"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -344,10 +349,10 @@ export function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && (
-                <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               )}
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
@@ -355,25 +360,25 @@ export function Register() {
         </form>
       )}
 
-      <div className="mt-8 text-center text-xs text-white/40">
+      <div className="mt-8 text-center text-xs text-muted-foreground">
         Already have an account?{' '}
-        <Link to="/login" className="text-white hover:underline underline-offset-4">
+        <Link to="/login" className="text-accent hover:underline underline-offset-4">
           Sign in
         </Link>
       </div>
 
-      <p className="mt-6 text-center text-[10px] text-white/30 max-w-xs mx-auto leading-relaxed">
+      <p className="mt-6 text-center text-[10px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
         By clicking continue, you agree to our{' '}
         <Link
           to="/terms-of-services"
-          className="hover:text-white transition-colors underline underline-offset-2"
+          className="hover:text-foreground transition-colors underline underline-offset-2"
         >
           Terms of Service
         </Link>{' '}
         and{' '}
         <Link
           to="/privacy-policies"
-          className="hover:text-white transition-colors underline underline-offset-2"
+          className="hover:text-foreground transition-colors underline underline-offset-2"
         >
           Privacy Policy
         </Link>

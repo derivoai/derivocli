@@ -1,9 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Distinct typeface for the authenticated dashboard (not the marketing site). */
+  --font-dashboard: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Light "Nexora" marketing tokens (additive — used by the light landing).
+     Not referenced by the existing dark app, so defining them is safe. ────── */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(210 14% 17%);
+  --color-primary: hsl(210 14% 17%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 96%);
+  --color-secondary-foreground: hsl(0 0% 9%);
+  --color-muted: hsl(0 0% 96%);
+  --color-muted-foreground: hsl(184 5% 55%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-border: hsl(0 0% 90%);
+  --color-ring: hsl(239 84% 67%);
 
   /* ── Surfaces — near-black, softly layered (premium minimal) ── */
   --color-canvas: #0a0a0c;
@@ -106,6 +124,18 @@
   pointer-events: none;
   opacity: 0.5;
   z-index: 0;
+}
+
+/* ── Light "Nexora" landing scope ───────────────────────────────────────────
+   Applied on the landing root. Overrides accent + display font locally so the
+   marketing page renders the indigo/serif system without touching the dark app. */
+:root {
+  --shadow-dashboard: 0 25px 80px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.lightui {
+  --color-accent: hsl(239 84% 67%);
+  --font-display: 'Instrument Serif', serif;
+  font-family: var(--font-body);
 }
 
 @keyframes cursor-blink {

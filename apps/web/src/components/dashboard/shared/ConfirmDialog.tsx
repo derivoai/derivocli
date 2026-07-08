@@ -30,7 +30,7 @@ export function ConfirmDialog({
       open={open}
       title={title}
       onClose={onCancel}
-      icon={destructive ? <AlertTriangle className="w-4 h-4 text-bad" /> : undefined}
+      icon={destructive ? <AlertTriangle className="w-4 h-4 text-red-600" /> : undefined}
       footer={
         <>
           <Btn variant="secondary" onClick={onCancel} disabled={busy}>
@@ -42,7 +42,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="px-6 py-5 text-sm text-white/65 leading-relaxed">{message}</p>
+      <p className="px-6 py-5 text-sm text-muted-foreground leading-relaxed">{message}</p>
     </Modal>
   );
 }
